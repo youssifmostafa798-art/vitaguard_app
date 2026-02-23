@@ -1,0 +1,45 @@
+name: vitaguard_app
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  gap: ^3.0.1
+  flutter_svg: ^2.2.3
+  url_launcher: ^6.1.10
+  intl: ^0.19.0   # ✅ تمت الإضافة
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/cover/
+    - assets/Logo/
+    - assets/PNG/
+    - assets/SVG/
+
+  fonts:   # ✅ لازم تكون جوه flutter
+    - family: WixMadeforDisplay
+      fonts:
+        - asset: assets/fonts/WixMadeforDisplay/WixMadeforDisplay-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/WixMadeforDisplay/WixMadeforDisplay-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/WixMadeforDisplay/WixMadeforDisplay-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/WixMadeforDisplay/WixMadeforDisplay-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/WixMadeforDisplay/WixMadeforDisplay-ExtraBold.ttf
+          weight: 800
