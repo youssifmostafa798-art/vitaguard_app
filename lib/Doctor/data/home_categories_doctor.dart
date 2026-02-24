@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:vitaguard_app/Doctor/Home/screen/daily%20_reports.dart';
-import 'package:vitaguard_app/Doctor/Home/screen/medical_reports.dart';
-import 'package:vitaguard_app/Models/category_model.dart';
+import 'package:vitaguard_app/doctor/home/screen/daily_reports.dart';
+import 'package:vitaguard_app/doctor/home/screen/medical_reports.dart';
+import 'package:vitaguard_app/models/category_model.dart';
 
 List<CategoryModel> homeCategoriesDr(BuildContext context, String drName) {
   return [

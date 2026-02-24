@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-class SpecialBottomNav extends StatefulWidget {
+class HomeBottomNav extends StatefulWidget {
   final int currentIndex;
   final ValueChanged<int>? onTap;
 
-  const SpecialBottomNav({super.key, required this.currentIndex, this.onTap});
+  const HomeBottomNav({super.key, required this.currentIndex, this.onTap});
 
   @override
-  State<SpecialBottomNav> createState() => _SpecialBottomNavState();
+  State<HomeBottomNav> createState() => _HomeBottomNavState();
 }
 
-class _SpecialBottomNavState extends State<SpecialBottomNav>
+class _HomeBottomNavState extends State<HomeBottomNav>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -29,7 +29,7 @@ class _SpecialBottomNavState extends State<SpecialBottomNav>
   }
 
   @override
-  void didUpdateWidget(SpecialBottomNav oldWidget) {
+  void didUpdateWidget(HomeBottomNav oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.currentIndex != widget.currentIndex) {
       _animationController.forward().then((_) {
@@ -61,20 +61,16 @@ class _SpecialBottomNavState extends State<SpecialBottomNav>
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           // Home with animation
-          _buildAnimatedIconButton(index: 0, icon: Icons.home, label: 'Chats'),
+          _buildAnimatedIconButton(index: 0, icon: Icons.home, label: 'Home'),
 
           // Chat with animation
-          _buildAnimatedIconButton(
-            index: 1,
-            icon: Icons.fact_check,
-            label: 'Report',
-          ),
+          _buildAnimatedIconButton(index: 1, icon: Icons.chat, label: 'Chat'),
 
           // Model with animation
           _buildAnimatedIconButton(
             index: 2,
-            icon: Icons.discount_outlined,
-            label: "Offer",
+            icon: Icons.health_and_safety,
+            label: "Model",
           ),
         ],
       ),
@@ -122,7 +118,7 @@ class _SpecialBottomNavState extends State<SpecialBottomNav>
                     scale: scale,
                     child: Icon(
                       icon,
-                      size: 26,
+                      size: 28,
                       color: isSelected ? const Color(0xff003F6B) : Colors.grey,
                     ),
                   );
@@ -140,7 +136,7 @@ class _SpecialBottomNavState extends State<SpecialBottomNav>
                     style: TextStyle(
                       color: const Color(0xff003F6B),
                       fontWeight: FontWeight.bold,
-                      fontSize: 8,
+                      fontSize: 10,
                     ),
                   ),
                 ),
@@ -151,3 +147,6 @@ class _SpecialBottomNavState extends State<SpecialBottomNav>
     );
   }
 }
+
+
+

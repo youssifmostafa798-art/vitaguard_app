@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
-import 'package:vitaguard_app/doctor/Home/widget/category_grid_dr.dart';
-import 'package:vitaguard_app/compenets/custem_background.dart';
+import 'package:vitaguard_app/doctor/home/widget/category_grid_dr.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/home_header.dart';
-import 'package:vitaguard_app/patient/Home/widget/home_search.dart';
-import '../ui/doctor_provider.dart';
+import 'package:vitaguard_app/patient/home/widget/home_search.dart';
+import '../../ui/doctor_provider.dart';
 
 class DoctorHomes extends StatefulWidget {
   final String name;
@@ -54,3 +54,6 @@ class _DoctorHomesState extends State<DoctorHomes> {
     );
   }
 }
+
+
+

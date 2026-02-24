@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:vitaguard_app/Doctor/main_doctor.dart';
+import 'package:vitaguard_app/doctor/main_doctor.dart';
 import 'package:vitaguard_app/auth/ui/screens/create_account_screen.dart';
 import 'package:vitaguard_app/auth/ui/widgets/professional_id.dart';
 
@@ -86,3 +86,6 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
     );
   }
 }
+
+
+

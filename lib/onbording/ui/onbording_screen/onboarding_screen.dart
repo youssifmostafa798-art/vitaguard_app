@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:vitaguard_app/compenets/custem_background.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/onbording/model/onboarding_data.dart';
 import 'package:vitaguard_app/onbording/ui/onbording_widget/onboarding_page.dart';
 import 'package:vitaguard_app/onbording/ui/onbording_widget/onbording_actions.dart';
@@ -50,3 +50,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 }
+
+
+

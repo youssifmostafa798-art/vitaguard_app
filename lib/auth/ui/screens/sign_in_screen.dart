@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vitaguard_app/auth/ui/auth_provider.dart';
 import 'package:vitaguard_app/auth/ui/widgets/auth_textfield.dart';
-import 'package:vitaguard_app/compenets/custem_background.dart';
-import 'package:vitaguard_app/compenets/custem_bottom.dart';
-import 'package:vitaguard_app/compenets/custom_logo.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/components/custem_bottom.dart';
+import 'package:vitaguard_app/components/custom_logo.dart';
 
 // Import target screens
 import 'package:vitaguard_app/patient/main_patient.dart';
-import 'package:vitaguard_app/Doctor/main_doctor.dart';
-import 'package:vitaguard_app/Companion/main_companion.dart';
-import 'package:vitaguard_app/Facility/main_facility.dart';
+import 'package:vitaguard_app/doctor/main_doctor.dart';
+import 'package:vitaguard_app/companion/main_companion.dart';
+import 'package:vitaguard_app/facility/main_facility.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -36,18 +36,19 @@ class _SignInScreenState extends State<SignInScreen> {
       if (!mounted) return;
 
       Widget nextScreen;
+      final name = authProvider.userName;
       switch (role) {
         case 'doctor':
-          nextScreen = const MainDoctor();
+          nextScreen = MainDoctor(name: name);
           break;
         case 'companion':
-          nextScreen = const MainCompanion();
+          nextScreen = MainCompanion(name: name);
           break;
         case 'facility':
-          nextScreen = const MainFacility();
+          nextScreen = MainFacility(name: name);
           break;
         default:
-          nextScreen = const MainPatient();
+          nextScreen = MainPatient(name: name);
       }
 
       Navigator.pushAndRemoveUntil(
@@ -56,6 +57,7 @@ class _SignInScreenState extends State<SignInScreen> {
         (route) => false,
       );
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(authProvider.error ?? 'Login failed')),
       );

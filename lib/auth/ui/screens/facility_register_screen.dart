@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:vitaguard_app/Facility/main_facility.dart';
+import 'package:vitaguard_app/facility/main_facility.dart';
 import 'package:vitaguard_app/auth/ui/screens/create_account_screen.dart';
 import 'package:vitaguard_app/auth/ui/widgets/image_of_the_record.dart';
 
@@ -86,3 +86,6 @@ class _FacilityRegisterScreenState extends State<FacilityRegisterScreen> {
     );
   }
 }
+
+
+

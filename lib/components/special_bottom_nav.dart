@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-class HomeBottomNav extends StatefulWidget {
+class SpecialBottomNav extends StatefulWidget {
   final int currentIndex;
   final ValueChanged<int>? onTap;
 
-  const HomeBottomNav({super.key, required this.currentIndex, this.onTap});
+  const SpecialBottomNav({super.key, required this.currentIndex, this.onTap});
 
   @override
-  State<HomeBottomNav> createState() => _HomeBottomNavState();
+  State<SpecialBottomNav> createState() => _SpecialBottomNavState();
 }
 
-class _HomeBottomNavState extends State<HomeBottomNav>
+class _SpecialBottomNavState extends State<SpecialBottomNav>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -29,7 +29,7 @@ class _HomeBottomNavState extends State<HomeBottomNav>
   }
 
   @override
-  void didUpdateWidget(HomeBottomNav oldWidget) {
+  void didUpdateWidget(SpecialBottomNav oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.currentIndex != widget.currentIndex) {
       _animationController.forward().then((_) {
@@ -61,16 +61,20 @@ class _HomeBottomNavState extends State<HomeBottomNav>
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           // Home with animation
-          _buildAnimatedIconButton(index: 0, icon: Icons.home, label: 'Home'),
+          _buildAnimatedIconButton(index: 0, icon: Icons.home, label: 'Chats'),
 
           // Chat with animation
-          _buildAnimatedIconButton(index: 1, icon: Icons.chat, label: 'Chat'),
+          _buildAnimatedIconButton(
+            index: 1,
+            icon: Icons.fact_check,
+            label: 'Report',
+          ),
 
           // Model with animation
           _buildAnimatedIconButton(
             index: 2,
-            icon: Icons.health_and_safety,
-            label: "Model",
+            icon: Icons.discount_outlined,
+            label: "Offer",
           ),
         ],
       ),
@@ -118,7 +122,7 @@ class _HomeBottomNavState extends State<HomeBottomNav>
                     scale: scale,
                     child: Icon(
                       icon,
-                      size: 28,
+                      size: 26,
                       color: isSelected ? const Color(0xff003F6B) : Colors.grey,
                     ),
                   );
@@ -136,7 +140,7 @@ class _HomeBottomNavState extends State<HomeBottomNav>
                     style: TextStyle(
                       color: const Color(0xff003F6B),
                       fontWeight: FontWeight.bold,
-                      fontSize: 10,
+                      fontSize: 8,
                     ),
                   ),
                 ),
@@ -147,3 +151,6 @@ class _HomeBottomNavState extends State<HomeBottomNav>
     );
   }
 }
+
+
+

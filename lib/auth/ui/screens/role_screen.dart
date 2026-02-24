@@ -6,10 +6,10 @@ import 'package:vitaguard_app/auth/ui/screens/facility_register_screen.dart';
 
 import 'package:vitaguard_app/auth/ui/screens/patient_register_screen.dart';
 
-import 'package:vitaguard_app/compenets/custem_background.dart';
-import 'package:vitaguard_app/compenets/custem_bottom.dart';
-import 'package:vitaguard_app/compenets/custem_text.dart';
-import 'package:vitaguard_app/compenets/custom_logo.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/components/custem_bottom.dart';
+import 'package:vitaguard_app/components/custem_text.dart';
+import 'package:vitaguard_app/components/custom_logo.dart';
 
 class RoleScreen extends StatelessWidget {
   const RoleScreen({super.key});
@@ -101,3 +101,6 @@ class RoleScreen extends StatelessWidget {
     );
   }
 }
+
+
+

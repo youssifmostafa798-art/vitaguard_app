@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vitaguard_app/auth/ui/auth_provider.dart';
 import 'package:vitaguard_app/auth/ui/screens/create_account_screen.dart';
-import 'package:vitaguard_app/auth/ui/widgets/patient%E2%80%99s_medical_history.dart';
-import 'package:vitaguard_app/patient/main_patient.dart';
+import 'package:vitaguard_app/auth/ui/widgets/patients_medical_history.dart';
 
 class PatientRegisterScreen extends StatefulWidget {
   const PatientRegisterScreen({super.key});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/compenets/custem_text.dart';
-import '../../../Models/message_model.dart';
+import 'package:vitaguard_app/components/custem_text.dart';
+import '../../../models/message_model.dart';
 
 class MessagePatientBubble extends StatelessWidget {
   final ChatMessage message;
@@ -134,3 +134,6 @@ class MessagePatientBubble extends StatelessWidget {
     );
   }
 }
+
+
+

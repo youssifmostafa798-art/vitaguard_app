@@ -27,3 +27,6 @@ class InfoSlider extends StatelessWidget {
     );
   }
 }
+
+
+

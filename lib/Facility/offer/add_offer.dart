@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/compenets/custem_background.dart';
-import 'package:vitaguard_app/compenets/custem_bottom.dart';
-import 'package:vitaguard_app/compenets/custem_field.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/components/custem_bottom.dart';
+import 'package:vitaguard_app/components/custem_field.dart';
 import 'package:vitaguard_app/core/simple_header.dart';
 
 class AddOffer extends StatelessWidget {
@@ -83,3 +83,6 @@ class AddOffer extends StatelessWidget {
     );
   }
 }
+
+
+

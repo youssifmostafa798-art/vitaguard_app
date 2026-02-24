@@ -5,9 +5,13 @@ class AuthProvider with ChangeNotifier {
   final AuthRepository _repository = AuthRepository();
   bool _isLoading = false;
   String? _error;
+  Map<String, dynamic>? _currentUser;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
+  Map<String, dynamic>? get currentUser => _currentUser;
+  String get userName =>
+      _currentUser?['full_name'] ?? _currentUser?['name'] ?? 'User';
 
   Future<bool> login(String email, String password) async {
     _isLoading = true;
@@ -57,8 +61,8 @@ class AuthProvider with ChangeNotifier {
 
   Future<String?> getUserRole() async {
     try {
-      final data = await _repository.getMe();
-      return data['role'];
+      _currentUser = await _repository.getMe();
+      return _currentUser?['role'];
     } catch (e) {
       return null;
     }
@@ -71,3 +75,5 @@ class AuthProvider with ChangeNotifier {
     return 'An unexpected error occurred';
   }
 }
+
+

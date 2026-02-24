@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/Companion/data/home_Categories_companion.dart';
-import 'package:vitaguard_app/compenets/custem_text.dart';
-import 'package:vitaguard_app/patient/Home/widget/category_item.dart';
+import 'package:vitaguard_app/companion/data/home_Categories_companion.dart';
+import 'package:vitaguard_app/components/custem_text.dart';
+import 'package:vitaguard_app/patient/home/widget/category_item.dart';
 
 class CategoryGridCompanion extends StatelessWidget {
   final String companionName;
@@ -52,3 +52,6 @@ class CategoryGridCompanion extends StatelessWidget {
     );
   }
 }
+
+
+

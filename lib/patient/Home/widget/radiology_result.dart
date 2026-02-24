@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/compenets/custem_background.dart';
-import 'package:vitaguard_app/compenets/custem_bottom.dart';
-import 'package:vitaguard_app/compenets/custem_text.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/components/custem_bottom.dart';
+import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/core/simple_header.dart';
 import '../../data/patient_models.dart';
 
@@ -37,7 +37,7 @@ class RadiologyResult extends StatelessWidget {
                 CustemText(
                   text: result.isValid ? "Analysis Complete" : "Invalid Scan",
                   size: 22,
-                  fontWeight: FontWeight.bold,
+                  weight: FontWeight.bold,
                   color: const Color(0xff003F6B),
                 ),
                 const Gap(20),
@@ -62,7 +62,7 @@ class RadiologyResult extends StatelessWidget {
                             ? "Result: ${isInfected ? 'INFECTED' : 'NORMAL'}"
                             : "Result: UNREADABLE",
                         size: 18,
-                        fontWeight: FontWeight.bold,
+                        weight: FontWeight.bold,
                         color: result.isValid
                             ? (isInfected ? Colors.red : Colors.green)
                             : Colors.orange,
@@ -95,7 +95,6 @@ class RadiologyResult extends StatelessWidget {
                             "⚠ This is a preliminary automated report and does not replace a professional medical consultation.",
                         size: 13,
                         color: Colors.grey.shade700,
-                        fontStyle: FontStyle.italic,
                       ),
                     ],
                   ),
@@ -116,3 +115,5 @@ class RadiologyResult extends StatelessWidget {
     );
   }
 }
+
+

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:vitaguard_app/compenets/custem_background.dart';
-import 'package:vitaguard_app/compenets/custem_text.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/components/custem_text.dart';
 
 class SimpleHeader extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -42,3 +42,6 @@ class SimpleHeader extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 }
+
+
+

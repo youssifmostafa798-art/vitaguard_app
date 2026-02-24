@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/Facility/Home.Chat/screens/chat_facility_detail.dart';
-import 'package:vitaguard_app/compenets/custem_background.dart';
-import 'package:vitaguard_app/compenets/custem_text.dart';
+import 'package:vitaguard_app/facility/home.chat/screens/chat_facility_detail.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/core/home_header.dart';
-import 'package:vitaguard_app/Models/chat_preview_card.dart';
-import 'package:vitaguard_app/patient/Home/widget/home_search.dart';
-import '../../../Models/message_model.dart';
+import 'package:vitaguard_app/models/chat_preview_card.dart';
+import 'package:vitaguard_app/patient/home/widget/home_search.dart';
+import '../../../models/message_model.dart';
 //delete
 
 class ChatListFacility extends StatelessWidget {
@@ -196,3 +196,6 @@ class ChatListFacility extends StatelessWidget {
     );
   }
 }
+
+
+

@@ -7,3 +7,6 @@ class CategoryModel {
 
   CategoryModel({required this.icon, required this.title, this.onTap});
 }
+
+
+

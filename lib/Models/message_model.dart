@@ -39,3 +39,6 @@ class ChatMessage {
     this.isRead = false,
   });
 }
+
+
+

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/Doctor/data/home_categories_doctor.dart';
-import 'package:vitaguard_app/compenets/custem_text.dart';
+import 'package:vitaguard_app/doctor/data/home_categories_doctor.dart';
+import 'package:vitaguard_app/components/custem_text.dart';
 
-import 'package:vitaguard_app/patient/Home/widget/category_item.dart';
+import 'package:vitaguard_app/patient/home/widget/category_item.dart';
 
 class CategoryGridDr extends StatelessWidget {
   final String drName;
@@ -56,3 +56,6 @@ class CategoryGridDr extends StatelessWidget {
     );
   }
 }
+
+
+

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/compenets/custem_text.dart';
+import 'package:vitaguard_app/components/custem_text.dart';
 
 class NameCard extends StatelessWidget {
   final String firstName;
@@ -25,3 +25,6 @@ class NameCard extends StatelessWidget {
     );
   }
 }
+
+
+

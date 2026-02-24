@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:vitaguard_app/Companion/Home/screens/alarts.dart';
-import 'package:vitaguard_app/Models/category_model.dart';
-import 'package:vitaguard_app/patient/Home/screen/daily_report.dart';
-import 'package:vitaguard_app/patient/Home/screen/medical_history_update.dart';
+import 'package:vitaguard_app/companion/home/screens/alarts.dart';
+import 'package:vitaguard_app/models/category_model.dart';
+import 'package:vitaguard_app/patient/home/screen/daily_report.dart';
+import 'package:vitaguard_app/patient/home/screen/medical_history_update.dart';
 
 List<CategoryModel> homeCategoriesCompanion(
   BuildContext context,
@@ -27,7 +27,7 @@ List<CategoryModel> homeCategoriesCompanion(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const DailyReport()),
+          MaterialPageRoute(builder: (_) => const DailyReportScreen()),
         );
       },
     ),
@@ -43,3 +43,5 @@ List<CategoryModel> homeCategoriesCompanion(
     ),
   ];
 }
+
+

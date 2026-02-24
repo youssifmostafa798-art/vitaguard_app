@@ -56,6 +56,15 @@ class AuthRepository {
     }
   }
 
+  Future<Map<String, dynamic>> getMe() async {
+    try {
+      final response = await _dio.get(ApiEndpoints.profile);
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> logout() async {
     await _storage.clearAll();
   }
@@ -65,3 +74,6 @@ class AuthRepository {
     return token != null;
   }
 }
+
+
+

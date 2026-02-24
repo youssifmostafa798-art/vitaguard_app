@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:vitaguard_app/compenets/custem_text.dart';
+import 'package:vitaguard_app/components/custem_text.dart';
 
 class SimpleButtom extends StatelessWidget {
   final String text;
@@ -30,3 +30,6 @@ class SimpleButtom extends StatelessWidget {
     );
   }
 }
+
+
+

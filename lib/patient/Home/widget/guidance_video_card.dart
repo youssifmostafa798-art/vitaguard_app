@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:vitaguard_app/compenets/custem_text.dart';
+import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/patient/models/guidance_video_model.dart';
 
 class GuidanceVideoCard extends StatelessWidget {
@@ -80,3 +80,6 @@ class GuidanceVideoCard extends StatelessWidget {
     );
   }
 }
+
+
+

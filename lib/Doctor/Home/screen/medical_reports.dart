@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/compenets/custem_background.dart';
-import 'package:vitaguard_app/compenets/custem_bottom.dart';
-import 'package:vitaguard_app/compenets/custem_text.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/components/custem_bottom.dart';
+import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/core/simple_header.dart';
 
 class MedicalReports extends StatelessWidget {
@@ -77,3 +77,6 @@ class MedicalReports extends StatelessWidget {
     );
   }
 }
+
+
+

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/auth/ui/widgets/consultation_options_screen.dart';
-import 'package:vitaguard_app/compenets/custem_background.dart';
-import 'package:vitaguard_app/compenets/custem_text.dart';
-import 'package:vitaguard_app/compenets/custom_logo.dart';
-import 'package:vitaguard_app/compenets/custem_bottom.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/components/custem_text.dart';
+import 'package:vitaguard_app/components/custom_logo.dart';
+import 'package:vitaguard_app/components/custem_bottom.dart';
 
 class ProfessionalId extends StatelessWidget {
   const ProfessionalId({super.key});
@@ -62,3 +62,6 @@ class ProfessionalId extends StatelessWidget {
     );
   }
 }
+
+
+

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:vitaguard_app/patient/Chat/screen/chat_list_patient.dart';
-import 'package:vitaguard_app/patient/Home/screen/patient_home.dart';
+import 'package:vitaguard_app/patient/chat/screen/chat_list_patient.dart';
+import 'package:vitaguard_app/patient/home/screen/patient_home.dart';
 import 'package:vitaguard_app/patient/X_ray_Model/screen/upload_x_ray.dart';
-import 'package:vitaguard_app/compenets/bottom_nav.dart';
+import 'package:vitaguard_app/components/bottom_nav.dart';
 
 class MainPatient extends StatefulWidget {
   final String name;
@@ -39,3 +39,6 @@ class _MainPatientState extends State<MainPatient> {
     );
   }
 }
+
+
+

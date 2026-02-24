@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:vitaguard_app/compenets/custem_background.dart';
-import 'package:vitaguard_app/compenets/custem_bottom.dart';
-import 'package:vitaguard_app/compenets/custem_text.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/components/custem_bottom.dart';
+import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/patient/ui/patient_provider.dart';
-import 'package:vitaguard_app/patient/Home/widget/radiology_result.dart';
+import 'package:vitaguard_app/patient/home/widget/radiology_result.dart';
 
 class UploadXRay extends StatefulWidget {
   const UploadXRay({super.key});
@@ -38,10 +38,7 @@ class _UploadXRayState extends State<UploadXRay> {
     }
 
     final provider = Provider.of<PatientProvider>(context, listen: false);
-    final repository =
-        provider.repository; // Add getter or use repo directly if available
-
-    // We'll use the repository directly or add a method to provider
+    // We'll use the repository indirectly through the provider
     // For now, let's assume we add a method to PatientProvider
     final success = await provider.analyzeXRay(_selectedImage!);
 
@@ -50,7 +47,7 @@ class _UploadXRayState extends State<UploadXRay> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => RadiologyResult(result: provider.lastXRayResult),
+          builder: (_) => RadiologyResult(result: provider.lastXRayResult!),
         ),
       );
     } else {

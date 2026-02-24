@@ -53,3 +53,6 @@ class CompanionProvider with ChangeNotifier {
     return 'An unexpected error occurred';
   }
 }
+
+
+

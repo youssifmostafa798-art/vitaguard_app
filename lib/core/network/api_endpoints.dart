@@ -31,11 +31,18 @@ class ApiEndpoints {
   // Companions
   static const String linkPatient = "/companions/me/link";
   static const String linkedPatients = "/companions/me/patients";
+  static const String companionLink = linkPatient;
+  static const String companionPatient = linkedPatients;
 
   // Facilities
   static const String facilityOffers = "/facilities/me/offers";
   static const String appointments = "/facilities/me/appointments";
+  static const String facilityTests = "/facilities/me/tests";
+  static const String facilityAppointments = appointments;
 
   // Chat
   static const String conversations = "/chat/conversations";
 }
+
+
+

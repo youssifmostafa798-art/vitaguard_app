@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 
-import 'package:vitaguard_app/compenets/custem_text.dart';
+import 'package:vitaguard_app/components/custem_text.dart';
 
 class Button extends StatelessWidget {
   const Button({super.key, required this.title, required this.onTap});
@@ -40,3 +40,6 @@ class Button extends StatelessWidget {
     );
   }
 }
+
+
+

@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
-import 'package:vitaguard_app/compenets/custem_background.dart';
-import 'package:vitaguard_app/compenets/custem_bottom.dart';
-import 'package:vitaguard_app/compenets/custem_field.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/components/custem_bottom.dart';
+import 'package:vitaguard_app/components/custem_field.dart';
 import 'package:vitaguard_app/core/simple_header.dart';
 import 'package:vitaguard_app/patient/ui/patient_provider.dart';
 import 'package:vitaguard_app/patient/data/patient_models.dart';
 
-class DailyReport extends StatefulWidget {
-  const DailyReport({super.key});
+class DailyReportScreen extends StatefulWidget {
+  const DailyReportScreen({super.key});
 
   @override
-  State<DailyReport> createState() => _DailyReportState();
+  State<DailyReportScreen> createState() => _DailyReportScreenState();
 }
 
-class _DailyReportState extends State<DailyReport> {
+class _DailyReportScreenState extends State<DailyReportScreen> {
   final _heartRateCtrl = TextEditingController();
   final _oxygenCtrl = TextEditingController();
   final _tempCtrl = TextEditingController();
@@ -115,3 +115,5 @@ class _DailyReportState extends State<DailyReport> {
     );
   }
 }
+
+

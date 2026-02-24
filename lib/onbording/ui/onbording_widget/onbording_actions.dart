@@ -1,7 +1,7 @@
 //actions
 import 'package:flutter/material.dart';
 
-import 'package:vitaguard_app/compenets/custem_bottom.dart';
+import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/auth/ui/screens/role_screen.dart';
 
 class OnboardingActions extends StatelessWidget {
@@ -40,3 +40,6 @@ class OnboardingActions extends StatelessWidget {
     );
   }
 }
+
+
+

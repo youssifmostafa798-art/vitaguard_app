@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/Companion/Home/widget/archive_medical_history.dart';
-import 'package:vitaguard_app/compenets/custem_background.dart';
-import 'package:vitaguard_app/compenets/custem_bottom.dart';
+import 'package:vitaguard_app/companion/home/widget/archive_medical_history.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/core/simple_header.dart';
-import 'package:vitaguard_app/compenets/custem_field.dart';
-import 'package:vitaguard_app/patient/Home/widget/name_card.dart';
+import 'package:vitaguard_app/components/custem_field.dart';
+import 'package:vitaguard_app/patient/home/widget/name_card.dart';
 
 class MedicalHistoryUpdate extends StatefulWidget {
   final String firstNamee;
@@ -96,3 +96,6 @@ class _MedicalHistoryUpdateState extends State<MedicalHistoryUpdate> {
     );
   }
 }
+
+
+

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:vitaguard_app/Facility/Home.Chat/widget/message_facility_bubble.dart';
-import 'package:vitaguard_app/compenets/custem_background.dart';
+import 'package:vitaguard_app/facility/home.chat/widget/message_facility_bubble.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/chat_header.dart';
-import 'package:vitaguard_app/compenets/message_input.dart';
-import '../../../Models/message_model.dart';
+import 'package:vitaguard_app/components/message_input.dart';
+import '../../../models/message_model.dart';
 
 // change
 class ChatFacilityDetail extends StatefulWidget {
@@ -194,3 +194,6 @@ class _ChatFacilityDetailState extends State<ChatFacilityDetail> {
     super.dispose();
   }
 }
+
+
+

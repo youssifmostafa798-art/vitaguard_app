@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:vitaguard_app/compenets/custem_background.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/chat_header.dart';
-import 'package:vitaguard_app/patient/Chat/widget/message_patient_bubble.dart';
-import 'package:vitaguard_app/compenets/message_input.dart';
-import '../../../Models/message_model.dart';
+import 'package:vitaguard_app/patient/chat/widget/message_patient_bubble.dart';
+import 'package:vitaguard_app/components/message_input.dart';
+import '../../../models/message_model.dart';
 
 // change
 class ChatPatientDetail extends StatefulWidget {
@@ -193,3 +193,6 @@ class _ChatPatientDetailState extends State<ChatPatientDetail> {
     super.dispose();
   }
 }
+
+
+

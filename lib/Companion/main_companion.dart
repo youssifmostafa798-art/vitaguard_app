@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:vitaguard_app/Companion/Home/screens/companion_home.dart';
-import 'package:vitaguard_app/compenets/bottom_nav.dart';
-import 'package:vitaguard_app/patient/Chat/screen/chat_list_patient.dart';
+import 'package:vitaguard_app/companion/home/screens/companion_home.dart';
+import 'package:vitaguard_app/components/bottom_nav.dart';
+import 'package:vitaguard_app/patient/chat/screen/chat_list_patient.dart';
 import 'package:vitaguard_app/patient/X_ray_Model/screen/upload_x_ray.dart';
 
 class MainCompanion extends StatefulWidget {
@@ -44,3 +44,6 @@ class _MainCompanionState extends State<MainCompanion> {
     );
   }
 }
+
+
+

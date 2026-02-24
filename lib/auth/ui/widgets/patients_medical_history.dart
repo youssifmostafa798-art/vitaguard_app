@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/compenets/custem_background.dart';
-import 'package:vitaguard_app/compenets/custom_logo.dart';
-import 'package:vitaguard_app/compenets/custem_bottom.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/components/custom_logo.dart';
+import 'package:vitaguard_app/components/custem_bottom.dart';
 
 class MedicalHistoryScreen extends StatelessWidget {
   const MedicalHistoryScreen({super.key});
@@ -66,3 +66,6 @@ class MedicalHistoryScreen extends StatelessWidget {
     );
   }
 }
+
+
+

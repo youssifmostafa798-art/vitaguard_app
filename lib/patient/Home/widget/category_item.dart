@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/compenets/custem_text.dart';
+import 'package:vitaguard_app/components/custem_text.dart';
 
 class CategoryItem extends StatelessWidget {
   final IconData icon;
@@ -45,3 +45,6 @@ class CategoryItem extends StatelessWidget {
     );
   }
 }
+
+
+
