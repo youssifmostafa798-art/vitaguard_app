@@ -35,6 +35,8 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
       email: _emailController.text.trim(),
       password: _passwordController.text.trim(),
       phone: _phoneController.text.trim(),
+      gender: _genderController.text.trim(),
+      age: _ageController.text.trim(),
     );
 
     if (success) {

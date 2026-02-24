@@ -15,6 +15,8 @@ class MedicalHistoryResponse(BaseModel):
     chronic_diseases: str
     medications: str
     allergies: str
+    surgeries: str
+    notes: str
     updated_at: datetime
 
     model_config = {"from_attributes": True}
@@ -24,6 +26,8 @@ class MedicalHistoryUpdateRequest(BaseModel):
     chronic_diseases: str | None = None
     medications: str | None = None
     allergies: str | None = None
+    surgeries: str | None = None
+    notes: str | None = None
 
 
 # ── Daily Report ──────────────────────────────────────────
@@ -31,13 +35,23 @@ class MedicalHistoryUpdateRequest(BaseModel):
 
 class DailyReportCreateRequest(BaseModel):
     report_date: date
-    tasks_activities: str = Field(..., min_length=1)
+    heart_rate: float
+    oxygen_level: float
+    temperature: float
+    blood_pressure: str
+    tasks_activities: str = Field(
+        "-", min_length=1
+    )  # Defaulting since Flutter doesn't send this yet
     notes: str = ""
 
 
 class DailyReportResponse(BaseModel):
     id: str
     report_date: date
+    heart_rate: float
+    oxygen_level: float
+    temperature: float
+    blood_pressure: str
     tasks_activities: str
     notes: str
     created_at: datetime

@@ -95,6 +95,8 @@ async def update_medical_history(
         chronic_diseases=data.chronic_diseases,
         medications=data.medications,
         allergies=data.allergies,
+        surgeries=data.surgeries,
+        notes=data.notes,
     )
     return MedicalHistoryResponse.model_validate(history)
 
@@ -135,6 +137,10 @@ async def create_daily_report(
         db,
         profile.id,
         report_date=data.report_date,
+        heart_rate=data.heart_rate,
+        oxygen_level=data.oxygen_level,
+        temperature=data.temperature,
+        blood_pressure=data.blood_pressure,
         tasks_activities=data.tasks_activities,
         notes=data.notes,
     )

@@ -28,6 +28,8 @@ class MedicalHistory(Base):
     chronic_diseases: Mapped[str] = mapped_column(Text, default="")
     medications: Mapped[str] = mapped_column(Text, default="")
     allergies: Mapped[str] = mapped_column(Text, default="")
+    surgeries: Mapped[str] = mapped_column(Text, default="")
+    notes: Mapped[str] = mapped_column(Text, default="")
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
@@ -47,6 +49,10 @@ class DailyReport(Base):
         String(36), ForeignKey("patient_profiles.id", ondelete="CASCADE"), nullable=False
     )
     report_date: Mapped[date] = mapped_column(Date, nullable=False)
+    heart_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    oxygen_level: Mapped[float] = mapped_column(Float, default=0.0)
+    temperature: Mapped[float] = mapped_column(Float, default=0.0)
+    blood_pressure: Mapped[str] = mapped_column(String(20), default="")
     tasks_activities: Mapped[str] = mapped_column(Text, default="")
     notes: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

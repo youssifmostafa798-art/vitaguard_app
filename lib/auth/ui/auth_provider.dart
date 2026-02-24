@@ -36,6 +36,8 @@ class AuthProvider with ChangeNotifier {
     required String email,
     required String password,
     required String phone,
+    String? gender,
+    String? age,
   }) async {
     _isLoading = true;
     _error = null;
@@ -47,6 +49,8 @@ class AuthProvider with ChangeNotifier {
         email: email,
         password: password,
         phone: phone,
+        gender: gender,
+        age: age,
       );
       _isLoading = false;
       notifyListeners();
@@ -75,5 +79,3 @@ class AuthProvider with ChangeNotifier {
     return 'An unexpected error occurred';
   }
 }
-
-

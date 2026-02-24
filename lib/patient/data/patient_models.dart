@@ -1,31 +1,31 @@
 class MedicalHistory {
-  final String? allergies;
-  final String? medications;
-  final String? pastConditions;
-  final String? surgeries;
-  final String? notes;
-
   MedicalHistory({
     this.allergies,
     this.medications,
-    this.pastConditions,
+    this.chronicDiseases,
     this.surgeries,
     this.notes,
   });
 
+  final String? allergies;
+  final String? medications;
+  final String? chronicDiseases;
+  final String? surgeries;
+  final String? notes;
+
   Map<String, dynamic> toJson() => {
-    'allergies': allergies,
-    'medications': medications,
-    'past_conditions': pastConditions,
-    'surgeries': surgeries,
-    'notes': notes,
+    'allergies': allergies ?? "",
+    'medications': medications ?? "",
+    'chronic_diseases': chronicDiseases ?? "",
+    'surgeries': surgeries ?? "",
+    'notes': notes ?? "",
   };
 
   factory MedicalHistory.fromJson(Map<String, dynamic> json) {
     return MedicalHistory(
       allergies: json['allergies'],
       medications: json['medications'],
-      pastConditions: json['past_conditions'],
+      chronicDiseases: json['chronic_diseases'],
       surgeries: json['surgeries'],
       notes: json['notes'],
     );
@@ -33,24 +33,33 @@ class MedicalHistory {
 }
 
 class DailyReport {
-  final double heartRate;
-  final double oxygenLevel;
-  final double temperature;
-  final String bloodPressure;
-
   DailyReport({
     required this.heartRate,
     required this.oxygenLevel,
     required this.temperature,
     required this.bloodPressure,
+    this.reportDate,
   });
 
-  Map<String, dynamic> toJson() => {
-    'heart_rate': heartRate,
-    'oxygen_level': oxygenLevel,
-    'temperature': temperature,
-    'blood_pressure': bloodPressure,
-  };
+  final double heartRate;
+  final double oxygenLevel;
+  final double temperature;
+  final String bloodPressure;
+  final DateTime? reportDate;
+
+  Map<String, dynamic> toJson() {
+    final date = reportDate ?? DateTime.now();
+    return {
+      'report_date':
+          "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}",
+      'heart_rate': heartRate,
+      'oxygen_level': oxygenLevel,
+      'temperature': temperature,
+      'blood_pressure': bloodPressure,
+      'tasks_activities': "-", // Backend expects this
+      'notes': "",
+    };
+  }
 }
 
 class XRayResult {
@@ -78,6 +87,3 @@ class XRayResult {
     );
   }
 }
-
-
-

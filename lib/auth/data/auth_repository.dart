@@ -37,18 +37,21 @@ class AuthRepository {
     required String password,
     required String phone,
     String? gender,
-    String? birthDate,
+    String? age,
   }) async {
     try {
       await _dio.post(
         ApiEndpoints.registerPatient,
         data: {
-          'full_name': fullName,
+          'name': fullName,
           'email': email,
           'password': password,
-          'phone_number': phone,
-          'gender': gender,
-          'birth_date': birthDate,
+          'phone': phone,
+          'gender': gender ?? "Male",
+          'age': int.tryParse(age ?? "0") ?? 0,
+          'chronic_diseases': "",
+          'medications': "",
+          'allergies': "",
         },
       );
     } catch (e) {
@@ -74,6 +77,3 @@ class AuthRepository {
     return token != null;
   }
 }
-
-
-

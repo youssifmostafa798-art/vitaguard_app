@@ -28,6 +28,8 @@ async def upsert_medical_history(
     chronic_diseases: str | None = None,
     medications: str | None = None,
     allergies: str | None = None,
+    surgeries: str | None = None,
+    notes: str | None = None,
 ) -> MedicalHistory:
     """Create or update the patient's medical history."""
     result = await db.execute(
@@ -45,6 +47,10 @@ async def upsert_medical_history(
         history.medications = medications
     if allergies is not None:
         history.allergies = allergies
+    if surgeries is not None:
+        history.surgeries = surgeries
+    if notes is not None:
+        history.notes = notes
 
     return history
 
@@ -80,13 +86,21 @@ async def create_daily_report(
     patient_profile_id: str,
     *,
     report_date: date,
-    tasks_activities: str,
+    heart_rate: float,
+    oxygen_level: float,
+    temperature: float,
+    blood_pressure: str,
+    tasks_activities: str = "-",
     notes: str = "",
 ) -> DailyReport:
     """Create a new daily report."""
     report = DailyReport(
         patient_id=patient_profile_id,
         report_date=report_date,
+        heart_rate=heart_rate,
+        oxygen_level=oxygen_level,
+        temperature=temperature,
+        blood_pressure=blood_pressure,
         tasks_activities=tasks_activities,
         notes=notes,
     )

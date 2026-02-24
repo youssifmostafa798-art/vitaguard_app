@@ -6,6 +6,9 @@ import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/core/simple_header.dart';
 import 'package:vitaguard_app/components/custem_field.dart';
 import 'package:vitaguard_app/patient/home/widget/name_card.dart';
+import 'package:provider/provider.dart';
+import 'package:vitaguard_app/patient/ui/patient_provider.dart';
+import 'package:vitaguard_app/patient/data/patient_models.dart';
 
 class MedicalHistoryUpdate extends StatefulWidget {
   final String firstNamee;
@@ -70,20 +73,57 @@ class _MedicalHistoryUpdateState extends State<MedicalHistoryUpdate> {
                     controller: dustmites,
                   ),
 
-                  const Gap(230),
+                  const Gap(30),
 
-                  Button(
-                    title: "Confirm",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ArchiveMedicalHistory(
-                            diabetes: diabetes.text,
-                            metformin: metformin.text,
-                            dustmites: dustmites.text,
-                          ),
-                        ),
+                  Consumer<PatientProvider>(
+                    builder: (context, provider, child) {
+                      if (provider.isLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      return Button(
+                        title: "Confirm",
+                        onTap: () async {
+                          final history = MedicalHistory(
+                            chronicDiseases: diabetes.text,
+                            medications: metformin.text,
+                            allergies: dustmites.text,
+                            surgeries: "", // UI doesn't have these yet
+                            notes: "",
+                          );
+
+                          final success = await provider.updateMedicalHistory(
+                            history,
+                          );
+
+                          if (success && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Medical history updated successfully!',
+                                ),
+                              ),
+                            );
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ArchiveMedicalHistory(
+                                  diabetes: diabetes.text,
+                                  metformin: metformin.text,
+                                  dustmites: dustmites.text,
+                                ),
+                              ),
+                            );
+                          } else if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  provider.error ??
+                                      'Failed to update medical history',
+                                ),
+                              ),
+                            );
+                          }
+                        },
                       );
                     },
                   ),
@@ -96,6 +136,3 @@ class _MedicalHistoryUpdateState extends State<MedicalHistoryUpdate> {
     );
   }
 }
-
-
-
