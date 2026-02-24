@@ -52,6 +52,8 @@ async def upsert_medical_history(
     if notes is not None:
         history.notes = notes
 
+    await db.flush()
+    await db.refresh(history)
     return history
 
 

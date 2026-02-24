@@ -98,6 +98,8 @@ async def create_patient(
         chronic_diseases=chronic_diseases,
         medications=medications,
         allergies=allergies,
+        surgeries="",
+        notes="",
     )
     db.add(history)
     return user
