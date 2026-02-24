@@ -1,0 +1,1 @@
+"""VitaGuard — API routes package."""

@@ -56,13 +56,21 @@ class User(Base):
 
     # ── Role-specific profiles (one-to-one) ───────────────
     patient_profile: Mapped[PatientProfile | None] = relationship(
-        "PatientProfile", back_populates="user", uselist=False, cascade="all, delete-orphan"
+        "PatientProfile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+        primaryjoin="User.id == PatientProfile.user_id",
     )
     doctor_profile: Mapped[DoctorProfile | None] = relationship(
         "DoctorProfile", back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
     companion_profile: Mapped[CompanionProfile | None] = relationship(
-        "CompanionProfile", back_populates="user", uselist=False, cascade="all, delete-orphan"
+        "CompanionProfile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+        primaryjoin="User.id == CompanionProfile.user_id",
     )
     facility_profile: Mapped[FacilityProfile | None] = relationship(
         "FacilityProfile", back_populates="user", uselist=False, cascade="all, delete-orphan"
