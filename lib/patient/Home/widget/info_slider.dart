@@ -13,7 +13,7 @@ class InfoSlider extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: images.length,
-        separatorBuilder: (_, __) => const Gap(15),
+        separatorBuilder: (_, _) => const Gap(15),
         itemBuilder: (context, index) {
           return Container(
             width: 300,
@@ -27,6 +27,3 @@ class InfoSlider extends StatelessWidget {
     );
   }
 }
-
-
-

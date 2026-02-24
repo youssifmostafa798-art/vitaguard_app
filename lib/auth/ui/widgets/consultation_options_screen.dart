@@ -38,7 +38,9 @@ class _ConsultationOptionsScreenState extends State<ConsultationOptionsScreen> {
             color: isSelected ? Colors.blue : Colors.grey.shade400,
             width: 1.5,
           ),
-          color: isSelected ? Colors.blue.withOpacity(0.05) : Colors.white,
+          color: isSelected
+              ? Colors.blue.withValues(alpha: 0.05)
+              : Colors.white,
         ),
         child: Center(
           child: Text(
@@ -117,6 +119,3 @@ class _ConsultationOptionsScreenState extends State<ConsultationOptionsScreen> {
     );
   }
 }
-
-
-

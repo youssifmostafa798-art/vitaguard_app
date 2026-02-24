@@ -113,7 +113,7 @@ class CreateAccountScreen extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: DropdownButtonFormField<String>(
-        value: controller.text.isEmpty ? null : controller.text,
+        initialValue: controller.text.isEmpty ? null : controller.text,
         decoration: InputDecoration(
           hintText: field['hint'],
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(25)),
@@ -141,6 +141,3 @@ class CreateAccountScreen extends StatelessWidget {
     }
   }
 }
-
-
-

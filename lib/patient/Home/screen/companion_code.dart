@@ -68,7 +68,6 @@ class CompanionCode extends StatelessWidget {
                   text: "Change Code",
                   onTap: () {
                     Navigator.pop(context);
-                    print("Change Code");
                   },
                 ),
               ],
@@ -79,6 +78,3 @@ class CompanionCode extends StatelessWidget {
     );
   }
 }
-
-
-

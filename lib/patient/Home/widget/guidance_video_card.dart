@@ -42,7 +42,9 @@ class GuidanceVideoCard extends StatelessWidget {
 
                   /// Dark Overlay
                   Positioned.fill(
-                    child: Container(color: Colors.black.withOpacity(0.25)),
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.25),
+                    ),
                   ),
 
                   /// Play Button
@@ -50,7 +52,7 @@ class GuidanceVideoCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.9),
+                        color: Colors.red.withValues(alpha: 0.9),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -80,6 +82,3 @@ class GuidanceVideoCard extends StatelessWidget {
     );
   }
 }
-
-
-

@@ -23,7 +23,7 @@ class MessageInput extends StatelessWidget {
           BoxShadow(
             offset: const Offset(0, -2),
             blurRadius: 4,
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
           ),
         ],
       ),
@@ -64,6 +64,3 @@ class MessageInput extends StatelessWidget {
     );
   }
 }
-
-
-

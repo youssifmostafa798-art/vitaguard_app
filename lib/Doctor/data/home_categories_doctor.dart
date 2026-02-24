@@ -29,7 +29,9 @@ List<CategoryModel> homeCategoriesDr(BuildContext context, String drName) {
       icon: Icons.medical_information,
       title: "Labs",
       onTap: () {
-        print("Soon");
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Coming Soon")));
       },
     ),
   ];
