@@ -1,19 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/Doctor/Home/widget/category_grid_dr.dart';
+import 'package:provider/provider.dart';
+import 'package:vitaguard_app/doctor/Home/widget/category_grid_dr.dart';
 import 'package:vitaguard_app/compenets/custem_background.dart';
 import 'package:vitaguard_app/core/home_header.dart';
 import 'package:vitaguard_app/patient/Home/widget/home_search.dart';
+import '../ui/doctor_provider.dart';
 
-class DoctorHomes extends StatelessWidget {
+class DoctorHomes extends StatefulWidget {
   final String name;
   const DoctorHomes({super.key, required this.name});
+
+  @override
+  State<DoctorHomes> createState() => _DoctorHomesState();
+}
+
+class _DoctorHomesState extends State<DoctorHomes> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DoctorProvider>().fetchAssignedPatients();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: HomeHeader(
-        name_: name,
+        name_: widget.name,
         profileImage: const AssetImage("assets/PNG/doctor-patient 1.png"),
         onExit: () {
           Navigator.pop(context);
@@ -25,13 +40,12 @@ class DoctorHomes extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: ListView(
               children: [
-                Gap(20),
-                HomeSearch(),
-                Gap(25),
-
-                Gap(30),
-                CategoryGridDr(drName: name),
-                Gap(10),
+                const Gap(20),
+                const HomeSearch(),
+                const Gap(25),
+                const Gap(30),
+                CategoryGridDr(drName: widget.name),
+                const Gap(10),
               ],
             ),
           ),

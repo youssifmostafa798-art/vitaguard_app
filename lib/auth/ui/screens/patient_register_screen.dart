@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:vitaguard_app/auth/ui/auth_provider.dart';
 import 'package:vitaguard_app/auth/ui/screens/create_account_screen.dart';
 import 'package:vitaguard_app/auth/ui/widgets/patient%E2%80%99s_medical_history.dart';
 import 'package:vitaguard_app/patient/main_patient.dart';
@@ -19,6 +21,39 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
   final _phoneController = TextEditingController();
   final _genderController = TextEditingController();
   final _medicalHistoryController = TextEditingController();
+
+  void _handleSignUp() async {
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
+      return;
+    }
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.registerPatient(
+      fullName: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+      phone: _phoneController.text.trim(),
+    );
+
+    if (success) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Registration successful! Please sign in.'),
+        ),
+      );
+      Navigator.pop(context);
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(authProvider.error ?? 'Registration failed')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return CreateAccountScreen(
@@ -47,7 +82,8 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
           'type': FieldType.password,
         },
         {
-          'hint': 'Age',
+          'hint':
+              'Age', // Note: Age is not in current backend schema, but we'll keep it in UI
           'controller': _ageController,
           'type': FieldType.normal,
           'keyboardType': TextInputType.number,
@@ -75,14 +111,7 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
           },
         },
       ],
-      onSubmit: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => MainPatient(name: _nameController.text),
-          ),
-        );
-      },
+      onSubmit: _handleSignUp,
     );
   }
 }
