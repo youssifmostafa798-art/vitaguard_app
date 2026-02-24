@@ -25,11 +25,24 @@ class _SignInScreenState extends State<SignInScreen> {
 
   void _handleSignIn() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final input = emailCtrl.text.trim();
+    final secret = passCtrl.text.trim();
 
-    final success = await authProvider.login(
-      emailCtrl.text.trim(),
-      passCtrl.text.trim(),
-    );
+    if (input.isEmpty || secret.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter your credentials")),
+      );
+      return;
+    }
+
+    bool success;
+    // Simple heuristic: if input contains '@', it's likely an email (standard login)
+    // Otherwise, treat as Companion Name + Code
+    if (input.contains('@')) {
+      success = await authProvider.login(input, secret);
+    } else {
+      success = await authProvider.loginCompanion(input, secret);
+    }
 
     if (success) {
       final role = await authProvider.getUserRole();
@@ -37,6 +50,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
       Widget nextScreen;
       final name = authProvider.userName;
+
       switch (role) {
         case 'doctor':
           nextScreen = MainDoctor(name: name);
@@ -82,9 +96,12 @@ class _SignInScreenState extends State<SignInScreen> {
                     children: [
                       const VitaGuardLogo(),
                       const SizedBox(height: 20),
-                      AuthTextField(hint: "Email", controller: emailCtrl),
                       AuthTextField(
-                        hint: "Password",
+                        hint: "Name or Email",
+                        controller: emailCtrl,
+                      ),
+                      AuthTextField(
+                        hint: "Password or Code",
                         controller: passCtrl,
                         obscure: true,
                         suffixIcon: const Icon(Icons.visibility),

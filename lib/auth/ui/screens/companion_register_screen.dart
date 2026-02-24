@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:vitaguard_app/auth/ui/auth_provider.dart';
 import 'package:vitaguard_app/companion/main_companion.dart';
 import 'package:vitaguard_app/auth/ui/widgets/auth_textfield.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
@@ -20,6 +22,9 @@ class _CompanionRegisterScreenState extends State<CompanionRegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final isLoading = authProvider.isLoading;
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: SafeArea(
@@ -59,16 +64,49 @@ class _CompanionRegisterScreenState extends State<CompanionRegisterScreen> {
                       const SizedBox(height: 50),
 
                       Button(
-                        title: "Sign In",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  MainCompanion(name: _nameController.text),
-                            ),
-                          );
-                        },
+                        title: isLoading ? "Processing..." : "Sign Up",
+                        onTap: isLoading
+                            ? null
+                            : () async {
+                                if (_nameController.text.isEmpty ||
+                                    codeCtrl.text.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Please fill all fields"),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                final success = await authProvider
+                                    .registerCompanion(
+                                      name: _nameController.text.trim(),
+                                      companionCode: codeCtrl.text.trim(),
+                                    );
+
+                                if (success) {
+                                  if (!mounted) return;
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => MainCompanion(
+                                        name: authProvider.userName,
+                                      ),
+                                    ),
+                                    (route) => false,
+                                  );
+                                } else {
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        authProvider.error ??
+                                            "Registration failed",
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
                       ),
 
                       const SizedBox(height: 30),
@@ -83,6 +121,3 @@ class _CompanionRegisterScreenState extends State<CompanionRegisterScreen> {
     );
   }
 }
-
-
-

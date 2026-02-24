@@ -9,9 +9,12 @@ class AuthInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    // Add Bearer token to all requests except auth registration/login
+    // Add Bearer token to all requests except public auth endpoints
+    final publicPaths = ['/auth/login', '/auth/register'];
+    final isPublic = publicPaths.any((path) => options.path.contains(path));
+
     final token = await _storage.getAccessToken();
-    if (token != null && !options.path.contains('/auth/')) {
+    if (token != null && !isPublic) {
       options.headers['Authorization'] = 'Bearer $token';
     }
     return handler.next(options);
@@ -27,6 +30,3 @@ class AuthInterceptor extends Interceptor {
     return handler.next(err);
   }
 }
-
-
-

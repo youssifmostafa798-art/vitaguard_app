@@ -6,6 +6,8 @@ import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/home_header.dart';
 import 'package:vitaguard_app/patient/home/widget/home_search.dart';
 import '../../ui/doctor_provider.dart';
+import 'package:vitaguard_app/auth/ui/auth_provider.dart';
+import 'package:vitaguard_app/auth/ui/screens/role_screen.dart';
 
 class DoctorHomes extends StatefulWidget {
   final String name;
@@ -31,7 +33,12 @@ class _DoctorHomesState extends State<DoctorHomes> {
         name_: widget.name,
         profileImage: const AssetImage("assets/PNG/doctor-patient 1.png"),
         onExit: () {
-          Navigator.pop(context);
+          context.read<AuthProvider>().logout();
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const RoleScreen()),
+            (route) => false,
+          );
         },
       ),
       body: SafeArea(
@@ -54,6 +61,3 @@ class _DoctorHomesState extends State<DoctorHomes> {
     );
   }
 }
-
-
-

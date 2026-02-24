@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:vitaguard_app/auth/ui/auth_provider.dart';
 import 'package:vitaguard_app/doctor/main_doctor.dart';
 import 'package:vitaguard_app/auth/ui/screens/create_account_screen.dart';
 import 'package:vitaguard_app/auth/ui/widgets/professional_id.dart';
@@ -75,17 +77,46 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
           },
         },
       ],
-      onSubmit: () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => MainDoctor(name: _nameController.text),
-          ),
+      onSubmit: () async {
+        if (_nameController.text.isEmpty ||
+            _emailController.text.isEmpty ||
+            _passwordController.text.isEmpty ||
+            _professionalIdController.text.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Please fill all required fields")),
+          );
+          return;
+        }
+
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        final success = await authProvider.registerDoctor(
+          fullName: _nameController.text.trim(),
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+          phone: _phoneController.text.trim(),
+          professionalId: _professionalIdController.text.trim(),
+          gender: _genderController.text.trim().toLowerCase(),
+          age: _ageController.text.trim(),
         );
+
+        if (success) {
+          if (!context.mounted) return;
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MainDoctor(name: authProvider.userName),
+            ),
+            (route) => false,
+          );
+        } else {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authProvider.error ?? "Registration failed"),
+            ),
+          );
+        }
       },
     );
   }
 }
-
-
-

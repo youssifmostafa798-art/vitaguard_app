@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:provider/provider.dart';
+import 'package:vitaguard_app/auth/ui/auth_provider.dart';
+import 'package:vitaguard_app/auth/ui/screens/role_screen.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/home_header.dart';
 import 'package:vitaguard_app/patient/home/widget/category_grid_patient.dart';
@@ -18,7 +21,12 @@ class PatientHome extends StatelessWidget {
         name_: name,
         profileImage: const AssetImage("assets/PNG/youth_14.png"),
         onExit: () {
-          Navigator.pop(context);
+          context.read<AuthProvider>().logout();
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const RoleScreen()),
+            (route) => false,
+          );
         },
       ),
       body: SafeArea(
@@ -50,6 +58,3 @@ class PatientHome extends StatelessWidget {
     );
   }
 }
-
-
-

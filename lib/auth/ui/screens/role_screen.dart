@@ -5,6 +5,7 @@ import 'package:vitaguard_app/auth/ui/screens/doctor_register_screen.dart';
 import 'package:vitaguard_app/auth/ui/screens/facility_register_screen.dart';
 
 import 'package:vitaguard_app/auth/ui/screens/patient_register_screen.dart';
+import 'package:vitaguard_app/auth/ui/screens/sign_in_screen.dart';
 
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
@@ -90,6 +91,18 @@ class RoleScreen extends StatelessWidget {
                           );
                         },
                       ),
+                      Gap(30),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SignInScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text("Already have an account? Sign In"),
+                      ),
                     ],
                   ),
                 ),
@@ -101,6 +114,3 @@ class RoleScreen extends StatelessWidget {
     );
   }
 }
-
-
-

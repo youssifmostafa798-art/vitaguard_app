@@ -3,6 +3,9 @@ import 'package:vitaguard_app/patient/chat/screen/chat_list_patient.dart';
 import 'package:vitaguard_app/patient/home/screen/patient_home.dart';
 import 'package:vitaguard_app/patient/X_ray_Model/screen/upload_x_ray.dart';
 import 'package:vitaguard_app/components/bottom_nav.dart';
+import 'package:provider/provider.dart';
+import 'package:vitaguard_app/auth/ui/auth_provider.dart';
+import 'package:vitaguard_app/auth/ui/screens/role_screen.dart';
 
 class MainPatient extends StatefulWidget {
   final String name;
@@ -39,6 +42,3 @@ class _MainPatientState extends State<MainPatient> {
     );
   }
 }
-
-
-
