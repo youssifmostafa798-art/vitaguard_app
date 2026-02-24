@@ -4,7 +4,7 @@ import 'package:vitaguard_app/facility/home.chat/widget/message_facility_bubble.
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/chat_header.dart';
 import 'package:vitaguard_app/components/message_input.dart';
-import '../../../models/message_model.dart';
+import 'package:vitaguard_app/models/message_model.dart';
 
 // change
 class ChatFacilityDetail extends StatefulWidget {
@@ -194,6 +194,3 @@ class _ChatFacilityDetailState extends State<ChatFacilityDetail> {
     super.dispose();
   }
 }
-
-
-

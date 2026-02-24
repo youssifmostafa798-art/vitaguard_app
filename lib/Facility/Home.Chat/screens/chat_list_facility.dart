@@ -6,7 +6,7 @@ import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/core/home_header.dart';
 import 'package:vitaguard_app/models/chat_preview_card.dart';
 import 'package:vitaguard_app/patient/home/widget/home_search.dart';
-import '../../../models/message_model.dart';
+import 'package:vitaguard_app/models/message_model.dart';
 //delete
 
 class ChatListFacility extends StatelessWidget {
@@ -196,6 +196,3 @@ class ChatListFacility extends StatelessWidget {
     );
   }
 }
-
-
-

@@ -4,7 +4,7 @@ import 'package:vitaguard_app/doctor/chat/widget/message_dr_bubble.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/chat_header.dart';
 import 'package:vitaguard_app/components/message_input.dart';
-import '../../../models/message_model.dart';
+import 'package:vitaguard_app/models/message_model.dart';
 
 class ChatDrDetail extends StatefulWidget {
   final String chatName;
@@ -204,6 +204,3 @@ class _ChatDrDetailState extends State<ChatDrDetail> {
     super.dispose();
   }
 }
-
-
-

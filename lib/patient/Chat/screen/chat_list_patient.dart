@@ -5,7 +5,7 @@ import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/core/simple_header.dart';
 import 'package:vitaguard_app/patient/chat/screen/chat_patient_detail.dart';
 import 'package:vitaguard_app/models/chat_preview_card.dart';
-import '../../../models/message_model.dart';
+import 'package:vitaguard_app/models/message_model.dart';
 
 class ChatListPatient extends StatelessWidget {
   ChatListPatient({super.key});
@@ -185,6 +185,3 @@ class ChatListPatient extends StatelessWidget {
     );
   }
 }
-
-
-
