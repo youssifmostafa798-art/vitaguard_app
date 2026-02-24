@@ -26,7 +26,16 @@ class PatientRepository {
   Future<MedicalHistory> getMedicalHistory() async {
     try {
       final response = await _dio.get(ApiEndpoints.medicalHistory);
-      return MedicalHistory.fromJson(response.data);
+      if (response.data is List && (response.data as List).isNotEmpty) {
+        return MedicalHistory.fromJson(response.data[0]);
+      }
+      return MedicalHistory(
+        chronicDiseases: "",
+        medications: "",
+        allergies: "",
+        surgeries: "",
+        notes: "",
+      );
     } catch (e) {
       rethrow;
     }
@@ -51,6 +60,3 @@ class PatientRepository {
     }
   }
 }
-
-
-

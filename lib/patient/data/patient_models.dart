@@ -23,11 +23,11 @@ class MedicalHistory {
 
   factory MedicalHistory.fromJson(Map<String, dynamic> json) {
     return MedicalHistory(
-      allergies: json['allergies'],
-      medications: json['medications'],
-      chronicDiseases: json['chronic_diseases'],
-      surgeries: json['surgeries'],
-      notes: json['notes'],
+      allergies: json['allergies'] ?? "",
+      medications: json['medications'] ?? "",
+      chronicDiseases: json['chronic_diseases'] ?? "",
+      surgeries: json['surgeries'] ?? "",
+      notes: json['notes'] ?? "",
     );
   }
 }

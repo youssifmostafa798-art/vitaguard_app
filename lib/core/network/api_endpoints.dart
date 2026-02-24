@@ -14,9 +14,9 @@ class ApiEndpoints {
   static const String profile = "/auth/me";
 
   // Patients
-  static const String patientProfile = "/patients/me";
+  static const String patientProfile = "/patients/me/profile";
   static const String medicalHistory = "/patients/me/medical-history";
-  static const String dailyReports = "/patients/me/reports";
+  static const String dailyReports = "/patients/me/daily-reports";
   static const String xrayAnalyze = "/patients/me/xray";
   static const String xrayHistory = "/patients/me/xray-results";
   static const String symptomLogs = "/patients/me/symptoms";
@@ -43,6 +43,3 @@ class ApiEndpoints {
   // Chat
   static const String conversations = "/chat/conversations";
 }
-
-
-
