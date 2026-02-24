@@ -12,12 +12,7 @@ class AuthRepository {
     try {
       final response = await _dio.post(
         ApiEndpoints.login,
-        data: {
-          'username':
-              email, // Backend uses OAuth2PasswordRequestForm which expects 'username'
-          'password': password,
-        },
-        options: Options(contentType: Headers.formUrlEncodedContentType),
+        data: {'email': email, 'password': password},
       );
 
       final authResponse = AuthResponse.fromJson(response.data);
