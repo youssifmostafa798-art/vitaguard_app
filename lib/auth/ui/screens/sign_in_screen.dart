@@ -117,7 +117,13 @@ class _SignInScreenState extends State<SignInScreen> {
                       if (isLoading)
                         const CircularProgressIndicator()
                       else
-                        Button(title: "Sign In", onTap: _handleSignIn),
+                        Button(
+                          title: "Sign In",
+                          onTap: () {
+                            debugPrint('Sign In Button Clicked');
+                            _handleSignIn();
+                          },
+                        ),
                       TextButton(
                         onPressed: () {
                           Navigator.pop(context);

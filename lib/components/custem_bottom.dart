@@ -12,34 +12,37 @@ class Button extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        height: 65,
-        padding: EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Color(0xff003F6B),
-          borderRadius: BorderRadius.circular(40),
-        ),
-        child: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Gap(10),
-              CustemText(
-                //font
-                text: title.toUpperCase(),
-                size: 25,
-                weight: FontWeight.bold,
-              ),
-            ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          debugPrint('Button Tapped: $title');
+          if (onTap != null) onTap!();
+        },
+        borderRadius: BorderRadius.circular(40),
+        child: Ink(
+          width: double.infinity,
+          height: 65,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xff003F6B),
+            borderRadius: BorderRadius.circular(40),
+          ),
+          child: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Gap(10),
+                CustemText(
+                  text: title.toUpperCase(),
+                  size: 25,
+                  weight: FontWeight.bold,
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
-
-
-

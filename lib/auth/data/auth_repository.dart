@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../core/network/dio_client.dart';
@@ -53,20 +54,21 @@ class AuthRepository {
     String? age,
   }) async {
     try {
-      await _dio.post(
-        ApiEndpoints.registerPatient,
-        data: {
-          'name': fullName,
-          'email': email,
-          'password': password,
-          'phone': phone,
-          'gender': gender ?? "male",
-          'age': int.tryParse(age ?? "0") ?? 0,
-          'chronic_diseases': "",
-          'medications': "",
-          'allergies': "",
-        },
-      );
+      final payload = {
+        'name': fullName,
+        'email': email,
+        'password': password,
+        'phone': phone,
+        'gender': (gender == null || gender.trim().isEmpty)
+            ? "male"
+            : gender.trim().toLowerCase(),
+        'age': int.tryParse(age ?? "20") ?? 20,
+        'chronic_diseases': "",
+        'medications': "",
+        'allergies': "",
+      };
+      debugPrint('Registering Patient: $payload');
+      await _dio.post(ApiEndpoints.registerPatient, data: payload);
     } catch (e) {
       rethrow;
     }
@@ -82,18 +84,19 @@ class AuthRepository {
     String? age,
   }) async {
     try {
-      await _dio.post(
-        ApiEndpoints.registerDoctor,
-        data: {
-          'name': fullName,
-          'email': email,
-          'password': password,
-          'phone': phone,
-          'professional_id': professionalId,
-          'gender': gender ?? "male",
-          'age': int.tryParse(age ?? "0") ?? 0,
-        },
-      );
+      final payload = {
+        'name': fullName,
+        'email': email,
+        'password': password,
+        'phone': phone,
+        'professional_id': professionalId,
+        'gender': (gender == null || gender.trim().isEmpty)
+            ? "male"
+            : gender.trim().toLowerCase(),
+        'age': int.tryParse(age ?? "30") ?? 30,
+      };
+      debugPrint('Registering Doctor: $payload');
+      await _dio.post(ApiEndpoints.registerDoctor, data: payload);
     } catch (e) {
       rethrow;
     }
@@ -104,10 +107,9 @@ class AuthRepository {
     required String companionCode,
   }) async {
     try {
-      await _dio.post(
-        ApiEndpoints.registerCompanion,
-        data: {'name': name, 'companion_code': companionCode},
-      );
+      final payload = {'name': name, 'companion_code': companionCode};
+      debugPrint('Registering Companion: $payload');
+      await _dio.post(ApiEndpoints.registerCompanion, data: payload);
     } catch (e) {
       rethrow;
     }
@@ -122,17 +124,16 @@ class AuthRepository {
     required String facilityType,
   }) async {
     try {
-      await _dio.post(
-        ApiEndpoints.registerFacility,
-        data: {
-          'name': name,
-          'email': email,
-          'password': password,
-          'phone': phone,
-          'address': address,
-          'facility_type': facilityType,
-        },
-      );
+      final payload = {
+        'name': name,
+        'email': email,
+        'password': password,
+        'phone': phone,
+        'address': address,
+        'facility_type': facilityType,
+      };
+      debugPrint('Registering Facility: $payload');
+      await _dio.post(ApiEndpoints.registerFacility, data: payload);
     } catch (e) {
       rethrow;
     }
