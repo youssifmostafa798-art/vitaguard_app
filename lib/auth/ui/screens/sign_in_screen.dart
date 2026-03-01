@@ -107,6 +107,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         hint: "Name or Email",
                         controller: emailCtrl,
                       ),
+                      const SizedBox(height: 20),
                       AuthTextField(
                         hint: "Password or Code",
                         controller: passCtrl,
@@ -120,7 +121,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           child: const Text("Forget password?"),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 200),
                       if (isLoading)
                         const CircularProgressIndicator()
                       else
