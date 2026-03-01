@@ -21,6 +21,13 @@ class _CompanionRegisterScreenState extends State<CompanionRegisterScreen> {
   final _nameController = TextEditingController();
 
   @override
+  void dispose() {
+    codeCtrl.dispose();
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final isLoading = authProvider.isLoading;
@@ -84,8 +91,9 @@ class _CompanionRegisterScreenState extends State<CompanionRegisterScreen> {
                                       companionCode: codeCtrl.text.trim(),
                                     );
 
+                                if (!context.mounted) return;
+
                                 if (success) {
-                                  if (!mounted) return;
                                   Navigator.pushAndRemoveUntil(
                                     context,
                                     MaterialPageRoute(
@@ -96,7 +104,6 @@ class _CompanionRegisterScreenState extends State<CompanionRegisterScreen> {
                                     (route) => false,
                                   );
                                 } else {
-                                  if (!mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(

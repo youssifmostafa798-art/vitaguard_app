@@ -23,6 +23,13 @@ class _SignInScreenState extends State<SignInScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
 
+  @override
+  void dispose() {
+    emailCtrl.dispose();
+    passCtrl.dispose();
+    super.dispose();
+  }
+
   void _handleSignIn() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final input = emailCtrl.text.trim();

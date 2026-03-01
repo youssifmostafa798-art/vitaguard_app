@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Mapping
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 import bcrypt
 from jose import JWTError, jwt
@@ -21,8 +23,14 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain: str, hashed: str) -> bool:
     """Verify a plaintext password against its bcrypt hash."""
-    # checkpw expects bytes for both
-    return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    if not hashed:
+        return False
+    try:
+        # checkpw expects bytes for both
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except ValueError:
+        # Invalid hash format should be treated as non-match, not a server error.
+        return False
 
 
 def create_access_token(user_id: str, role: str) -> str:
@@ -62,7 +70,7 @@ def create_token_pair(user_id: str, role: str) -> dict[str, str]:
     }
 
 
-def decode_token(token: str) -> dict:
+def decode_token(token: str) -> dict[str, Any]:
     """Decode and validate a JWT token. Raises JWTError on failure."""
     try:
         payload = jwt.decode(
@@ -70,9 +78,12 @@ def decode_token(token: str) -> dict:
             settings.SECRET_KEY,
             algorithms=[settings.JWT_ALGORITHM],
         )
+        if not isinstance(payload, Mapping):
+            msg = "Token payload is not a JSON object"
+            raise JWTError(msg)
         if payload.get("sub") is None:
             msg = "Token missing subject"
             raise JWTError(msg)
-        return payload
+        return dict(payload)
     except JWTError:
         raise

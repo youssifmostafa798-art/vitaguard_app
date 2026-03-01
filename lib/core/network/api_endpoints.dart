@@ -1,7 +1,28 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+
 class ApiEndpoints {
-  // Use http://10.0.2.2:8000/api/v1 for Android Emulator
-  // Use http://localhost:8000/api/v1 for iOS/Web/Desktop
-  static String baseUrl = "http://10.0.2.2:8000/api/v1";
+  // Override with: --dart-define=API_BASE_URL=http://host:port/api/v1
+  static final String baseUrl = _resolveBaseUrl();
+
+  static String _resolveBaseUrl() {
+    const configured = String.fromEnvironment('API_BASE_URL');
+    if (configured.isNotEmpty) {
+      return configured;
+    }
+
+    if (kIsWeb) {
+      return 'http://localhost:8000/api/v1';
+    }
+
+    // Android emulator maps host machine localhost to 10.0.2.2
+    if (Platform.isAndroid) {
+      return 'http://10.0.2.2:8000/api/v1';
+    }
+
+    // iOS simulator, desktop, and most local dev setups.
+    return 'http://localhost:8000/api/v1';
+  }
 
   // Auth
   static const String login = "/auth/login";
@@ -23,21 +44,21 @@ class ApiEndpoints {
   static const String generateCompanionCode = "/patients/me/companion-code";
 
   // Doctors
-  static const String assignedPatients = "/doctors/me/patients";
+  static const String assignedPatients = "/doctors/patients";
   static const String patientMedicalData =
-      "/doctors/me/patients"; // /doctors/me/patients/{patient_id}/medical-data
-  static const String postFeedback = "/doctors/me/feedback";
+      "/doctors/patients"; // /doctors/patients/{patient_id}/medical-data
+  static const String postFeedback = "/doctors/feedback";
 
   // Companions
-  static const String linkPatient = "/companions/me/link";
-  static const String linkedPatients = "/companions/me/patients";
+  static const String linkPatient = "/companions/link";
+  static const String linkedPatients = "/companions/patient";
   static const String companionLink = linkPatient;
   static const String companionPatient = linkedPatients;
 
   // Facilities
-  static const String facilityOffers = "/facilities/me/offers";
-  static const String appointments = "/facilities/me/appointments";
-  static const String facilityTests = "/facilities/me/tests";
+  static const String facilityOffers = "/facilities/offers";
+  static const String appointments = "/facilities/appointments";
+  static const String facilityTests = "/facilities/tests";
   static const String facilityAppointments = appointments;
 
   // Chat

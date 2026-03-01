@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, HTTPException, status
+from jose import JWTError
 
-from app.database import get_db
 from app.dependencies import CurrentUser, DbSession
-from app.models.user import UserRole
 from app.schemas.auth import (
     CompanionLoginRequest,
     CompanionRegisterRequest,
@@ -32,6 +30,7 @@ from app.services.user_service import (
     create_patient,
     get_patient_by_companion_code,
     get_user_by_email,
+    get_user_by_id,
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -188,14 +187,25 @@ async def refresh_token(data: RefreshRequest, db: DbSession):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token type",
             )
-        user_id = payload.get("sub")
-        role = payload.get("role")
-        return create_token_pair(user_id, role)
-    except Exception:
+        user_id = str(payload.get("sub", ""))
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token subject",
+            )
+    except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired refresh token",
         )
+
+    user = await get_user_by_id(db, user_id)
+    if user is None or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+        )
+    return create_token_pair(user.id, user.role.value)
 
 
 @router.post("/verify", response_model=MessageResponse)

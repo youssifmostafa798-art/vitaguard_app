@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import CurrentUser, DbSession, require_role
 from app.models.user import PatientProfile, UserRole
@@ -119,7 +120,9 @@ async def send_feedback(
 # ── Helpers ───────────────────────────────────────────────
 
 
-async def _get_assigned_patient(db, doctor_user_id: str, patient_user_id: str) -> PatientProfile:
+async def _get_assigned_patient(
+    db: AsyncSession, doctor_user_id: str, patient_user_id: str
+) -> PatientProfile:
     """Verify the patient is assigned to the doctor, return their profile."""
     profile = await user_service.get_patient_profile(db, patient_user_id)
     if profile is None:

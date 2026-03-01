@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../core/network/dio_error_mapper.dart';
 import '../data/patient_repository.dart';
 import '../data/patient_models.dart';
 
@@ -72,12 +73,6 @@ class PatientProvider with ChangeNotifier {
   }
 
   String _handleError(dynamic e) {
-    if (e is Exception) {
-      return e.toString().replaceAll('Exception: ', '');
-    }
-    return 'An unexpected error occurred';
+    return DioErrorMapper.map(e);
   }
 }
-
-
-

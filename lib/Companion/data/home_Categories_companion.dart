@@ -43,5 +43,3 @@ List<CategoryModel> homeCategoriesCompanion(
     ),
   ];
 }
-
-

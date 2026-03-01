@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/companion/data/home_Categories_companion.dart';
+import 'package:vitaguard_app/companion/data/home_categories_companion.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/patient/home/widget/category_item.dart';
 

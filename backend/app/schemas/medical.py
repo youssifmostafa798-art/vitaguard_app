@@ -35,13 +35,11 @@ class MedicalHistoryUpdateRequest(BaseModel):
 
 class DailyReportCreateRequest(BaseModel):
     report_date: date
-    heart_rate: float
-    oxygen_level: float
-    temperature: float
-    blood_pressure: str
-    tasks_activities: str = Field(
-        "-", min_length=1
-    )  # Defaulting since Flutter doesn't send this yet
+    heart_rate: float = Field(0.0, ge=0)
+    oxygen_level: float = Field(0.0, ge=0)
+    temperature: float = Field(0.0, ge=0)
+    blood_pressure: str = ""
+    tasks_activities: str = Field("-", min_length=1)
     notes: str = ""
 
 

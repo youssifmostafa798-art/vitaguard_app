@@ -14,7 +14,7 @@ class ConversationCreateRequest(BaseModel):
 class ConversationResponse(BaseModel):
     id: str
     created_at: datetime
-    participant_ids: list[str] = []
+    participant_ids: list[str] = Field(default_factory=list)
     last_message: MessageResponse | None = None
 
     model_config = {"from_attributes": True}

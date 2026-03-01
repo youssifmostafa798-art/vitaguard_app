@@ -29,6 +29,13 @@ async def create_conversation(
     # Ensure creator is included
     all_ids = list(set([creator_id, *participant_ids]))
 
+    result = await db.execute(select(User.id).where(User.id.in_(all_ids)))
+    existing_ids = set(result.scalars().all())
+    missing_ids = sorted(set(all_ids) - existing_ids)
+    if missing_ids:
+        msg = f"Unknown participant IDs: {', '.join(missing_ids)}"
+        raise ValueError(msg)
+
     conversation = Conversation()
     db.add(conversation)
     await db.flush()

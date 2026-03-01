@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/network/dio_error_mapper.dart';
 import '../data/doctor_repository.dart';
 
 class DoctorProvider with ChangeNotifier {
@@ -31,7 +32,7 @@ class DoctorProvider with ChangeNotifier {
   Future<bool> sendFeedback({
     required String patientId,
     required String feedbackText,
-    String? severity,
+    String? xrayResultId,
   }) async {
     _isLoading = true;
     _error = null;
@@ -41,7 +42,7 @@ class DoctorProvider with ChangeNotifier {
       await _repository.sendFeedback(
         patientId: patientId,
         feedbackText: feedbackText,
-        severity: severity,
+        xrayResultId: xrayResultId,
       );
       _isLoading = false;
       notifyListeners();
@@ -55,12 +56,6 @@ class DoctorProvider with ChangeNotifier {
   }
 
   String _handleError(dynamic e) {
-    if (e is Exception) {
-      return e.toString().replaceAll('Exception: ', '');
-    }
-    return 'An unexpected error occurred';
+    return DioErrorMapper.map(e);
   }
 }
-
-
-

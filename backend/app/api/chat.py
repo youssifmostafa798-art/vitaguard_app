@@ -45,7 +45,10 @@ async def create_conversation(
     db: DbSession,
 ):
     """Start a new conversation."""
-    convo = await chat_service.create_conversation(db, user.id, data.participant_ids)
+    try:
+        convo = await chat_service.create_conversation(db, user.id, data.participant_ids)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return ConversationResponse(
         id=convo.id,
         created_at=convo.created_at,

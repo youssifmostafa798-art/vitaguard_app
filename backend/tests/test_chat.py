@@ -103,3 +103,16 @@ async def test_chat_security(client: AsyncClient, users_auth):
         f"/api/v1/chat/conversations/{convo_id}/messages", headers={"Authorization": f"Bearer {t3}"}
     )
     assert access_response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_create_conversation_with_unknown_user_fails(client: AsyncClient, users_auth):
+    """Conversation creation should reject unknown participant IDs."""
+    (t1, _), _ = users_auth
+    response = await client.post(
+        "/api/v1/chat/conversations",
+        json={"participant_ids": ["missing-user-id"]},
+        headers={"Authorization": f"Bearer {t1}"},
+    )
+    assert response.status_code == 400
+    assert "Unknown participant IDs" in response.json()["detail"]

@@ -17,15 +17,16 @@ class DoctorRepository {
   Future<void> sendFeedback({
     required String patientId,
     required String feedbackText,
-    String? severity,
+    String? xrayResultId,
   }) async {
     try {
       await _dio.post(
         ApiEndpoints.postFeedback,
         data: {
           'patient_id': patientId,
-          'message': feedbackText,
-          'severity': severity ?? 'normal',
+          'feedback_text': feedbackText,
+          if (xrayResultId != null && xrayResultId.isNotEmpty)
+            'xray_result_id': xrayResultId,
         },
       );
     } catch (e) {
@@ -33,6 +34,3 @@ class DoctorRepository {
     }
   }
 }
-
-
-

@@ -7,7 +7,10 @@ class CompanionRepository {
 
   Future<void> linkPatient(String code) async {
     try {
-      await _dio.post(ApiEndpoints.companionLink, data: {'code': code});
+      await _dio.post(
+        ApiEndpoints.companionLink,
+        data: {'companion_code': code},
+      );
     } catch (e) {
       rethrow;
     }
@@ -22,6 +25,3 @@ class CompanionRepository {
     }
   }
 }
-
-
-

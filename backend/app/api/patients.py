@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
+from app.config import settings
 from app.dependencies import CurrentUser, DbSession, require_role
 from app.models.user import UserRole
 from app.schemas.medical import (
@@ -164,10 +165,10 @@ async def upload_xray(
     """Upload an X-ray image for AI analysis (per flowchart pipeline)."""
     # Read file content
     content = await file.read()
-    if len(content) > 10 * 1024 * 1024:  # 10 MB
+    if len(content) > settings.max_upload_bytes:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="File too large",
+            detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE_MB} MB",
         )
 
     # Save to disk

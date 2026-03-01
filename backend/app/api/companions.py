@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 
 from app.dependencies import CurrentUser, DbSession, require_role
 from app.models.user import UserRole
@@ -17,6 +18,10 @@ router = APIRouter(prefix="/companions", tags=["Companions"])
 
 def _require_companion():
     return require_role(UserRole.COMPANION)
+
+
+class LinkPatientRequest(BaseModel):
+    companion_code: str = Field(..., min_length=6, max_length=6)
 
 
 @router.get("/patient")
@@ -35,6 +40,26 @@ async def get_linked_patient(
         "age": profile.age,
         "gender": profile.gender,
     }
+
+
+@router.post("/link")
+async def link_patient(
+    data: LinkPatientRequest,
+    user: CurrentUser,
+    db: DbSession,
+    _: None = Depends(_require_companion()),
+):
+    """Link the authenticated companion to a patient by companion code."""
+    companion_profile = user.companion_profile
+    if companion_profile is None:
+        raise HTTPException(status_code=400, detail="Companion profile not found")
+
+    patient_profile = await user_service.get_patient_by_companion_code(db, data.companion_code)
+    if patient_profile is None:
+        raise HTTPException(status_code=404, detail="Invalid companion code")
+
+    companion_profile.linked_patient_id = patient_profile.user_id
+    return {"message": "Companion linked successfully", "patient_id": patient_profile.user_id}
 
 
 @router.get("/patient/medical-history", response_model=list[MedicalHistoryResponse])
@@ -65,7 +90,7 @@ async def get_patient_daily_reports(
     return [DailyReportResponse.model_validate(r) for r in reports]
 
 
-def _get_linked_patient_id(user) -> str:
+def _get_linked_patient_id(user: CurrentUser) -> str:
     """Extract the linked patient's user_id from companion profile."""
     if user.companion_profile and user.companion_profile.linked_patient_id:
         return user.companion_profile.linked_patient_id

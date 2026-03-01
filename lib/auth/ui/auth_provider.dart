@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
 import '../data/auth_repository.dart';
+import '../../core/network/dio_error_mapper.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthRepository _repository = AuthRepository();
@@ -179,6 +179,11 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<String?> getUserRole() async {
+    final cachedRole = _currentUser?['role'];
+    if (cachedRole is String && cachedRole.isNotEmpty) {
+      return cachedRole;
+    }
+
     try {
       _currentUser = await _repository.getMe();
       return _currentUser?['role'];
@@ -195,21 +200,6 @@ class AuthProvider with ChangeNotifier {
 
   String _handleError(dynamic e) {
     debugPrint('Auth Error: $e');
-    if (e is DioException) {
-      if (e.response != null) {
-        final data = e.response!.data;
-        if (data is Map && data.containsKey('detail')) {
-          final detail = data['detail'];
-          if (detail is List) {
-            // FastAPI validation error list
-            return detail.map((err) => err['msg']).join(', ');
-          }
-          return detail.toString();
-        }
-        return 'Server error: ${e.response!.statusCode}';
-      }
-      return 'Network error: ${e.message}';
-    }
-    return e.toString().replaceAll('Exception: ', '');
+    return DioErrorMapper.map(e);
   }
 }

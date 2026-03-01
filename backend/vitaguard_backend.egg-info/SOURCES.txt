@@ -3,6 +3,7 @@ app/__init__.py
 app/config.py
 app/database.py
 app/dependencies.py
+app/logging_config.py
 app/main.py
 app/middleware.py
 app/api/__init__.py
@@ -29,6 +30,12 @@ app/services/chat_service.py
 app/services/medical_service.py
 app/services/user_service.py
 app/services/xray_service.py
+tests/test_auth.py
+tests/test_chat.py
+tests/test_companion.py
+tests/test_doctors.py
+tests/test_facilities.py
+tests/test_patients.py
 vitaguard_backend.egg-info/PKG-INFO
 vitaguard_backend.egg-info/SOURCES.txt
 vitaguard_backend.egg-info/dependency_links.txt

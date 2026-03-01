@@ -182,7 +182,13 @@ async def update_appointment(
         raise HTTPException(status_code=404, detail="Appointment not found")
 
     if data.status is not None:
-        appt.status = AppointmentStatus(data.status)
+        try:
+            appt.status = AppointmentStatus(data.status)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Invalid appointment status: {data.status}",
+            ) from exc
     if data.scheduled_at is not None:
         appt.scheduled_at = data.scheduled_at
     if data.notes is not None:

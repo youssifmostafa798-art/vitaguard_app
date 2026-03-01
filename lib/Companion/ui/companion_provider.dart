@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/network/dio_error_mapper.dart';
 import '../data/companion_repository.dart';
 
 class CompanionProvider with ChangeNotifier {
@@ -47,12 +48,6 @@ class CompanionProvider with ChangeNotifier {
   }
 
   String _handleError(dynamic e) {
-    if (e is Exception) {
-      return e.toString().replaceAll('Exception: ', '');
-    }
-    return 'An unexpected error occurred';
+    return DioErrorMapper.map(e);
   }
 }
-
-
-
