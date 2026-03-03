@@ -17,7 +17,7 @@ from app.logging_config import setup_logging
 from app.middleware import setup_middleware
 
 # Initialize structured logging
-setup_logging(settings.ENVIRONMENT)
+setup_logging(settings.ENVIRONMENT, settings.LOG_LEVEL)
 logger = structlog.get_logger(__name__)
 
 

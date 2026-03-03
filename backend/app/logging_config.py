@@ -6,7 +6,7 @@ import sys
 import structlog
 
 
-def setup_logging(environment: str = "development") -> None:
+def setup_logging(environment: str = "development", log_level: str = "info") -> None:
     """Configure structlog for JSON output in production and pretty-print in development."""
     processors = [
         structlog.contextvars.merge_contextvars,
@@ -33,5 +33,5 @@ def setup_logging(environment: str = "development") -> None:
     logging.basicConfig(
         format="%(message)s",
         stream=sys.stdout,
-        level=logging.INFO,
+        level=getattr(logging, log_level.upper(), logging.INFO),
     )

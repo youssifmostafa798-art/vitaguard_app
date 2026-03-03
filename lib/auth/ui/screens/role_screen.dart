@@ -20,94 +20,101 @@ class RoleScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: AppBackground(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 14),
-            child: Column(
-              children: [
-                Gap(5),
-                VitaGuardLogo(size: 20),
-                Gap(5),
-                CustemText(
-                  text: "Choose Your Role",
-                  color: Color(0xff003F6B),
-                  size: 25,
-                  weight: FontWeight.w900,
-                ),
-                Gap(5),
-
-                Padding(
-                  padding: EdgeInsets.all(50),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      //patient
-                      Button(
-                        title: "Patient",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PatientRegisterScreen(),
-                            ),
-                          );
-                        },
+                      const Gap(10),
+                      const VitaGuardLogo(size: 80),
+                      const Gap(20),
+                      const CustemText(
+                        text: "Choose Your Role",
+                        color: Color(0xff003F6B),
+                        size: 25,
+                        weight: FontWeight.w900,
                       ),
-                      Gap(20),
-                      // Doctor
-                      Button(
-                        title: "Doctor",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => DoctorRegisterScreen(),
+                      const Gap(20),
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Button(
+                              title: "Patient",
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const PatientRegisterScreen(),
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
-                      Gap(20),
-                      //Companion
-                      Button(
-                        title: "Companion",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => CompanionRegisterScreen(),
+                            const Gap(20),
+                            Button(
+                              title: "Doctor",
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const DoctorRegisterScreen(),
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
-                      Gap(20),
-                      // Facility
-                      Button(
-                        title: "Facility",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => FacilityRegisterScreen(),
+                            const Gap(20),
+                            Button(
+                              title: "Companion",
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const CompanionRegisterScreen(),
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
-                      Gap(30),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const SignInScreen(),
+                            const Gap(20),
+                            Button(
+                              title: "Facility",
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const FacilityRegisterScreen(),
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                        child: const Text("Already have an account? Sign In"),
+                            const Gap(30),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const SignInScreen(),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                "Already have an account? Sign In",
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),

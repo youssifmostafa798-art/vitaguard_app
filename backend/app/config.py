@@ -37,6 +37,12 @@ class Settings(BaseSettings):
 
     # ── Environment ───────────────────────────────────────
     ENVIRONMENT: str = "development"
+    SERVER_HOST: str = "0.0.0.0"
+    SERVER_PORT: int = 8000
+    UVICORN_WORKERS: int = 1
+    UVICORN_RELOAD: bool = False
+    AUTO_APPLY_MIGRATIONS: bool = False
+    LOG_LEVEL: str = "info"
 
     @property
     def is_production(self) -> bool:

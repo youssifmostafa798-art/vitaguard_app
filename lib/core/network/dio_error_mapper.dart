@@ -1,6 +1,16 @@
 import 'package:dio/dio.dart';
+import 'api_endpoints.dart';
 
 class DioErrorMapper {
+  static const String _androidHostHint =
+      'If you use Android emulator, keep API at 10.0.2.2. '
+      'If you use a physical Android device, set --dart-define=API_BASE_URL='
+      'http://<your-pc-lan-ip>:8000/api/v1.';
+
+  static String _networkHint() {
+    return 'Current API URL: ${ApiEndpoints.baseUrl}. $_androidHostHint';
+  }
+
   static String map(dynamic error) {
     if (error is! DioException) {
       if (error is Exception) {
@@ -12,11 +22,11 @@ class DioErrorMapper {
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.receiveTimeout ||
         error.type == DioExceptionType.sendTimeout) {
-      return 'Request timed out. Please check your internet connection and try again.';
+      return 'Request timed out. ${_networkHint()}';
     }
 
     if (error.type == DioExceptionType.connectionError) {
-      return 'Unable to reach server. Please check your internet connection.';
+      return 'Unable to reach server. ${_networkHint()}';
     }
 
     final response = error.response;

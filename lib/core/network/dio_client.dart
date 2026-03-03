@@ -7,7 +7,8 @@ class DioClient {
   static final DioClient _instance = DioClient._internal();
   factory DioClient() => _instance;
 
-  static const Duration _defaultTimeout = Duration(seconds: 60);
+  static const Duration _connectTimeout = Duration(seconds: 10);
+  static const Duration _ioTimeout = Duration(seconds: 60);
   static const int _maxRetries = 1;
 
   late final Dio _dio;
@@ -17,9 +18,9 @@ class DioClient {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiEndpoints.baseUrl,
-        connectTimeout: _defaultTimeout,
-        receiveTimeout: _defaultTimeout,
-        sendTimeout: _defaultTimeout,
+        connectTimeout: _connectTimeout,
+        receiveTimeout: _ioTimeout,
+        sendTimeout: _ioTimeout,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -36,7 +37,8 @@ class DioClient {
           final isRetryableMethod = _isIdempotentMethod(
             error.requestOptions.method,
           );
-          final isRetryableError = error.type == DioExceptionType.connectionError;
+          final isRetryableError =
+              error.type == DioExceptionType.connectionError;
 
           if (isRetryableMethod && isRetryableError && retries < _maxRetries) {
             final nextRetryCount = retries + 1;

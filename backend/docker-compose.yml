@@ -1,28 +1,45 @@
 services:
   api:
+    container_name: vitaguard-api
     build: .
+    restart: unless-stopped
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
       - ENVIRONMENT=production
-      - DATABASE_URL=postgresql+asyncpg://user:pass@db:5432/vitaguard
-      - SECRET_KEY=${SECRET_KEY:-change-me-at-all-costs}
-    volumes:
-      - ./uploads:/app/uploads
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8000
+      - UVICORN_WORKERS=2
+      - AUTO_APPLY_MIGRATIONS=true
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-vitaguard}:${POSTGRES_PASSWORD:-change-me}@db:5432/${POSTGRES_DB:-vitaguard}
+      - SECRET_KEY=${SECRET_KEY:?Set SECRET_KEY in .env}
+      - LOG_LEVEL=info
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+    volumes:
+      - uploads_data:/app/uploads
 
   db:
+    container_name: vitaguard-db
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=pass
-      - POSTGRES_DB=vitaguard
+      - POSTGRES_USER=${POSTGRES_USER:-vitaguard}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-change-me}
+      - POSTGRES_DB=${POSTGRES_DB:-vitaguard}
     ports:
       - "5432:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U user -d vitaguard" ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vitaguard} -d ${POSTGRES_DB:-vitaguard}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -31,3 +48,4 @@ services:
 
 volumes:
   postgres_data:
+  uploads_data:

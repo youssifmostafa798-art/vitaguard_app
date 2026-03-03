@@ -1,0 +1,24 @@
+[Unit]
+Description=VitaGuard FastAPI Backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=vitaguard
+Group=vitaguard
+WorkingDirectory=/opt/vitaguard/backend
+EnvironmentFile=/opt/vitaguard/backend/.env
+ExecStart=/opt/vitaguard/backend/.venv/bin/python /opt/vitaguard/backend/scripts/start_server.py
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGTERM
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/vitaguard/backend/uploads /opt/vitaguard/backend/logs
+
+[Install]
+WantedBy=multi-user.target

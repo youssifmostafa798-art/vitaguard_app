@@ -28,7 +28,7 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
       ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
       return;
     }
-
+    //edit api
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.registerPatient(
       fullName: _nameController.text.trim(),
