@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vitaguard_app/auth/ui/auth_provider.dart';
-import 'package:vitaguard_app/companion/main_companion.dart';
 import 'package:vitaguard_app/auth/ui/widgets/auth_textfield.dart';
+import 'package:vitaguard_app/auth/ui/widgets/signup_success_dialog.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
@@ -119,15 +119,7 @@ class _CompanionRegisterScreenState extends State<CompanionRegisterScreen> {
                                 if (!context.mounted) return;
 
                                 if (success) {
-                                  Navigator.pushAndRemoveUntil(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => MainCompanion(
-                                        name: authProvider.userName,
-                                      ),
-                                    ),
-                                    (route) => false,
-                                  );
+                                  await showSignupSuccessDialog(context);
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:vitaguard_app/auth/ui/auth_provider.dart';
 import 'package:vitaguard_app/auth/ui/screens/create_account_screen.dart';
 import 'package:vitaguard_app/auth/ui/widgets/patients_medical_history.dart';
+import 'package:vitaguard_app/auth/ui/widgets/signup_success_dialog.dart';
 
 class PatientRegisterScreen extends StatefulWidget {
   const PatientRegisterScreen({super.key});
@@ -41,12 +42,7 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
 
     if (success) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Registration successful! Please sign in.'),
-        ),
-      );
-      Navigator.pop(context);
+      await showSignupSuccessDialog(context);
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

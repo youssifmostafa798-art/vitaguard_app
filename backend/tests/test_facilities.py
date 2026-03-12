@@ -1,10 +1,14 @@
+"""Facility API integration tests."""
+
+from datetime import datetime, timedelta
+
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 
 
 @pytest_asyncio.fixture
-async def facility_auth(client: AsyncClient):
+async def facility_token(client: AsyncClient):
     """Fixture to register a facility and return access token."""
     response = await client.post(
         "/api/v1/auth/register/facility",
@@ -21,9 +25,9 @@ async def facility_auth(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_facility_offers(client: AsyncClient, facility_auth):
+async def test_facility_offers(client: AsyncClient, facility_token):
     """Test facility offer management."""
-    token = facility_auth
+    token = facility_token
 
     # Create offer
     create_response = await client.post(
@@ -43,9 +47,9 @@ async def test_facility_offers(client: AsyncClient, facility_auth):
 
 
 @pytest.mark.asyncio
-async def test_facility_appointments(client: AsyncClient, facility_auth):
+async def test_facility_appointments(client: AsyncClient, facility_token):
     """Test facility appointment creation."""
-    token = facility_auth
+    token = facility_token
 
     # Register a patient to get their ID
     pat = await client.post(
@@ -62,8 +66,6 @@ async def test_facility_appointments(client: AsyncClient, facility_auth):
     pat_id = (
         await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {pat_token}"})
     ).json()["id"]
-
-    from datetime import datetime, timedelta
 
     scheduled = (datetime.now() + timedelta(days=1)).isoformat()
 

@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vitaguard_app/auth/ui/auth_provider.dart';
-import 'package:vitaguard_app/facility/main_facility.dart';
 import 'package:vitaguard_app/auth/ui/screens/create_account_screen.dart';
 import 'package:vitaguard_app/auth/ui/widgets/image_of_the_record.dart';
+import 'package:vitaguard_app/auth/ui/widgets/signup_success_dialog.dart';
 
 class FacilityRegisterScreen extends StatefulWidget {
   const FacilityRegisterScreen({super.key});
@@ -111,13 +111,7 @@ class _FacilityRegisterScreenState extends State<FacilityRegisterScreen> {
 
         if (success) {
           if (!context.mounted) return;
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MainFacility(name: authProvider.userName),
-            ),
-            (route) => false,
-          );
+          await showSignupSuccessDialog(context);
         } else {
           if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
