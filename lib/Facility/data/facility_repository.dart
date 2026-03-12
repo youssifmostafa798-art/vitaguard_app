@@ -15,8 +15,8 @@ class FacilityRepository {
   }) async {
     try {
       final formData = FormData.fromMap({
-        'patient_id': ?patientId,
-        'patient_phone': ?patientPhone,
+        if (patientId != null) 'patient_id': patientId,
+        if (patientPhone != null) 'patient_phone': patientPhone,
         'test_type': testType,
         'file': await MultipartFile.fromFile(filePath),
         'notes': notes,
