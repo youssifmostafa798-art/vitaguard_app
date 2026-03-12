@@ -15,11 +15,11 @@ class FacilityRepository {
   }) async {
     try {
       final formData = FormData.fromMap({
-        'patient_id': ?patientId,
-        'patient_phone': ?patientPhone,
+        if (patientId != null) 'patient_id': patientId, // ignore: use_null_aware_elements
+        if (patientPhone != null) 'patient_phone': patientPhone, // ignore: use_null_aware_elements
         'test_type': testType,
         'file': await MultipartFile.fromFile(filePath),
-        'notes': notes,
+        if (notes != null) 'notes': notes, // ignore: use_null_aware_elements
       });
       await _dio.post(ApiEndpoints.facilityTests, data: formData);
     } catch (e) {

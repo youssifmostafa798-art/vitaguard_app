@@ -28,7 +28,7 @@ class BackendManager {
       final String batPath = 'run_vitaguard_backend.bat';
       
       if (await File(batPath).exists()) {
-        print('BackendManager: Starting backend via batch file...');
+        debugPrint('BackendManager: Starting backend via batch file...');
         
         // Use shell execute to run the batch file in the background
         _backendProcess = await Process.start(
@@ -38,12 +38,12 @@ class BackendManager {
           mode: ProcessStartMode.detached,
         );
         
-        print('BackendManager: Backend launch triggered.');
+        debugPrint('BackendManager: Backend launch triggered.');
       } else {
-        print('BackendManager: run_vitaguard_backend.bat not found in root.');
+        debugPrint('BackendManager: run_vitaguard_backend.bat not found in root.');
       }
     } catch (e) {
-      print('BackendManager Error: $e');
+      debugPrint('BackendManager Error: $e');
     }
   }
 
