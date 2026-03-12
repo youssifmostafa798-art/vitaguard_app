@@ -16,6 +16,29 @@ from app.config import settings
 from app.logging_config import setup_logging
 from app.middleware import setup_middleware
 
+
+def run_migrations():
+    """Run Alembic migrations programmatically."""
+    from alembic import command
+    from alembic.config import Config
+
+    # Get the directory of the current file (app/main.py)
+    # The alembic.ini is in the parent directory (backend/alembic.ini)
+    from pathlib import Path
+
+    backend_dir = Path(__file__).resolve().parent.parent
+    ini_path = backend_dir / "alembic.ini"
+
+    if not ini_path.exists():
+        return
+
+    logger.info("Auto-applying database migrations...")
+    cfg = Config(str(ini_path))
+    # Ensure the script_location is interpreted correctly relative to backend root
+    cfg.set_main_option("script_location", str(backend_dir / "alembic"))
+    command.upgrade(cfg, "head")
+    logger.info("Database migrations complete")
+
 # Initialize structured logging
 setup_logging(settings.ENVIRONMENT, settings.LOG_LEVEL)
 logger = structlog.get_logger(__name__)
@@ -27,14 +50,19 @@ async def lifespan(app: FastAPI):
     # ── Startup ───────────────────────────────────────────
     logger.info("Starting VitaGuard Backend", env=settings.ENVIRONMENT)
 
-    # Create database tables (dev only — use Alembic in production)
-    if not settings.is_production:
-        from app.database import engine
-        from app.models import Base
+    # Create database tables (dev only — fallback if migrations are disabled)
+    if settings.AUTO_APPLY_MIGRATIONS:
+        try:
+            run_migrations()
+        except Exception:
+            logger.exception("Programmatic migration failed — attempting direct sync")
+            if not settings.is_production:
+                from app.database import engine
+                from app.models import Base
 
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        logger.info("Database tables created (dev mode)")
+                async with engine.begin() as conn:
+                    await conn.run_sync(Base.metadata.create_all)
+                logger.info("Database tables created (direct sync fallback)")
 
     # Load TFLite model
     try:

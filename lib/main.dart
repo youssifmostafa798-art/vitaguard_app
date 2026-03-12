@@ -8,8 +8,14 @@ import 'package:vitaguard_app/facility/ui/facility_provider.dart';
 import 'package:vitaguard_app/onbording/ui/onbording_screen/onboarding_screen.dart';
 
 import 'package:vitaguard_app/core/network/health_provider.dart';
+import 'package:vitaguard_app/core/network/backend_manager.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Start backend automatically if on Windows
+  await BackendManager().autoStartBackend();
+  
   runApp(
     MultiProvider(
       providers: [
