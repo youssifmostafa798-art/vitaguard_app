@@ -6,7 +6,6 @@ Secure healthcare backend with AI-powered X-ray analysis.
 
 from __future__ import annotations
 
-import logging
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -40,9 +39,11 @@ async def lifespan(_app: FastAPI):
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
             logger.info("Database tables verified/created via direct sync")
-        except Exception:
-            # Keep broader catch here as this is a fallback startup mechanism
-            logger.exception("Database sync failed during startup")
+        except (ImportError, AttributeError, RuntimeError) as e:
+            # Catch specific errors related to environment or DB setup
+            logger.exception("Database sync failed during startup: %s", e)
+        except Exception: # pylint: disable=broad-except
+            logger.exception("Unexpected error during database sync")
 
     # Load TFLite model
     try:
@@ -60,7 +61,7 @@ async def lifespan(_app: FastAPI):
 
 def create_app() -> FastAPI:
     """Application factory."""
-    app = FastAPI(
+    api_app = FastAPI(
         title="VitaGuard API",
         description="Secure healthcare backend with AI-powered X-ray analysis",
         version="1.0.0",
@@ -70,19 +71,19 @@ def create_app() -> FastAPI:
     )
 
     # Middleware
-    setup_middleware(app)
+    setup_middleware(api_app)
 
     # Routes
     api_prefix = "/api/v1"
-    app.include_router(health.router)
-    app.include_router(auth.router, prefix=api_prefix)
-    app.include_router(patients.router, prefix=api_prefix)
-    app.include_router(doctors.router, prefix=api_prefix)
-    app.include_router(companions.router, prefix=api_prefix)
-    app.include_router(facilities.router, prefix=api_prefix)
-    app.include_router(chat.router, prefix=api_prefix)
+    api_app.include_router(health.router)
+    api_app.include_router(auth.router, prefix=api_prefix)
+    api_app.include_router(patients.router, prefix=api_prefix)
+    api_app.include_router(doctors.router, prefix=api_prefix)
+    api_app.include_router(companions.router, prefix=api_prefix)
+    api_app.include_router(facilities.router, prefix=api_prefix)
+    api_app.include_router(chat.router, prefix=api_prefix)
 
-    return app
+    return api_app
 
 
 app = create_app()
