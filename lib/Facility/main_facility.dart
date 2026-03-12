@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vitaguard_app/facility/home.chat/screens/facility_home.dart';
-import 'package:vitaguard_app/facility/Report/reports.dart';
+import 'package:vitaguard_app/facility/report/reports.dart';
 import 'package:vitaguard_app/facility/offer/current_offers.dart';
 import 'package:vitaguard_app/components/special_bottom_nav.dart';
 

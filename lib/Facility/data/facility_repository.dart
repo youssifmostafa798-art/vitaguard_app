@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
-import '../../core/network/api_endpoints.dart';
-import '../../core/network/dio_client.dart';
+import 'package:vitaguard_app/core/network/api_endpoints.dart';
+import 'package:vitaguard_app/core/network/dio_client.dart';
 
 class FacilityRepository {
   final Dio _dio = DioClient().dio;
@@ -15,8 +15,8 @@ class FacilityRepository {
   }) async {
     try {
       final formData = FormData.fromMap({
-        if (patientId != null) 'patient_id': patientId,
-        if (patientPhone != null) 'patient_phone': patientPhone,
+        'patient_id': ?patientId,
+        'patient_phone': ?patientPhone,
         'test_type': testType,
         'file': await MultipartFile.fromFile(filePath),
         'notes': notes,
@@ -57,6 +57,3 @@ class FacilityRepository {
     }
   }
 }
-
-
-

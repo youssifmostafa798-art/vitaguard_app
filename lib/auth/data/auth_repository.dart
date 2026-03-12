@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import '../../core/network/api_endpoints.dart';
-import '../../core/network/dio_client.dart';
-import '../../core/storage/secure_storage_service.dart';
-import 'auth_models.dart';
+import 'package:vitaguard_app/core/network/api_endpoints.dart';
+import 'package:vitaguard_app/core/network/dio_client.dart';
+import 'package:vitaguard_app/core/storage/secure_storage_service.dart';
+import 'package:vitaguard_app/auth/data/auth_models.dart';
 
 class AuthRepository {
   final Dio _dio = DioClient().dio;

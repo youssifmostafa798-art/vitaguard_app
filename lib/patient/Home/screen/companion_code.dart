@@ -6,7 +6,7 @@ import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/core/simple_buttom.dart';
 import 'package:vitaguard_app/core/simple_header.dart';
-import '../../ui/patient_provider.dart';
+import 'package:vitaguard_app/patient/ui/patient_provider.dart';
 
 class CompanionCode extends StatefulWidget {
   const CompanionCode({super.key});

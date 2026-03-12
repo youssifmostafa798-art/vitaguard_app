@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/network/dio_error_mapper.dart';
-import '../data/companion_repository.dart';
+import 'package:vitaguard_app/core/network/dio_error_mapper.dart';
+import 'package:vitaguard_app/companion/data/companion_repository.dart';
 
 class CompanionProvider with ChangeNotifier {
   final CompanionRepository _repository = CompanionRepository();

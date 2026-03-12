@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../data/auth_repository.dart';
-import '../../core/network/dio_error_mapper.dart';
+import 'package:vitaguard_app/auth/data/auth_repository.dart';
+import 'package:vitaguard_app/core/network/dio_error_mapper.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthRepository _repository = AuthRepository();

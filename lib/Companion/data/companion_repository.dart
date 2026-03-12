@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import '../../core/network/api_endpoints.dart';
-import '../../core/network/dio_client.dart';
+import 'package:vitaguard_app/core/network/api_endpoints.dart';
+import 'package:vitaguard_app/core/network/dio_client.dart';
 
 class CompanionRepository {
   final Dio _dio = DioClient().dio;

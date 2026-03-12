@@ -6,7 +6,7 @@ import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_field.dart';
 import 'package:vitaguard_app/core/simple_header.dart';
-import '../data/facility_repository.dart';
+import 'package:vitaguard_app/facility/data/facility_repository.dart';
 
 class AddOffer extends StatefulWidget {
   const AddOffer({super.key});

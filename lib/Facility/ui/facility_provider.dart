@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/network/dio_error_mapper.dart';
-import '../data/facility_repository.dart';
+import 'package:vitaguard_app/core/network/dio_error_mapper.dart';
+import 'package:vitaguard_app/facility/data/facility_repository.dart';
 
 class FacilityProvider with ChangeNotifier {
   final FacilityRepository _repository = FacilityRepository();
