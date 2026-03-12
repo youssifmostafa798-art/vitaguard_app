@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import '../../core/network/api_endpoints.dart';
-import '../../core/network/dio_client.dart';
+import 'package:vitaguard_app/core/network/api_endpoints.dart';
+import 'package:vitaguard_app/core/network/dio_client.dart';
 
 class DoctorRepository {
   final Dio _dio = DioClient().dio;
@@ -29,6 +29,15 @@ class DoctorRepository {
             'xray_result_id': xrayResultId,
         },
       );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> getVerificationStatus() async {
+    try {
+      final response = await _dio.get(ApiEndpoints.doctorVerificationStatus);
+      return response.data;
     } catch (e) {
       rethrow;
     }

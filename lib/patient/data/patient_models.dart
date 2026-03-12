@@ -87,3 +87,32 @@ class XRayResult {
     );
   }
 }
+
+class MedicalDocument {
+  final String id;
+  final String patientId;
+  final String fileUrl;
+  final String documentType;
+  final String originalFilename;
+  final DateTime uploadedAt;
+
+  MedicalDocument({
+    required this.id,
+    required this.patientId,
+    required this.fileUrl,
+    required this.documentType,
+    required this.originalFilename,
+    required this.uploadedAt,
+  });
+
+  factory MedicalDocument.fromJson(Map<String, dynamic> json) {
+    return MedicalDocument(
+      id: json['id'] ?? '',
+      patientId: json['patient_id'] ?? '',
+      fileUrl: json['file_url'] ?? '',
+      documentType: json['document_type'] ?? '',
+      originalFilename: json['original_filename'] ?? '',
+      uploadedAt: DateTime.tryParse(json['uploaded_at'] ?? '') ?? DateTime.now(),
+    );
+  }
+}

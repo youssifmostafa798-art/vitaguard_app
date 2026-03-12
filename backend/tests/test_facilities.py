@@ -8,7 +8,7 @@ async def facility_auth(client: AsyncClient):
     """Fixture to register a facility and return access token."""
     response = await client.post(
         "/api/v1/auth/register/facility",
-        json={
+        data={
             "name": "Radiology Center",
             "email": "facility@example.com",
             "password": "password123",
@@ -28,7 +28,7 @@ async def test_facility_offers(client: AsyncClient, facility_auth):
     # Create offer
     create_response = await client.post(
         "/api/v1/facilities/offers",
-        json={"title": "50% off Chest X-rays", "description": "Summer discount"},
+        data={"title": "50% off Chest X-rays", "description": "Summer discount"},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert create_response.status_code == 201

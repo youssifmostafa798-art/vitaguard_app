@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/network/dio_error_mapper.dart';
-import '../data/doctor_repository.dart';
+import 'package:vitaguard_app/core/network/dio_error_mapper.dart';
+import 'package:vitaguard_app/doctor/data/doctor_repository.dart';
 
 class DoctorProvider with ChangeNotifier {
   final DoctorRepository _repository = DoctorRepository();
@@ -12,6 +12,8 @@ class DoctorProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   List<dynamic> get assignedPatients => _assignedPatients;
+  String _verificationStatus = 'pending';
+  String get verificationStatus => _verificationStatus;
 
   Future<void> fetchAssignedPatients() async {
     _isLoading = true;
@@ -52,6 +54,23 @@ class DoctorProvider with ChangeNotifier {
       _error = _handleError(e);
       notifyListeners();
       return false;
+    }
+  }
+
+  Future<void> fetchVerificationStatus() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final statusData = await _repository.getVerificationStatus();
+      _verificationStatus = statusData['verification_status'] ?? 'pending';
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _error = _handleError(e);
+      notifyListeners();
     }
   }
 

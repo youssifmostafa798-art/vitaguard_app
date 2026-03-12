@@ -58,6 +58,15 @@ def is_model_loaded() -> bool:
     return _interpreter is not None
 
 
+def ensure_model_loaded():
+    """Ensure the model is loaded and return the interpreter, raising an error if it fails."""
+    if not is_model_loaded():
+        load_model()
+    if not is_model_loaded():
+        raise RuntimeError("TFLite model could not be loaded")
+    return _interpreter
+
+
 def validate_xray_image(file_path: str) -> tuple[bool, str]:
     """
     Validate that the uploaded file is a valid X-ray image.
@@ -119,37 +128,45 @@ def run_inference(file_path: str) -> dict:
         }
 
     # Load and preprocess image
-    with Image.open(file_path) as img:
-        # Get model input shape
-        input_shape = _input_details[0]["shape"]  # e.g., [1, 224, 224, 3]
-        target_height = input_shape[1]
-        target_width = input_shape[2]
-        channels = input_shape[3] if len(input_shape) > 3 else 1
+    try:
+        with Image.open(file_path) as img:
+            # Get model input shape
+            input_shape = _input_details[0]["shape"]  # e.g., [1, 224, 224, 3]
+            target_height = input_shape[1]
+            target_width = input_shape[2]
+            channels = input_shape[3] if len(input_shape) > 3 else 1
 
-        # Convert to RGB or grayscale based on model input
-        if channels == 3:
-            img = img.convert("RGB")
-        elif channels == 1:
-            img = img.convert("L")
+            # Convert to RGB or grayscale based on model input
+            if channels == 3:
+                img = img.convert("RGB")
+            elif channels == 1:
+                img = img.convert("L")
 
-        # Resize to model input size
-        img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
+            # Resize to model input size
+            img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
 
-        # Convert to numpy array and normalize
-        img_array = np.array(img, dtype=np.float32)
+            # Convert to numpy array and normalize
+            img_array = np.array(img, dtype=np.float32)
 
-        # Normalize to [0, 1]
-        img_array = img_array / 255.0
+            # Normalize to [0, 1]
+            img_array = img_array / 255.0
 
-        # Add batch dimension and channel dimension if needed
-        if channels == 1 and len(img_array.shape) == 2:
-            img_array = np.expand_dims(img_array, axis=-1)
-        img_array = np.expand_dims(img_array, axis=0)
+            # Add batch dimension and channel dimension if needed
+            if channels == 1 and len(img_array.shape) == 2:
+                img_array = np.expand_dims(img_array, axis=-1)
+            img_array = np.expand_dims(img_array, axis=0)
 
-    # Run inference
-    _interpreter.set_tensor(_input_details[0]["index"], img_array)
-    _interpreter.invoke()
-    output = _interpreter.get_tensor(_output_details[0]["index"])
+        # Run inference
+        _interpreter.set_tensor(_input_details[0]["index"], img_array)
+        _interpreter.invoke()
+        output = _interpreter.get_tensor(_output_details[0]["index"])
+    except Exception as e:
+        logger.error("Error during AI inference: %s", e)
+        return {
+            "prediction": None,
+            "confidence": None,
+            "report_text": f"Error running inference: {e}",
+        }
 
     # Parse output
     output_shape = _output_details[0]["shape"]

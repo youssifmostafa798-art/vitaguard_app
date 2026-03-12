@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../../core/network/api_endpoints.dart';
@@ -80,6 +81,7 @@ class AuthRepository {
     required String password,
     required String phone,
     required String professionalId,
+    required File? idCardImage,
     String? gender,
     String? age,
   }) async {
@@ -95,12 +97,46 @@ class AuthRepository {
             : gender.trim().toLowerCase(),
         'age': int.tryParse(age ?? "30") ?? 30,
       };
-      debugPrint('Registering Doctor: $payload');
-      await _dio.post(ApiEndpoints.registerDoctor, data: payload);
+      
+      debugPrint('Registering Doctor JSON: $payload');
+      // 1. Register the doctor details via JSON
+      final response = await _dio.post(ApiEndpoints.registerDoctor, data: payload);
+      
+      // 2. We need to save the login tokens to be authenticated to upload the ID card
+      final authResponse = AuthResponse.fromJson(response.data);
+      await _storage.saveTokens(
+        access: authResponse.accessToken,
+        refresh: authResponse.refreshToken,
+      );
+      
+      // 3. Upload ID card if an image was provided
+      if (idCardImage != null) {
+        debugPrint('Uploading Doctor ID Card Image: ${idCardImage.path}');
+        await uploadDoctorIdCard(idCardImage);
+      }
     } catch (e) {
       rethrow;
     }
   }
+
+  Future<void> uploadDoctorIdCard(File imageFile) async {
+    try {
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: imageFile.path.split('/').last,
+        ),
+      });
+
+      await _dio.post(
+        ApiEndpoints.doctorIdCard,
+        data: formData,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
 
   Future<void> registerCompanion({
     required String name,
@@ -122,9 +158,10 @@ class AuthRepository {
     required String phone,
     required String address,
     required String facilityType,
+    required File? recordImage,
   }) async {
     try {
-      final payload = {
+      final Map<String, dynamic> formMap = {
         'name': name,
         'email': email,
         'password': password,
@@ -132,8 +169,17 @@ class AuthRepository {
         'address': address,
         'facility_type': facilityType,
       };
-      debugPrint('Registering Facility: $payload');
-      await _dio.post(ApiEndpoints.registerFacility, data: payload);
+
+      if (recordImage != null) {
+        formMap['record_image'] = await MultipartFile.fromFile(
+          recordImage.path,
+          filename: recordImage.path.split('/').last,
+        );
+      }
+
+      final formData = FormData.fromMap(formMap);
+      debugPrint('Registering Facility with Image');
+      await _dio.post(ApiEndpoints.registerFacility, data: formData);
     } catch (e) {
       rethrow;
     }

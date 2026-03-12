@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
-import '../../core/network/api_endpoints.dart';
-import '../../core/network/dio_client.dart';
-import 'patient_models.dart';
+import 'package:vitaguard_app/core/network/api_endpoints.dart';
+import 'package:vitaguard_app/core/network/dio_client.dart';
+import 'package:vitaguard_app/patient/data/patient_models.dart';
 
 class PatientRepository {
   final Dio _dio = DioClient().dio;
@@ -55,6 +55,42 @@ class PatientRepository {
         data: formData,
       );
       return XRayResult.fromJson(response.data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<String> getCompanionCode() async {
+    try {
+      final response = await _dio.get(ApiEndpoints.generateCompanionCode);
+      return response.data['companion_code'] as String;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> uploadMedicalDocument(File documentFile) async {
+    try {
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          documentFile.path,
+          filename: documentFile.path.split('/').last,
+        ),
+      });
+
+      await _dio.post(
+        ApiEndpoints.patientDocuments,
+        data: formData,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<String> regenerateCompanionCode() async {
+    try {
+      final response = await _dio.post(ApiEndpoints.companionCodeRegenerate);
+      return response.data['companion_code'] as String;
     } catch (e) {
       rethrow;
     }

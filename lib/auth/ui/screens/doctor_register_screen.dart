@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vitaguard_app/auth/ui/auth_provider.dart';
@@ -21,6 +22,8 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
   final _phoneController = TextEditingController();
   final _genderController = TextEditingController();
   final _professionalIdController = TextEditingController();
+  File? _selectedIdCardImage;
+
   @override
   Widget build(BuildContext context) {
     return CreateAccountScreen(
@@ -66,14 +69,20 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
           'type': FieldType.gender,
         },
         {
-          'hint': 'Professional Association ID',
+          'hint': _selectedIdCardImage != null ? 'ID Card Selected' : 'Professional Association ID',
           'controller': _professionalIdController,
           'type': FieldType.navigation,
-          'onTap': () {
-            Navigator.push(
+          'onTap': () async {
+            final result = await Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => ProfessionalId()),
+              MaterialPageRoute(builder: (_) => ProfessionalId(initialImage: _selectedIdCardImage)),
             );
+            if (result != null && result is File) {
+              setState(() {
+                _selectedIdCardImage = result;
+                _professionalIdController.text = result.path.split('/').last;
+              });
+            }
           },
         },
       ],
@@ -95,6 +104,7 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
           password: _passwordController.text.trim(),
           phone: _phoneController.text.trim(),
           professionalId: _professionalIdController.text.trim(),
+          idCardImage: _selectedIdCardImage,
           gender: _genderController.text.trim().toLowerCase(),
           age: _ageController.text.trim(),
         );

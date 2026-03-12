@@ -176,6 +176,7 @@ async def create_facility(
     phone: str | None,
     address: str,
     facility_type: str,
+    record_image_url: str | None = None,
 ) -> User:
     """Register a new facility user."""
     user = User(
@@ -192,6 +193,7 @@ async def create_facility(
         user_id=user.id,
         address=address,
         facility_type=facility_type,
+        record_image_url=record_image_url,
     )
     db.add(profile)
     return user

@@ -42,12 +42,16 @@ class ApiEndpoints {
   static const String xrayHistory = "/patients/me/xray-results";
   static const String symptomLogs = "/patients/me/symptoms";
   static const String generateCompanionCode = "/patients/me/companion-code";
+  static const String companionCodeRegenerate = "/patients/me/companion-code/regenerate";
+  static const String patientDocuments = "/patients/me/documents";
 
   // Doctors
   static const String assignedPatients = "/doctors/patients";
   static const String patientMedicalData =
       "/doctors/patients"; // /doctors/patients/{patient_id}/medical-data
   static const String postFeedback = "/doctors/feedback";
+  static const String doctorIdCard = "/doctors/me/id-card";
+  static const String doctorVerificationStatus = "/doctors/me/verification-status";
 
   // Companions
   static const String linkPatient = "/companions/link";

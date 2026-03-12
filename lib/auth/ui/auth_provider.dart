@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../data/auth_repository.dart';
 import '../../core/network/dio_error_mapper.dart';
@@ -72,6 +73,7 @@ class AuthProvider with ChangeNotifier {
     required String password,
     required String phone,
     required String professionalId,
+    required File? idCardImage,
     String? gender,
     String? age,
   }) async {
@@ -86,6 +88,7 @@ class AuthProvider with ChangeNotifier {
         password: password,
         phone: phone,
         professionalId: professionalId,
+        idCardImage: idCardImage,
         gender: gender,
         age: age,
       );
@@ -133,6 +136,7 @@ class AuthProvider with ChangeNotifier {
     required String phone,
     required String address,
     required String facilityType,
+    required File? recordImage,
   }) async {
     _isLoading = true;
     _error = null;
@@ -146,6 +150,7 @@ class AuthProvider with ChangeNotifier {
         phone: phone,
         address: address,
         facilityType: facilityType,
+        recordImage: recordImage,
       );
       _currentUser = await _repository.getMe();
       _isLoading = false;

@@ -51,11 +51,36 @@ class _CompanionRegisterScreenState extends State<CompanionRegisterScreen> {
 
                       const SizedBox(height: 40),
 
-                      CustemText(
-                        text: "Create your Code",
-                        color: const Color(0xff003F6B),
-                        size: 22,
-                        weight: FontWeight.bold,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CustemText(
+                            text: "Enter Patient Code",
+                            color: const Color(0xff003F6B),
+                            size: 22,
+                            weight: FontWeight.bold,
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.info_outline, color: Color(0xff003F6B)),
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text("Companion Code"),
+                                  content: const Text(
+                                    "To monitor a patient's health, you must enter their unique 6-digit companion code.\n\nThe patient can find this code in their profile tab.",
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx),
+                                      child: const Text("Got it"),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 20),
 
@@ -66,7 +91,7 @@ class _CompanionRegisterScreenState extends State<CompanionRegisterScreen> {
 
                       const SizedBox(height: 20),
 
-                      AuthTextField(hint: "Enter Code", controller: codeCtrl),
+                      AuthTextField(hint: "Enter 6-digit Patient Code", controller: codeCtrl),
 
                       const SizedBox(height: 50),
 

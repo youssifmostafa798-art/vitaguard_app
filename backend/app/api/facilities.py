@@ -4,13 +4,32 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+    status,
+)
 from pydantic import BaseModel, Field
 
+from app.config import settings
 from app.dependencies import CurrentUser, DbSession, require_role
-from app.models.facility import Appointment, AppointmentStatus, FacilityOffer, MedicalTestUpload
+from app.models.facility import (
+    Appointment,
+    AppointmentStatus,
+    FacilityOffer,
+    MedicalTestUpload,
+)
 from app.models.user import UserRole
-from app.services.xray_service import save_uploaded_image
+from app.services.file_service import (
+    ALLOWED_DOCUMENT_EXTENSIONS,
+    ALLOWED_IMAGE_EXTENSIONS,
+    FileValidationError,
+    validate_and_save,
+)
 
 router = APIRouter(prefix="/facilities", tags=["Facilities"])
 
@@ -57,16 +76,12 @@ class AppointmentUpdateRequest(BaseModel):
     notes: str | None = None
 
 
-class OfferCreateRequest(BaseModel):
-    title: str = Field(..., min_length=1, max_length=200)
-    description: str = Field(..., min_length=1)
-
-
 class OfferResponse(BaseModel):
     id: str
     facility_id: str
     title: str
     description: str
+    image_url: str | None = None
     is_active: bool
     created_at: datetime
     model_config = {"from_attributes": True}
@@ -79,15 +94,46 @@ class OfferResponse(BaseModel):
 async def upload_medical_test(
     user: CurrentUser,
     db: DbSession,
-    test_type: str,
-    patient_id: str | None = None,
-    notes: str | None = None,
+    test_type: str = Form(...),
+    patient_id: str | None = Form(None),
+    patient_phone: str | None = Form(None),
+    notes: str | None = Form(None),
     file: UploadFile = File(...),
     _: None = Depends(_require_facility()),
 ):
     """Upload a medical test or report (per flowchart)."""
+
+    # Resolve patient_id via phone if not provided directly
+    if not patient_id and patient_phone:
+        from sqlalchemy import select
+        from app.models.user import User, PatientProfile
+        
+        result = await db.execute(
+            select(PatientProfile.id)
+            .join(User, User.id == PatientProfile.user_id)
+            .where(User.phone == patient_phone)
+        )
+        patient_id = result.scalar_one_or_none()
+        if not patient_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Patient with phone {patient_phone} not found"
+            )
+
     content = await file.read()
-    file_path = save_uploaded_image(content, file.filename or "test.pdf")
+
+    try:
+        file_path = validate_and_save(
+            content,
+            file.filename or "test.pdf",
+            subdirectory=f"lab_reports/{user.id}",
+            allowed_extensions=ALLOWED_DOCUMENT_EXTENSIONS,
+            max_bytes=settings.max_upload_bytes,
+        )
+    except FileValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
 
     upload = MedicalTestUpload(
         facility_id=user.id,
@@ -202,16 +248,35 @@ async def update_appointment(
 
 @router.post("/offers", response_model=OfferResponse, status_code=status.HTTP_201_CREATED)
 async def create_offer(
-    data: OfferCreateRequest,
     user: CurrentUser,
     db: DbSession,
+    title: str = Form(...),
+    description: str = Form(...),
+    image: UploadFile | None = File(None),
     _: None = Depends(_require_facility()),
 ):
-    """Create a medical offer."""
+    """Create a medical offer with optional image."""
+    image_url = None
+    if image and image.filename:
+        content = await image.read()
+        try:
+            image_url = validate_and_save(
+                content,
+                image.filename,
+                subdirectory=f"offer_images/{user.id}",
+                allowed_extensions=ALLOWED_IMAGE_EXTENSIONS,
+                max_bytes=settings.max_upload_bytes,
+            )
+        except FileValidationError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+            ) from e
+
     offer = FacilityOffer(
         facility_id=user.id,
-        title=data.title,
-        description=data.description,
+        title=title,
+        description=description,
+        image_url=image_url,
     )
     db.add(offer)
     await db.flush()

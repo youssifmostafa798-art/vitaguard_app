@@ -7,6 +7,8 @@ import 'package:vitaguard_app/companion/ui/companion_provider.dart';
 import 'package:vitaguard_app/facility/ui/facility_provider.dart';
 import 'package:vitaguard_app/onbording/ui/onbording_screen/onboarding_screen.dart';
 
+import 'package:vitaguard_app/core/network/health_provider.dart';
+
 void main() {
   runApp(
     MultiProvider(
@@ -16,6 +18,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => DoctorProvider()),
         ChangeNotifierProvider(create: (_) => CompanionProvider()),
         ChangeNotifierProvider(create: (_) => FacilityProvider()),
+        ChangeNotifierProvider(create: (_) => HealthProvider()),
       ],
       child: const MyApp(),
     ),

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../core/network/dio_client.dart';
@@ -6,19 +7,42 @@ class FacilityRepository {
   final Dio _dio = DioClient().dio;
 
   Future<void> uploadMedicalTest({
-    required String patientId,
+    String? patientId,
+    String? patientPhone,
     required String testType,
     required String filePath,
     String? notes,
   }) async {
     try {
       final formData = FormData.fromMap({
-        'patient_id': patientId,
+        if (patientId != null) 'patient_id': patientId,
+        if (patientPhone != null) 'patient_phone': patientPhone,
         'test_type': testType,
         'file': await MultipartFile.fromFile(filePath),
         'notes': notes,
       });
       await _dio.post(ApiEndpoints.facilityTests, data: formData);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> createOffer({
+    required String title,
+    required String description,
+    File? image,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'title': title,
+        'description': description,
+        if (image != null)
+          'image': await MultipartFile.fromFile(
+            image.path,
+            filename: image.path.split('/').last,
+          ),
+      });
+      await _dio.post(ApiEndpoints.facilityOffers, data: formData);
     } catch (e) {
       rethrow;
     }

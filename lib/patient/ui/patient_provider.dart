@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../../core/network/dio_error_mapper.dart';
-import '../data/patient_repository.dart';
-import '../data/patient_models.dart';
+import 'package:vitaguard_app/core/network/dio_error_mapper.dart';
+import 'package:vitaguard_app/patient/data/patient_repository.dart';
+import 'package:vitaguard_app/patient/data/patient_models.dart';
 
 class PatientProvider with ChangeNotifier {
   final PatientRepository _repository = PatientRepository();
@@ -16,6 +16,8 @@ class PatientProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   XRayResult? get lastXRayResult => _lastXRayResult;
+  String? _companionCode;
+  String? get companionCode => _companionCode;
 
   Future<bool> submitDailyReport(DailyReport report) async {
     _isLoading = true;
@@ -72,7 +74,41 @@ class PatientProvider with ChangeNotifier {
     }
   }
 
+  Future<void> fetchCompanionCode() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _companionCode = await _repository.getCompanionCode();
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _error = _handleError(e);
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   String _handleError(dynamic e) {
     return DioErrorMapper.map(e);
+  }
+
+  Future<bool> regenerateCompanionCode() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _companionCode = await _repository.regenerateCompanionCode();
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = _handleError(e);
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
   }
 }

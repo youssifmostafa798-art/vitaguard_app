@@ -8,12 +8,22 @@ import string
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, MetaData, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
+convention = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
 
 class Base(DeclarativeBase):
+    """Shared declarative base for all models."""
+
+    metadata = MetaData(naming_convention=convention)
     """Shared declarative base for all models."""
 
 
@@ -24,6 +34,14 @@ class UserRole(str, enum.Enum):
     DOCTOR = "doctor"
     COMPANION = "companion"
     FACILITY = "facility"
+
+
+class VerificationStatus(str, enum.Enum):
+    """Verification lifecycle for doctors and facilities."""
+
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
 
 
 def _generate_uuid() -> str:
@@ -63,7 +81,11 @@ class User(Base):
         primaryjoin="User.id == PatientProfile.user_id",
     )
     doctor_profile: Mapped[DoctorProfile | None] = relationship(
-        "DoctorProfile", back_populates="user", uselist=False, cascade="all, delete-orphan"
+        "DoctorProfile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+        primaryjoin="User.id == DoctorProfile.user_id",
     )
     companion_profile: Mapped[CompanionProfile | None] = relationship(
         "CompanionProfile",
@@ -112,7 +134,7 @@ class PatientProfile(Base):
 
 
 class DoctorProfile(Base):
-    """Doctor-specific fields (age, gender, professional_id)."""
+    """Doctor-specific fields (age, gender, professional_id, verification)."""
 
     __tablename__ = "doctor_profiles"
 
@@ -124,7 +146,19 @@ class DoctorProfile(Base):
     gender: Mapped[str] = mapped_column(String(10), nullable=False)
     professional_id: Mapped[str] = mapped_column(String(100), nullable=False)
 
-    user: Mapped[User] = relationship("User", back_populates="doctor_profile")
+    # ── Verification workflow ──────────────────────────────
+    id_card_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    verification_status: Mapped[VerificationStatus] = mapped_column(
+        Enum(VerificationStatus), default=VerificationStatus.PENDING
+    )
+    reviewed_by: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("users.id"), nullable=True
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    user: Mapped[User] = relationship(
+        "User", back_populates="doctor_profile", foreign_keys=[user_id]
+    )
 
 
 class CompanionProfile(Base):
@@ -147,7 +181,7 @@ class CompanionProfile(Base):
 
 
 class FacilityProfile(Base):
-    """Facility-specific fields (address, type, record image)."""
+    """Facility-specific fields (address, type, record image, verification)."""
 
     __tablename__ = "facility_profiles"
 
@@ -158,6 +192,9 @@ class FacilityProfile(Base):
     address: Mapped[str] = mapped_column(String(500), nullable=False)
     facility_type: Mapped[str] = mapped_column(String(100), nullable=False)
     record_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    verification_status: Mapped[VerificationStatus] = mapped_column(
+        Enum(VerificationStatus), default=VerificationStatus.PENDING
+    )
 
     user: Mapped[User] = relationship("User", back_populates="facility_profile")
 

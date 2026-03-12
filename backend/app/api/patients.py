@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from sqlalchemy import select
 
 from app.config import settings
 from app.dependencies import CurrentUser, DbSession, require_role
+from app.models.document import MedicalDocument
 from app.models.user import UserRole
 from app.schemas.medical import (
     DailyReportCreateRequest,
@@ -16,6 +18,11 @@ from app.schemas.medical import (
 )
 from app.schemas.user import PatientProfileResponse, PatientUpdateRequest
 from app.services import medical_service, user_service, xray_service
+from app.services.file_service import (
+    ALLOWED_DOCUMENT_EXTENSIONS,
+    FileValidationError,
+    validate_and_save,
+)
 
 router = APIRouter(prefix="/patients", tags=["Patients"])
 
@@ -60,6 +67,30 @@ async def get_companion_code(
     if profile is None:
         raise HTTPException(status_code=404, detail="Patient profile not found")
     return {"companion_code": profile.companion_code}
+
+
+@router.post("/me/companion-code/regenerate")
+async def regenerate_companion_code(
+    user: CurrentUser,
+    db: DbSession,
+    _: None = Depends(_require_patient()),
+):
+    """Regenerate the companion code (invalidates the old one)."""
+    profile = await user_service.get_patient_profile(db, user.id)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="Patient profile not found")
+
+    import secrets
+    import string
+
+    alphabet = string.ascii_letters + string.digits
+    profile.companion_code = "".join(secrets.choice(alphabet) for _ in range(6))
+    await db.flush()
+
+    return {
+        "message": "Companion code regenerated",
+        "companion_code": profile.companion_code,
+    }
 
 
 # ── Medical History ───────────────────────────────────────
@@ -220,3 +251,89 @@ async def list_xray_results(
         raise HTTPException(status_code=404, detail="Patient profile not found")
     results = await medical_service.get_xray_results(db, profile.id)
     return [XRayResultResponse.model_validate(r) for r in results]
+
+
+# ── Medical Document Upload ──────────────────────────────
+
+
+@router.post(
+    "/me/documents",
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_document(
+    user: CurrentUser,
+    db: DbSession,
+    file: UploadFile = File(...),
+    _: None = Depends(_require_patient()),
+):
+    """Upload a medical document (PDF, lab result, scan image)."""
+    profile = await user_service.get_patient_profile(db, user.id)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="Patient profile not found")
+
+    content = await file.read()
+    original_name = file.filename or "document"
+
+    try:
+        file_path = validate_and_save(
+            content,
+            original_name,
+            subdirectory=f"patient_documents/{profile.id}",
+            allowed_extensions=ALLOWED_DOCUMENT_EXTENSIONS,
+            max_bytes=settings.max_upload_bytes,
+        )
+    except FileValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )
+
+    from pathlib import Path
+
+    ext = Path(original_name).suffix.lower()
+    doc_type = "pdf" if ext == ".pdf" else "image"
+
+    doc = MedicalDocument(
+        patient_id=profile.id,
+        file_url=file_path,
+        document_type=doc_type,
+        original_filename=original_name,
+    )
+    db.add(doc)
+    await db.flush()
+
+    return {
+        "id": doc.id,
+        "file_url": doc.file_url,
+        "document_type": doc.document_type,
+        "original_filename": doc.original_filename,
+        "uploaded_at": doc.uploaded_at.isoformat() if doc.uploaded_at else None,
+    }
+
+
+@router.get("/me/documents")
+async def list_documents(
+    user: CurrentUser,
+    db: DbSession,
+    _: None = Depends(_require_patient()),
+):
+    """List all uploaded medical documents."""
+    profile = await user_service.get_patient_profile(db, user.id)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="Patient profile not found")
+
+    result = await db.execute(
+        select(MedicalDocument)
+        .where(MedicalDocument.patient_id == profile.id)
+        .order_by(MedicalDocument.uploaded_at.desc())
+    )
+    docs = result.scalars().all()
+    return [
+        {
+            "id": d.id,
+            "file_url": d.file_url,
+            "document_type": d.document_type,
+            "original_filename": d.original_filename,
+            "uploaded_at": d.uploaded_at.isoformat() if d.uploaded_at else None,
+        }
+        for d in docs
+    ]

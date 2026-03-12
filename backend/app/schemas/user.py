@@ -49,6 +49,8 @@ class DoctorProfileResponse(BaseModel):
     age: int
     gender: str
     professional_id: str
+    verification_status: str = "pending"
+    id_card_image_url: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -69,5 +71,6 @@ class FacilityProfileResponse(BaseModel):
     address: str
     facility_type: str
     record_image_url: str | None
+    verification_status: str = "pending"
 
     model_config = {"from_attributes": True}

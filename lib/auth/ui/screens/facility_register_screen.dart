@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vitaguard_app/auth/ui/auth_provider.dart';
@@ -21,6 +22,8 @@ class _FacilityRegisterScreenState extends State<FacilityRegisterScreen> {
   final _phoneController = TextEditingController();
   final _typeController = TextEditingController();
   final _attachimageController = TextEditingController();
+  File? _selectedRecordImage;
+
   @override
   Widget build(BuildContext context) {
     return CreateAccountScreen(
@@ -66,14 +69,20 @@ class _FacilityRegisterScreenState extends State<FacilityRegisterScreen> {
           'type': FieldType.normal,
         },
         {
-          'hint': 'Attach image of the record',
+          'hint': _selectedRecordImage != null ? 'Image Selected' : 'Attach image of the record',
           'controller': _attachimageController,
           'type': FieldType.navigation,
-          'onTap': () {
-            Navigator.push(
+          'onTap': () async {
+            final result = await Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => ImageOfTheRecord()),
+              MaterialPageRoute(builder: (_) => ImageOfTheRecord(initialImage: _selectedRecordImage)),
             );
+            if (result != null && result is File) {
+              setState(() {
+                _selectedRecordImage = result;
+                _attachimageController.text = result.path.split('/').last;
+              });
+            }
           },
         },
       ],
@@ -97,6 +106,7 @@ class _FacilityRegisterScreenState extends State<FacilityRegisterScreen> {
           phone: _phoneController.text.trim(),
           address: _addressController.text.trim(),
           facilityType: _typeController.text.trim(),
+          recordImage: _selectedRecordImage,
         );
 
         if (success) {

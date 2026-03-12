@@ -49,7 +49,7 @@ List<CategoryModel> homeCategoriesPatient(
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => CompanionCode(code: "TqS78T", onChangeCode: () {}),
+            builder: (_) => const CompanionCode(),
           ),
         );
       },

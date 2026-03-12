@@ -1,21 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
+import 'package:provider/provider.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/core/simple_buttom.dart';
 import 'package:vitaguard_app/core/simple_header.dart';
+import '../../ui/patient_provider.dart';
 
-class CompanionCode extends StatelessWidget {
-  final String code;
-  final VoidCallback? onBack;
-  final VoidCallback? onChangeCode;
+class CompanionCode extends StatefulWidget {
+  const CompanionCode({super.key});
 
-  const CompanionCode({
-    super.key,
-    required this.code,
-    this.onBack,
-    this.onChangeCode,
-  });
+  @override
+  State<CompanionCode> createState() => _CompanionCodeState();
+}
+
+class _CompanionCodeState extends State<CompanionCode> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<PatientProvider>().fetchCompanionCode();
+    });
+  }
+
+  Future<void> _regenerateCode() async {
+    final success = await context.read<PatientProvider>().regenerateCompanionCode();
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Companion code regenerated successfully")),
+      );
+    }
+  }
+
+  void _copyToClipboard(String code) {
+    Clipboard.setData(ClipboardData(text: code));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Code copied to clipboard")),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,52 +48,80 @@ class CompanionCode extends StatelessWidget {
         child: AppBackground(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Gap(10),
+            child: Consumer<PatientProvider>(
+              builder: (context, patient, _) {
+                final displayCode = patient.companionCode ?? "......";
+                
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Gap(10),
+                    const Gap(40),
 
-                Gap(40),
+                    CustemText(
+                      text: "Code",
+                      size: 18,
+                      color: const Color(0xff0E3C63),
+                      weight: FontWeight.bold,
+                    ),
 
-                ///  Code Label
-                CustemText(
-                  text: "Code",
-                  size: 18,
-                  color: Color(0xff0E3C63),
-                  weight: FontWeight.bold,
-                ),
+                    const Gap(10),
 
-                Gap(10),
+                    GestureDetector(
+                      onLongPress: () => _copyToClipboard(displayCode),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(25),
+                          border: Border.all(color: const Color(0xff0E3C63)),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: CustemText(
+                                text: displayCode,
+                                size: 24,
+                                color: Colors.black,
+                                weight: FontWeight.w700,
+                              ),
+                            ),
+                            if (patient.isLoading)
+                              const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            else
+                              IconButton(
+                                icon: const Icon(Icons.copy, size: 20, color: Color(0xff0E3C63)),
+                                onPressed: () => _copyToClipboard(displayCode),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
 
-                ///  Code Field (Read Only)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(25),
-                    border: Border.all(color: const Color(0xff0E3C63)),
-                  ),
-                  child: CustemText(
-                    text: code,
-                    size: 16,
-                    color: Colors.black,
-                    weight: FontWeight.w600,
-                  ),
-                ),
+                    const Gap(30),
 
-                Gap(30),
-
-                ///  Change Code Button
-                SimpleButtom(
-                  text: "Change Code",
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
+                    SimpleButtom(
+                      text: patient.isLoading ? "Regenerating..." : "Change Code",
+                      onTap: patient.isLoading ? null : _regenerateCode,
+                    ),
+                    
+                    if (patient.error != null) ...[
+                      const Gap(10),
+                      Text(
+                        patient.error!,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ],
+                  ],
+                );
+              },
             ),
           ),
         ),

@@ -2,8 +2,16 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import (
+    APIRouter,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+    status,
+)
 from jose import JWTError
+from pydantic import EmailStr
 
 from app.dependencies import CurrentUser, DbSession
 from app.schemas.auth import (
@@ -23,6 +31,12 @@ from app.services.auth_service import (
     decode_token,
     verify_password,
 )
+from app.services.file_service import (
+    ALLOWED_IMAGE_EXTENSIONS,
+    FileValidationError,
+    validate_and_save,
+)
+from app.config import settings
 from app.services.user_service import (
     create_companion,
     create_doctor,
@@ -104,22 +118,49 @@ async def register_companion(data: CompanionRegisterRequest, db: DbSession):
 @router.post(
     "/register/facility", response_model=TokenResponse, status_code=status.HTTP_201_CREATED
 )
-async def register_facility(data: FacilityRegisterRequest, db: DbSession):
-    """Register a new facility account."""
-    existing = await get_user_by_email(db, data.email)
+async def register_facility(
+    db: DbSession,
+    name: str = Form(..., min_length=2, max_length=100),
+    email: EmailStr = Form(...),
+    password: str = Form(..., min_length=8),
+    phone: str = Form(..., min_length=5, max_length=20),
+    address: str = Form(..., min_length=5, max_length=500),
+    facility_type: str = Form(..., min_length=2, max_length=100),
+    record_image: UploadFile | None = File(None),
+):
+    """Register a new facility account (with optional image)."""
+    existing = await get_user_by_email(db, email)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Email already registered",
         )
+
+    record_image_url = None
+    if record_image and record_image.filename:
+        content = await record_image.read()
+        try:
+            record_image_url = validate_and_save(
+                content,
+                record_image.filename,
+                subdirectory="facility_records",
+                allowed_extensions=ALLOWED_IMAGE_EXTENSIONS,
+                max_bytes=settings.max_upload_bytes,
+            )
+        except FileValidationError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+            )
+
     user = await create_facility(
         db,
-        name=data.name,
-        email=data.email,
-        password=data.password,
-        phone=data.phone,
-        address=data.address,
-        facility_type=data.facility_type,
+        name=name,
+        email=email,
+        password=password,
+        phone=phone,
+        address=address,
+        facility_type=facility_type,
+        record_image_url=record_image_url,
     )
     return create_token_pair(user.id, user.role.value)
 
