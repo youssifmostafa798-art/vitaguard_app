@@ -6,9 +6,13 @@ Secure healthcare backend with AI-powered X-ray analysis.
 
 from __future__ import annotations
 
-import structlog
+import logging
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 
+import structlog
+import uvicorn
 from fastapi import FastAPI
 
 from app.api import auth, chat, companions, doctors, facilities, health, patients
@@ -16,60 +20,36 @@ from app.config import settings
 from app.logging_config import setup_logging
 from app.middleware import setup_middleware
 
-
-def run_migrations():
-    """Run Alembic migrations programmatically."""
-    from alembic import command
-    from alembic.config import Config
-
-    # Get the directory of the current file (app/main.py)
-    # The alembic.ini is in the parent directory (backend/alembic.ini)
-    from pathlib import Path
-
-    backend_dir = Path(__file__).resolve().parent.parent
-    ini_path = backend_dir / "alembic.ini"
-
-    if not ini_path.exists():
-        return
-
-    logger.info("Auto-applying database migrations...")
-    cfg = Config(str(ini_path))
-    # Ensure the script_location is interpreted correctly relative to backend root
-    cfg.set_main_option("script_location", str(backend_dir / "alembic"))
-    command.upgrade(cfg, "head")
-    logger.info("Database migrations complete")
-
 # Initialize structured logging
 setup_logging(settings.ENVIRONMENT, settings.LOG_LEVEL)
 logger = structlog.get_logger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     """Application startup / shutdown lifecycle."""
     # ── Startup ───────────────────────────────────────────
     logger.info("Starting VitaGuard Backend", env=settings.ENVIRONMENT)
 
     # Create database tables (dev only — fallback if migrations are disabled)
-    if settings.AUTO_APPLY_MIGRATIONS:
+    if not settings.is_production and settings.AUTO_APPLY_MIGRATIONS:
         try:
-            run_migrations()
-        except Exception:
-            logger.exception("Programmatic migration failed — attempting direct sync")
-            if not settings.is_production:
-                from app.database import engine
-                from app.models import Base
+            from app.database import engine
+            from app.models import Base
 
-                async with engine.begin() as conn:
-                    await conn.run_sync(Base.metadata.create_all)
-                logger.info("Database tables created (direct sync fallback)")
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            logger.info("Database tables verified/created via direct sync")
+        except Exception:
+            # Keep broader catch here as this is a fallback startup mechanism
+            logger.exception("Database sync failed during startup")
 
     # Load TFLite model
     try:
         from app.services.xray_service import load_model
 
         load_model()
-    except Exception:
+    except (ImportError, RuntimeError, ValueError):
         logger.exception("Failed to load TFLite model — X-ray inference disabled")
 
     yield
@@ -106,3 +86,28 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+
+
+def run_server() -> None:
+    """Launch the API server with synchronized configuration."""
+    # Ensure project root is in path for module discovery
+    project_root = Path(__file__).resolve().parent.parent
+    if str(project_root) not in sys.path:
+        sys.path.append(str(project_root))
+
+    workers = settings.UVICORN_WORKERS
+    if settings.UVICORN_RELOAD and workers > 1:
+        workers = 1
+
+    uvicorn.run(
+        "app.main:app",
+        host=settings.SERVER_HOST,
+        port=settings.SERVER_PORT,
+        workers=workers,
+        reload=settings.UVICORN_RELOAD,
+        log_level=settings.LOG_LEVEL.lower(),
+    )
+
+
+if __name__ == "__main__":
+    run_server()
