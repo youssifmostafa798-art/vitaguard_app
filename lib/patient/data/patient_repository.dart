@@ -50,7 +50,7 @@ class PatientRepository {
         .eq('patient_id', _uid)
         .limit(1);
 
-    if (data is List && data.isNotEmpty) {
+    if (data.isNotEmpty) {
       return MedicalHistory.fromMap(
         Map<String, dynamic>.from(data.first as Map),
       );
@@ -108,6 +108,15 @@ class PatientRepository {
   }
 
   Future<void> uploadMedicalDocument(File documentFile) async {
+    final size = await documentFile.length();
+    if (size > 10 * 1024 * 1024) {
+      throw StateError('File too large. Maximum size is 10 MB.');
+    }
+    final contentType = _contentTypeForFile(documentFile.path);
+    if (contentType == 'application/octet-stream') {
+      throw StateError('Invalid file type. Please upload a JPEG, PNG, or PDF.');
+    }
+
     await _client.functions.invoke(
       'upload_medical_record',
       body: {
@@ -123,7 +132,7 @@ class PatientRepository {
   Future<String> getCompanionCode() async {
     final data =
         await _client.from('patients').select('companion_code').eq('id', _uid).limit(1);
-    if (data is List && data.isNotEmpty) {
+    if (data.isNotEmpty) {
       final code = data.first['companion_code'];
       if (code is String && code.isNotEmpty) {
         return code;
@@ -170,7 +179,7 @@ class PatientRepository {
           .select('id')
           .eq('companion_code', code)
           .limit(1);
-      if (existing is List && existing.isEmpty) {
+      if (existing.isEmpty) {
         return code;
       }
     }

@@ -28,12 +28,20 @@ class FacilityRepository {
           .eq('phone', patientPhone)
           .eq('role', 'patient')
           .limit(1);
-      if (userSnapshot is List && userSnapshot.isNotEmpty) {
+      if (userSnapshot.isNotEmpty) {
         resolvedPatientId = userSnapshot.first['id'] as String?;
       }
     }
 
     final file = File(filePath);
+    final size = await file.length();
+    if (size > 10 * 1024 * 1024) {
+      throw StateError('File too large. Maximum size is 10 MB.');
+    }
+    final contentType = _contentTypeForFile(file.path);
+    if (contentType == 'application/octet-stream') {
+      throw StateError('Invalid file type. Please upload a JPEG, PNG, or PDF.');
+    }
 
     await _client.functions.invoke(
       'upload_lab_report',
@@ -56,6 +64,15 @@ class FacilityRepository {
     File? image,
   }) async {
     if (image != null) {
+      final size = await image.length();
+      if (size > 10 * 1024 * 1024) {
+        throw StateError('Image too large. Maximum size is 10 MB.');
+      }
+      final contentType = _contentTypeForFile(image.path);
+      if (contentType == 'application/octet-stream') {
+        throw StateError('Invalid file type. Please upload a JPEG, PNG, or PDF.');
+      }
+
       await _client.functions.invoke(
         'upload_lab_offer',
         body: {
@@ -86,7 +103,7 @@ class FacilityRepository {
         .eq('facility_id', _uid)
         .order('scheduled_at', ascending: false);
 
-    return snapshot is List ? snapshot : <dynamic>[];
+    return snapshot;
   }
 
   String _basename(String path) {

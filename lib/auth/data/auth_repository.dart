@@ -96,6 +96,16 @@ class AuthRepository {
     });
 
     if (idCardImage != null) {
+      final size = await idCardImage.length();
+      if (size > 10 * 1024 * 1024) {
+        throw StateError('Image too large. Maximum size is 10 MB.');
+      }
+      final ext = _fileExtension(idCardImage);
+      final contentType = _contentTypeForExtension(ext);
+      if (contentType == null) {
+        throw StateError('Invalid file type. Please upload a JPEG, PNG, or PDF.');
+      }
+
       await _client.functions.invoke(
         'upload_doctor_verification',
         body: {
@@ -121,7 +131,7 @@ class AuthRepository {
         .eq('companion_code', companionCode)
         .limit(1);
 
-    final patientId = (patientSnapshot is List && patientSnapshot.isNotEmpty)
+    final patientId = patientSnapshot.isNotEmpty
         ? patientSnapshot.first['id'] as String?
         : null;
     if (patientId == null) {
@@ -171,14 +181,22 @@ class AuthRepository {
 
     String? recordPath;
     if (recordImage != null) {
+      final size = await recordImage.length();
+      if (size > 10 * 1024 * 1024) {
+        throw StateError('File too large. Maximum size is 10 MB.');
+      }
       final ext = _fileExtension(recordImage);
+      final contentType = _contentTypeForExtension(ext);
+      if (contentType == null) {
+        throw StateError('Invalid file type. Please upload a JPEG, PNG, or PDF.');
+      }
       final path = '$uid/record$ext';
       await _client.storage.from('facility-records').upload(
             path,
             recordImage,
             fileOptions: FileOptions(
               upsert: true,
-              contentType: _contentTypeForExtension(ext),
+              contentType: contentType,
             ),
           );
       recordPath = path;
@@ -207,7 +225,7 @@ class AuthRepository {
     final uid = _supabase.currentUid;
     final profileSnapshot =
         await _client.from('profiles').select().eq('id', uid).limit(1);
-    final profile = (profileSnapshot is List && profileSnapshot.isNotEmpty)
+    final profile = profileSnapshot.isNotEmpty
         ? Map<String, dynamic>.from(profileSnapshot.first as Map)
         : <String, dynamic>{};
     profile['uid'] = uid;
@@ -216,25 +234,25 @@ class AuthRepository {
     if (role == UserRole.patient.value) {
       final patientSnapshot =
           await _client.from('patients').select().eq('id', uid).limit(1);
-      if (patientSnapshot is List && patientSnapshot.isNotEmpty) {
+      if (patientSnapshot.isNotEmpty) {
         profile.addAll(Map<String, dynamic>.from(patientSnapshot.first as Map));
       }
     } else if (role == UserRole.doctor.value) {
       final doctorSnapshot =
           await _client.from('doctors').select().eq('id', uid).limit(1);
-      if (doctorSnapshot is List && doctorSnapshot.isNotEmpty) {
+      if (doctorSnapshot.isNotEmpty) {
         profile.addAll(Map<String, dynamic>.from(doctorSnapshot.first as Map));
       }
     } else if (role == UserRole.companion.value) {
       final companionSnapshot =
           await _client.from('companions').select().eq('id', uid).limit(1);
-      if (companionSnapshot is List && companionSnapshot.isNotEmpty) {
+      if (companionSnapshot.isNotEmpty) {
         profile.addAll(Map<String, dynamic>.from(companionSnapshot.first as Map));
       }
     } else if (role == UserRole.facility.value) {
       final facilitySnapshot =
           await _client.from('facilities').select().eq('id', uid).limit(1);
-      if (facilitySnapshot is List && facilitySnapshot.isNotEmpty) {
+      if (facilitySnapshot.isNotEmpty) {
         profile.addAll(Map<String, dynamic>.from(facilitySnapshot.first as Map));
       }
     }
@@ -277,7 +295,7 @@ class AuthRepository {
             .select('id')
             .eq('companion_code', code)
             .limit(1);
-        if (existing is List && existing.isEmpty) {
+        if (existing.isEmpty) {
           return code;
         }
       } catch (_) {

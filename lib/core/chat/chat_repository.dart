@@ -66,9 +66,7 @@ class ChatRepository {
         .select('conversation_id')
         .eq('user_id', _uid);
 
-    final ids = rows is List
-        ? rows.map((row) => row['conversation_id'] as String).toList()
-        : <String>[];
+    final ids = rows.map((row) => row['conversation_id'] as String).toList();
 
     return _loadPreviews(ids);
   }
@@ -79,26 +77,22 @@ class ChatRepository {
     final conversations = await _client
         .from('conversations')
         .select()
-        .in_('id', conversationIds);
+        .inFilter('id', conversationIds);
 
     final participants = await _client
         .from('conversation_participants')
         .select('conversation_id, user_id, profiles(name, role)')
-        .in_('conversation_id', conversationIds)
+        .inFilter('conversation_id', conversationIds)
         .neq('user_id', _uid);
 
     final convMap = <String, Map<String, dynamic>>{};
-    if (conversations is List) {
-      for (final row in conversations) {
-        convMap[row['id'] as String] =
-            Map<String, dynamic>.from(row as Map);
-      }
+    for (final row in conversations) {
+      convMap[row['id'] as String] = Map<String, dynamic>.from(row as Map);
     }
 
     final previews = <ChatPreview>[];
-    if (participants is List) {
-      for (final row in participants) {
-        final data = Map<String, dynamic>.from(row as Map);
+    for (final row in participants) {
+      final data = Map<String, dynamic>.from(row as Map);
         final convId = data['conversation_id'] as String;
         final profile = data['profiles'] as Map?;
         final name = profile?['name']?.toString() ?? 'Unknown';
@@ -117,7 +111,6 @@ class ChatRepository {
           sender: sender,
           status: MessageStatus.active,
         ));
-      }
     }
 
     return previews;

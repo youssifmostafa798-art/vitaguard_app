@@ -16,17 +16,15 @@ class DoctorRepository {
         .select('id, gender, age, profiles(name)')
         .eq('assigned_doctor_id', _uid);
 
-    if (patients is List) {
-      for (final entry in patients) {
-        final data = Map<String, dynamic>.from(entry as Map);
-        final profile = data['profiles'] as Map?;
-        results.add({
-          'patient_id': data['id'],
-          'name': profile?['name'] ?? 'Unknown',
-          'age': data['age'],
-          'gender': data['gender'],
-        });
-      }
+    for (final entry in patients) {
+      final data = Map<String, dynamic>.from(entry as Map);
+      final profile = data['profiles'] as Map?;
+      results.add({
+        'patient_id': data['id'],
+        'name': profile?['name'] ?? 'Unknown',
+        'age': data['age'],
+        'gender': data['gender'],
+      });
     }
 
     return results;
@@ -48,7 +46,7 @@ class DoctorRepository {
   Future<Map<String, dynamic>> getVerificationStatus() async {
     final data =
         await _client.from('doctors').select().eq('id', _uid).limit(1);
-    if (data is List && data.isNotEmpty) {
+    if (data.isNotEmpty) {
       final row = Map<String, dynamic>.from(data.first as Map);
       return {
         'verificationStatus': row['verification_status'] ?? 'pending',

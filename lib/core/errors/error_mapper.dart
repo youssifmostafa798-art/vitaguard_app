@@ -24,10 +24,8 @@ class ErrorMapper {
           : 'Storage error (${error.statusCode}).';
     }
 
-    if (error is FunctionsException) {
-      return error.message.isNotEmpty
-          ? error.message
-          : 'Function error (${error.status}).';
+    if (error is FunctionException) {
+      return error.reasonPhrase ?? 'Function error (${error.status}).';
     }
 
     return error.toString();
