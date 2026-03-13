@@ -318,3 +318,55 @@ create policy "lab reports write" on storage.objects for insert with check (buck
 
 create policy "lab offers read" on storage.objects for select using (bucket_id = 'lab-offers');
 create policy "lab offers write" on storage.objects for insert with check (bucket_id = 'lab-offers' and public.is_owner(split_part(name, '/', 1)::uuid));
+-- ==========================================
+-- 4. Auth Triggers for Auto-Profile Creation
+-- ==========================================
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (id, role, name, email, phone)
+  values (
+    new.id, 
+    coalesce(new.raw_user_meta_data->>'role', 'patient'), 
+    new.raw_user_meta_data->>'name', 
+    new.email,
+    new.raw_user_meta_data->>'phone'
+  );
+
+  if (new.raw_user_meta_data->>'role' = 'patient') then
+    insert into public.patients (id, gender, age, companion_code)
+    values (
+      new.id,
+      coalesce(new.raw_user_meta_data->>'gender', 'male'),
+      (coalesce(new.raw_user_meta_data->>'age', '20'))::int,
+      new.raw_user_meta_data->>'companion_code'
+    );
+  elsif (new.raw_user_meta_data->>'role' = 'doctor') then
+    insert into public.doctors (id, gender, age, professional_id)
+    values (
+      new.id,
+      coalesce(new.raw_user_meta_data->>'gender', 'male'),
+      (coalesce(new.raw_user_meta_data->>'age', '30'))::int,
+      new.raw_user_meta_data->>'professional_id'
+    );
+  elsif (new.raw_user_meta_data->>'role' = 'companion') then
+    insert into public.companions (id, linked_patient_id)
+    values (new.id, (new.raw_user_meta_data->>'linked_patient_id')::uuid);
+  elsif (new.raw_user_meta_data->>'role' = 'facility') then
+    insert into public.facilities (id, address, facility_type)
+    values (
+      new.id,
+      new.raw_user_meta_data->>'address',
+      new.raw_user_meta_data->>'facility_type'
+    );
+  end if;
+
+  return new;
+end;
+$$ language plpgsql security definer;
+
+-- Trigger to call handle_new_user on auth.users insert
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();

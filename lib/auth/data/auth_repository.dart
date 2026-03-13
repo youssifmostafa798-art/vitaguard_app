@@ -24,34 +24,19 @@ class AuthRepository {
     String? gender,
     String? age,
   }) async {
-    final response = await _client.auth.signUp(email: email, password: password);
-    final user = response.user;
-    if (user == null) {
-      throw StateError('Account created. Please verify your email to continue.');
-    }
-
-    final uid = user.id;
     final companionCode = await _resolveCompanionCode();
-
-    await _client.from('profiles').insert({
-      'id': uid,
-      'role': UserRole.patient.value,
-      'name': fullName,
-      'email': email,
-      'phone': phone,
-      'is_active': true,
-      'is_verified': false,
-    });
-
-    await _client.from('patients').insert({
-      'id': uid,
-      'gender': (gender == null || gender.trim().isEmpty)
-          ? 'male'
-          : gender.trim().toLowerCase(),
-      'age': int.tryParse(age ?? '20') ?? 20,
-      'companion_code': companionCode,
-      'assigned_doctor_id': null,
-    });
+    await _client.auth.signUp(
+      email: email,
+      password: password,
+      data: {
+        'role': UserRole.patient.value,
+        'name': fullName,
+        'phone': phone,
+        'gender': (gender == null || gender.trim().isEmpty) ? 'male' : gender.trim().toLowerCase(),
+        'age': age ?? '20',
+        'companion_code': companionCode,
+      },
+    );
   }
 
   Future<void> registerDoctor({
@@ -64,38 +49,21 @@ class AuthRepository {
     String? gender,
     String? age,
   }) async {
-    final response = await _client.auth.signUp(email: email, password: password);
+    final response = await _client.auth.signUp(
+      email: email,
+      password: password,
+      data: {
+        'role': UserRole.doctor.value,
+        'name': fullName,
+        'phone': phone,
+        'gender': (gender == null || gender.trim().isEmpty) ? 'male' : gender.trim().toLowerCase(),
+        'age': age ?? '30',
+        'professional_id': professionalId,
+      },
+    );
     final user = response.user;
-    if (user == null) {
-      throw StateError('Account created. Please verify your email to continue.');
-    }
 
-    final uid = user.id;
-
-    await _client.from('profiles').insert({
-      'id': uid,
-      'role': UserRole.doctor.value,
-      'name': fullName,
-      'email': email,
-      'phone': phone,
-      'is_active': true,
-      'is_verified': false,
-    });
-
-    await _client.from('doctors').insert({
-      'id': uid,
-      'gender': (gender == null || gender.trim().isEmpty)
-          ? 'male'
-          : gender.trim().toLowerCase(),
-      'age': int.tryParse(age ?? '30') ?? 30,
-      'professional_id': professionalId,
-      'verification_status': 'pending',
-      'id_card_path': null,
-      'reviewed_by': null,
-      'reviewed_at': null,
-    });
-
-    if (idCardImage != null) {
+    if (user != null && idCardImage != null) {
       final size = await idCardImage.length();
       if (size > 10 * 1024 * 1024) {
         throw StateError('Image too large. Maximum size is 10 MB.');
@@ -109,10 +77,9 @@ class AuthRepository {
       await _client.functions.invoke(
         'upload_doctor_verification',
         body: {
-          'doctor_id': uid,
+          'doctor_id': user.id,
           'filename': _basename(idCardImage.path),
-          'content_type': _contentTypeForExtension(_fileExtension(idCardImage)) ??
-              'application/octet-stream',
+          'content_type': contentType,
           'data': base64Encode(await idCardImage.readAsBytes()),
         },
       );
@@ -138,28 +105,15 @@ class AuthRepository {
       throw StateError('Invalid companion code.');
     }
 
-    final response = await _client.auth.signUp(email: email, password: password);
-    final user = response.user;
-    if (user == null) {
-      throw StateError('Account created. Please verify your email to continue.');
-    }
-
-    final uid = user.id;
-
-    await _client.from('profiles').insert({
-      'id': uid,
-      'role': UserRole.companion.value,
-      'name': name,
-      'email': email,
-      'phone': null,
-      'is_active': true,
-      'is_verified': true,
-    });
-
-    await _client.from('companions').insert({
-      'id': uid,
-      'linked_patient_id': patientId,
-    });
+    await _client.auth.signUp(
+      email: email,
+      password: password,
+      data: {
+        'role': UserRole.companion.value,
+        'name': name,
+        'linked_patient_id': patientId,
+      },
+    );
   }
 
   Future<void> registerFacility({
@@ -171,16 +125,20 @@ class AuthRepository {
     required String facilityType,
     required File? recordImage,
   }) async {
-    final response = await _client.auth.signUp(email: email, password: password);
+    final response = await _client.auth.signUp(
+      email: email,
+      password: password,
+      data: {
+        'role': UserRole.facility.value,
+        'name': name,
+        'phone': phone,
+        'address': address,
+        'facility_type': facilityType,
+      },
+    );
     final user = response.user;
-    if (user == null) {
-      throw StateError('Account created. Please verify your email to continue.');
-    }
 
-    final uid = user.id;
-
-    String? recordPath;
-    if (recordImage != null) {
+    if (user != null && recordImage != null) {
       final size = await recordImage.length();
       if (size > 10 * 1024 * 1024) {
         throw StateError('File too large. Maximum size is 10 MB.');
@@ -190,7 +148,7 @@ class AuthRepository {
       if (contentType == null) {
         throw StateError('Invalid file type. Please upload a JPEG, PNG, or PDF.');
       }
-      final path = '$uid/record$ext';
+      final path = '${user.id}/record$ext';
       await _client.storage.from('facility-records').upload(
             path,
             recordImage,
@@ -199,26 +157,11 @@ class AuthRepository {
               contentType: contentType,
             ),
           );
-      recordPath = path;
+      
+      await _client.from('facilities').update({
+        'record_path': path,
+      }).eq('id', user.id);
     }
-
-    await _client.from('profiles').insert({
-      'id': uid,
-      'role': UserRole.facility.value,
-      'name': name,
-      'email': email,
-      'phone': phone,
-      'is_active': true,
-      'is_verified': false,
-    });
-
-    await _client.from('facilities').insert({
-      'id': uid,
-      'address': address,
-      'facility_type': facilityType,
-      'record_path': recordPath,
-      'verification_status': 'pending',
-    });
   }
 
   Future<Map<String, dynamic>> getMe() async {
