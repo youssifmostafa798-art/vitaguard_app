@@ -22,9 +22,11 @@ class ErrorMapper {
         case 'weak-password':
           return 'Password is too weak.';
         case 'internal-error':
-          return message.isNotEmpty ? message : 'Authentication error.';
+          return message.isNotEmpty ? message : 'Authentication error (${error.code}).';
         default:
-          return message.isNotEmpty ? message : 'Authentication error.';
+          return message.isNotEmpty
+              ? message
+              : 'Authentication error (${error.code}).';
       }
     }
 
@@ -34,7 +36,7 @@ class ErrorMapper {
         return 'Sign up blocked: app verification is not configured. '
             'Add your SHA-256 fingerprint in Firebase and use a Google Play device/emulator.';
       }
-      return message.isNotEmpty ? message : 'Firebase error.';
+      return message.isNotEmpty ? message : 'Firebase error (${error.code}).';
     }
 
     return error.toString();

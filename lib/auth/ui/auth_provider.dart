@@ -22,6 +22,7 @@ class AuthProvider with ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
+      debugPrint('Auth login error: $e');
       _error = ErrorMapper.map(e);
       _setLoading(false);
       return false;
@@ -50,6 +51,7 @@ class AuthProvider with ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
+      debugPrint('Auth register patient error: $e');
       _error = ErrorMapper.map(e);
       _setLoading(false);
       return false;
@@ -82,6 +84,7 @@ class AuthProvider with ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
+      debugPrint('Auth register doctor error: $e');
       _error = ErrorMapper.map(e);
       _setLoading(false);
       return false;
@@ -106,6 +109,7 @@ class AuthProvider with ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
+      debugPrint('Auth register companion error: $e');
       _error = ErrorMapper.map(e);
       _setLoading(false);
       return false;
@@ -136,6 +140,7 @@ class AuthProvider with ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
+      debugPrint('Auth register facility error: $e');
       _error = ErrorMapper.map(e);
       _setLoading(false);
       return false;
