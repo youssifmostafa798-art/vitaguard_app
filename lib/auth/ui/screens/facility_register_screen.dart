@@ -26,9 +26,11 @@ class _FacilityRegisterScreenState extends ConsumerState<FacilityRegisterScreen>
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
     return CreateAccountScreen(
       title: "Create Facility Account",
       buttonText: "Sign up",
+      errorMessage: authState.error,
       fields: [
         {
           'hint': 'Name of Facility',
@@ -119,13 +121,6 @@ class _FacilityRegisterScreenState extends ConsumerState<FacilityRegisterScreen>
         if (success) {
           if (!context.mounted) return;
           await showSignupSuccessDialog(context);
-        } else {
-          if (!context.mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(authController.error ?? "Registration failed"),
-            ),
-          );
         }
       },
     );

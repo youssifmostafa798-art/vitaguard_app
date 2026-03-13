@@ -26,9 +26,11 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
     return CreateAccountScreen(
       title: "Create Doctor Account",
       buttonText: "Sign up",
+      errorMessage: authState.error,
       fields: [
         {
           'hint': 'User Name',
@@ -119,13 +121,6 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
         if (success) {
           if (!context.mounted) return;
           await showSignupSuccessDialog(context);
-        } else {
-          if (!context.mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(authController.error ?? "Registration failed"),
-            ),
-          );
         }
       },
     );

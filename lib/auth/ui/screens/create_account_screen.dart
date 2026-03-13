@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/auth/ui/screens/sign_in_screen.dart';
+import 'package:vitaguard_app/auth/ui/widgets/auth_error_banner.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custom_logo.dart';
@@ -12,6 +13,7 @@ class CreateAccountScreen extends StatelessWidget {
   final List<Map<String, dynamic>> fields;
   final String buttonText;
   final VoidCallback onSubmit;
+  final String? errorMessage;
 
   const CreateAccountScreen({
     super.key,
@@ -19,10 +21,13 @@ class CreateAccountScreen extends StatelessWidget {
     required this.fields,
     required this.buttonText,
     required this.onSubmit,
+    this.errorMessage,
   });
 
   @override
   Widget build(BuildContext context) {
+    final hasError = errorMessage != null && errorMessage!.trim().isNotEmpty;
+
     return Scaffold(
       body: SafeArea(
         child: AppBackground(
@@ -43,6 +48,30 @@ class CreateAccountScreen extends StatelessWidget {
                 ),
 
                 Gap(20),
+
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 280),
+                  switchInCurve: Curves.easeOut,
+                  switchOutCurve: Curves.easeIn,
+                  transitionBuilder: (child, animation) {
+                    final slide = Tween<Offset>(
+                      begin: const Offset(0, -0.08),
+                      end: Offset.zero,
+                    ).animate(animation);
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(position: slide, child: child),
+                    );
+                  },
+                  child: hasError
+                      ? AuthErrorBanner(
+                          key: ValueKey(errorMessage),
+                          message: errorMessage!,
+                        )
+                      : const SizedBox.shrink(),
+                ),
+
+                if (hasError) const Gap(12),
 
                 /// Fields
                 ...fields.map((field) {

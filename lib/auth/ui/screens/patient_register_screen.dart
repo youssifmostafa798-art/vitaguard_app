@@ -55,19 +55,16 @@ class _PatientRegisterScreenState extends ConsumerState<PatientRegisterScreen> {
 
       if (!mounted) return;
       await showSignupSuccessDialog(context);
-    } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(auth.error ?? 'Registration failed')),
-      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
     return CreateAccountScreen(
       title: "Create Patient Account",
       buttonText: "sign up",
+      errorMessage: authState.error,
       fields: [
         {
           'hint': 'User Name',

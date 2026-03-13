@@ -3,6 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 class ErrorMapper {
   static String map(Object error) {
     if (error is FirebaseAuthException) {
+      final message = error.message ?? '';
+      if (message.contains('CONFIGURATION_NOT_FOUND')) {
+        return 'Sign up blocked: app verification is not configured. '
+            'Add your SHA-256 fingerprint in Firebase and use a Google Play device/emulator.';
+      }
       switch (error.code) {
         case 'invalid-email':
           return 'Invalid email address.';
@@ -16,13 +21,20 @@ class ErrorMapper {
           return 'Email is already registered.';
         case 'weak-password':
           return 'Password is too weak.';
+        case 'internal-error':
+          return message.isNotEmpty ? message : 'Authentication error.';
         default:
-          return error.message ?? 'Authentication error.';
+          return message.isNotEmpty ? message : 'Authentication error.';
       }
     }
 
     if (error is FirebaseException) {
-      return error.message ?? 'Firebase error.';
+      final message = error.message ?? '';
+      if (message.contains('CONFIGURATION_NOT_FOUND')) {
+        return 'Sign up blocked: app verification is not configured. '
+            'Add your SHA-256 fingerprint in Firebase and use a Google Play device/emulator.';
+      }
+      return message.isNotEmpty ? message : 'Firebase error.';
     }
 
     return error.toString();

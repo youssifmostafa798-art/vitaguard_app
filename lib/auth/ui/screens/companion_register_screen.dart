@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vitaguard_app/auth/ui/widgets/auth_error_banner.dart';
 import 'package:vitaguard_app/auth/ui/widgets/auth_textfield.dart';
 import 'package:vitaguard_app/auth/ui/widgets/signup_success_dialog.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
@@ -37,6 +38,7 @@ class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScree
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final isLoading = authState.isLoading;
+    final hasError = authState.error != null && authState.error!.trim().isNotEmpty;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -89,6 +91,30 @@ class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScree
                         ],
                       ),
                       const SizedBox(height: 20),
+
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 280),
+                        switchInCurve: Curves.easeOut,
+                        switchOutCurve: Curves.easeIn,
+                        transitionBuilder: (child, animation) {
+                          final slide = Tween<Offset>(
+                            begin: const Offset(0, -0.08),
+                            end: Offset.zero,
+                          ).animate(animation);
+                          return FadeTransition(
+                            opacity: animation,
+                            child: SlideTransition(position: slide, child: child),
+                          );
+                        },
+                        child: hasError
+                            ? AuthErrorBanner(
+                                key: ValueKey(authState.error),
+                                message: authState.error!,
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+
+                      if (hasError) const SizedBox(height: 20),
 
                       AuthTextField(
                         hint: "User Name",
@@ -170,15 +196,6 @@ class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScree
 
                                 if (success) {
                                   await showSignupSuccessDialog(context);
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        authState.error ??
-                                            "Registration failed",
-                                      ),
-                                    ),
-                                  );
                                 }
                               },
                       ),
