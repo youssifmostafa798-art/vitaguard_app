@@ -1,29 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
-import 'package:provider/provider.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_field.dart';
 import 'package:vitaguard_app/core/simple_header.dart';
-import 'package:vitaguard_app/patient/ui/patient_provider.dart';
 import 'package:vitaguard_app/patient/data/patient_models.dart';
+import 'package:vitaguard_app/core/providers.dart';
 
-class DailyReportScreen extends StatefulWidget {
+class DailyReportScreen extends ConsumerStatefulWidget {
   const DailyReportScreen({super.key});
 
   @override
-  State<DailyReportScreen> createState() => _DailyReportScreenState();
+  ConsumerState<DailyReportScreen> createState() => _DailyReportScreenState();
 }
 
-class _DailyReportScreenState extends State<DailyReportScreen> {
+class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
   final _heartRateCtrl = TextEditingController();
   final _oxygenCtrl = TextEditingController();
   final _tempCtrl = TextEditingController();
   final _bpCtrl = TextEditingController();
 
   void _handleSave() async {
-    final provider = Provider.of<PatientProvider>(context, listen: false);
-
     final report = DailyReport(
       heartRate: double.tryParse(_heartRateCtrl.text) ?? 0,
       oxygenLevel: double.tryParse(_oxygenCtrl.text) ?? 0,
@@ -31,7 +29,7 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
       bloodPressure: _bpCtrl.text.trim(),
     );
 
-    final success = await provider.submitDailyReport(report);
+    final success = await ref.read(patientProvider).submitDailyReport(report);
 
     if (success) {
       if (!mounted) return;
@@ -41,6 +39,7 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
       Navigator.pop(context);
     } else {
       if (!mounted) return;
+      final provider = ref.read(patientProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(provider.error ?? 'Failed to save report')),
       );
@@ -49,7 +48,7 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = Provider.of<PatientProvider>(context).isLoading;
+    final isLoading = ref.watch(patientProvider).isLoading;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -115,5 +114,3 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
     );
   }
 }
-
-

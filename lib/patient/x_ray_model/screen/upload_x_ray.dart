@@ -1,22 +1,22 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
-import 'package:vitaguard_app/patient/ui/patient_provider.dart';
 import 'package:vitaguard_app/patient/home/widget/radiology_result.dart';
+import 'package:vitaguard_app/core/providers.dart';
 
-class UploadXRay extends StatefulWidget {
+class UploadXRay extends ConsumerStatefulWidget {
   const UploadXRay({super.key});
 
   @override
-  State<UploadXRay> createState() => _UploadXRayState();
+  ConsumerState<UploadXRay> createState() => _UploadXRayState();
 }
 
-class _UploadXRayState extends State<UploadXRay> {
+class _UploadXRayState extends ConsumerState<UploadXRay> {
   File? _selectedImage;
   final _picker = ImagePicker();
 
@@ -37,21 +37,21 @@ class _UploadXRayState extends State<UploadXRay> {
       return;
     }
 
-    final provider = Provider.of<PatientProvider>(context, listen: false);
-    // We'll use the repository indirectly through the provider
-    // For now, let's assume we add a method to PatientProvider
-    final success = await provider.analyzeXRay(_selectedImage!);
+    final success = await ref.read(patientProvider).analyzeXRay(_selectedImage!);
 
     if (success) {
       if (!mounted) return;
+      final result = ref.read(patientProvider).lastXRayResult;
+      if (result == null) return;
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => RadiologyResult(result: provider.lastXRayResult!),
+          builder: (_) => RadiologyResult(result: result),
         ),
       );
     } else {
       if (!mounted) return;
+      final provider = ref.read(patientProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(provider.error ?? 'Analysis failed')),
       );
@@ -60,7 +60,7 @@ class _UploadXRayState extends State<UploadXRay> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = Provider.of<PatientProvider>(context).isLoading;
+    final isLoading = ref.watch(patientProvider).isLoading;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,

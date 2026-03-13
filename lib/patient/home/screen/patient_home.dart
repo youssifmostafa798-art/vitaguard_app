@@ -1,27 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
-import 'package:provider/provider.dart';
-import 'package:vitaguard_app/auth/ui/auth_provider.dart';
 import 'package:vitaguard_app/auth/ui/screens/role_screen.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/home_header.dart';
 import 'package:vitaguard_app/patient/home/widget/category_grid_patient.dart';
 import 'package:vitaguard_app/patient/home/widget/home_search.dart';
 import 'package:vitaguard_app/patient/home/widget/info_slider.dart';
+import 'package:vitaguard_app/core/providers.dart';
 
-class PatientHome extends StatelessWidget {
+class PatientHome extends ConsumerWidget {
   final String name;
 
   const PatientHome({super.key, required this.name});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: HomeHeader(
         name_: name,
         profileImage: const AssetImage("assets/PNG/youth_14.png"),
         onExit: () {
-          context.read<AuthProvider>().logout();
+          ref.read(authProvider).logout();
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const RoleScreen()),
@@ -38,7 +38,6 @@ class PatientHome extends StatelessWidget {
                 Gap(20),
                 HomeSearch(),
                 Gap(25),
-                // Video / Slider
                 InfoSlider(
                   images: [
                     'assets/PNG/2437635 1.png',

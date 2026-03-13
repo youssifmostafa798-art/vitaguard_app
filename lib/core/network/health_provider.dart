@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'health_repository.dart';
+import 'package:vitaguard_app/core/ai/xray_inference_service.dart';
 
 class HealthProvider with ChangeNotifier {
-  final HealthRepository _repository = HealthRepository();
   bool _isAiOnline = false;
-  String _aiMessage = "Checking AI status...";
+  String _aiMessage = 'Checking AI status...';
 
   bool get isAiOnline => _isAiOnline;
   String get aiMessage => _aiMessage;
@@ -14,13 +13,13 @@ class HealthProvider with ChangeNotifier {
   }
 
   Future<void> checkHealth() async {
-    final health = await _repository.getAiHealth();
-    if (health['status'] == 'healthy') {
-      _isAiOnline = true;
-      _aiMessage = "AI Models Online";
-    } else {
+    try {
+      await XrayInferenceService.instance.ensureLoaded();
+      _isAiOnline = XrayInferenceService.instance.isReady;
+      _aiMessage = _isAiOnline ? 'AI model loaded' : 'AI model not available';
+    } catch (e) {
       _isAiOnline = false;
-      _aiMessage = "AI Models Offline or Error";
+      _aiMessage = 'AI model error';
     }
     notifyListeners();
   }

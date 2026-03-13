@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:vitaguard_app/core/network/dio_error_mapper.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/patient/data/patient_repository.dart';
 import 'package:vitaguard_app/patient/data/patient_models.dart';
 
@@ -91,7 +91,7 @@ class PatientProvider with ChangeNotifier {
   }
 
   String _handleError(dynamic e) {
-    return DioErrorMapper.map(e);
+    return ErrorMapper.map(e);
   }
 
   Future<bool> regenerateCompanionCode() async {

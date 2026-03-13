@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:vitaguard_app/auth/ui/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vitaguard_app/auth/ui/screens/create_account_screen.dart';
 import 'package:vitaguard_app/auth/ui/widgets/patients_medical_history.dart';
 import 'package:vitaguard_app/auth/ui/widgets/signup_success_dialog.dart';
+import 'package:vitaguard_app/core/providers.dart';
+import 'package:vitaguard_app/patient/data/patient_models.dart';
+import 'package:vitaguard_app/patient/data/patient_repository.dart';
 
-class PatientRegisterScreen extends StatefulWidget {
+class PatientRegisterScreen extends ConsumerStatefulWidget {
   const PatientRegisterScreen({super.key});
 
   @override
-  State<PatientRegisterScreen> createState() => _PatientRegisterScreenState();
+  ConsumerState<PatientRegisterScreen> createState() => _PatientRegisterScreenState();
 }
 
-class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
+class _PatientRegisterScreenState extends ConsumerState<PatientRegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -22,6 +24,8 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
   final _genderController = TextEditingController();
   final _medicalHistoryController = TextEditingController();
 
+  MedicalHistory? _draftHistory;
+
   void _handleSignUp() async {
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(
@@ -29,9 +33,9 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
       ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
       return;
     }
-    //edit api
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.registerPatient(
+
+    final auth = ref.read(authProvider);
+    final success = await auth.registerPatient(
       fullName: _nameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text.trim(),
@@ -41,12 +45,20 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
     );
 
     if (success) {
+      if (_draftHistory != null) {
+        try {
+          await PatientRepository().updateMedicalHistory(_draftHistory!);
+        } catch (_) {
+          // ignore draft history failures
+        }
+      }
+
       if (!mounted) return;
       await showSignupSuccessDialog(context);
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(authProvider.error ?? 'Registration failed')),
+        SnackBar(content: Text(auth.error ?? 'Registration failed')),
       );
     }
   }
@@ -79,8 +91,7 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
           'type': FieldType.password,
         },
         {
-          'hint':
-              'Age', // Note: Age is not in current backend schema, but we'll keep it in UI
+          'hint': 'Age',
           'controller': _ageController,
           'type': FieldType.normal,
           'keyboardType': TextInputType.number,
@@ -100,11 +111,17 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
           'hint': 'Patient’s Medical History',
           'controller': _medicalHistoryController,
           'type': FieldType.navigation,
-          'onTap': () {
-            Navigator.push(
+          'onTap': () async {
+            final result = await Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => MedicalHistoryScreen()),
             );
+            if (result is MedicalHistory) {
+              setState(() {
+                _draftHistory = result;
+                _medicalHistoryController.text = 'Saved';
+              });
+            }
           },
         },
       ],

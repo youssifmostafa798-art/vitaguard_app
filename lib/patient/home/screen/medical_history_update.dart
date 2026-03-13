@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/companion/home/widget/archive_medical_history.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
@@ -6,20 +7,19 @@ import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/core/simple_header.dart';
 import 'package:vitaguard_app/components/custem_field.dart';
 import 'package:vitaguard_app/patient/home/widget/name_card.dart';
-import 'package:provider/provider.dart';
-import 'package:vitaguard_app/patient/ui/patient_provider.dart';
 import 'package:vitaguard_app/patient/data/patient_models.dart';
+import 'package:vitaguard_app/core/providers.dart';
 
-class MedicalHistoryUpdate extends StatefulWidget {
+class MedicalHistoryUpdate extends ConsumerStatefulWidget {
   final String firstNamee;
 
   const MedicalHistoryUpdate({super.key, required this.firstNamee});
 
   @override
-  State<MedicalHistoryUpdate> createState() => _MedicalHistoryUpdateState();
+  ConsumerState<MedicalHistoryUpdate> createState() => _MedicalHistoryUpdateState();
 }
 
-class _MedicalHistoryUpdateState extends State<MedicalHistoryUpdate> {
+class _MedicalHistoryUpdateState extends ConsumerState<MedicalHistoryUpdate> {
   final TextEditingController diabetes = TextEditingController();
   final TextEditingController metformin = TextEditingController();
   final TextEditingController dustmites = TextEditingController();
@@ -34,6 +34,8 @@ class _MedicalHistoryUpdateState extends State<MedicalHistoryUpdate> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = ref.watch(patientProvider);
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: const SimpleHeader(title: "Medical history"),
@@ -75,58 +77,54 @@ class _MedicalHistoryUpdateState extends State<MedicalHistoryUpdate> {
 
                   const Gap(30),
 
-                  Consumer<PatientProvider>(
-                    builder: (context, provider, child) {
-                      if (provider.isLoading) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      return Button(
-                        title: "Confirm",
-                        onTap: () async {
-                          final history = MedicalHistory(
-                            chronicDiseases: diabetes.text,
-                            medications: metformin.text,
-                            allergies: dustmites.text,
-                            surgeries: "", // UI doesn't have these yet
-                            notes: "",
-                          );
+                  if (provider.isLoading)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    Button(
+                      title: "Confirm",
+                      onTap: () async {
+                        final history = MedicalHistory(
+                          chronicDiseases: diabetes.text,
+                          medications: metformin.text,
+                          allergies: dustmites.text,
+                          surgeries: "",
+                          notes: "",
+                        );
 
-                          final success = await provider.updateMedicalHistory(
-                            history,
-                          );
+                        final success = await ref
+                            .read(patientProvider)
+                            .updateMedicalHistory(history);
 
-                          if (success && context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Medical history updated successfully!',
-                                ),
+                        if (success && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Medical history updated successfully!',
                               ),
-                            );
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ArchiveMedicalHistory(
-                                  diabetes: diabetes.text,
-                                  metformin: metformin.text,
-                                  dustmites: dustmites.text,
-                                ),
+                            ),
+                          );
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ArchiveMedicalHistory(
+                                diabetes: diabetes.text,
+                                metformin: metformin.text,
+                                dustmites: dustmites.text,
                               ),
-                            );
-                          } else if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  provider.error ??
-                                      'Failed to update medical history',
-                                ),
+                            ),
+                          );
+                        } else if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                provider.error ??
+                                    'Failed to update medical history',
                               ),
-                            );
-                          }
-                        },
-                      );
-                    },
-                  ),
+                            ),
+                          );
+                        }
+                      },
+                    ),
                 ],
               ),
             ),

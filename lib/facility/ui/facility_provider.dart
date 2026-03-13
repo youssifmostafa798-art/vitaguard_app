@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:vitaguard_app/core/network/dio_error_mapper.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/facility/data/facility_repository.dart';
 
 class FacilityProvider with ChangeNotifier {
@@ -14,7 +14,8 @@ class FacilityProvider with ChangeNotifier {
   List<dynamic> get appointments => _appointments;
 
   Future<bool> uploadMedicalTest({
-    required String patientId,
+    String? patientId,
+    String? patientPhone,
     required String testType,
     required String filePath,
     String? notes,
@@ -26,6 +27,7 @@ class FacilityProvider with ChangeNotifier {
     try {
       await _repository.uploadMedicalTest(
         patientId: patientId,
+        patientPhone: patientPhone,
         testType: testType,
         filePath: filePath,
         notes: notes,
@@ -58,6 +60,6 @@ class FacilityProvider with ChangeNotifier {
   }
 
   String _handleError(dynamic e) {
-    return DioErrorMapper.map(e);
+    return ErrorMapper.map(e);
   }
 }

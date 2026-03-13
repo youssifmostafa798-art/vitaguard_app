@@ -1,1 +1,0 @@
-"""VitaGuard — Schemas package."""

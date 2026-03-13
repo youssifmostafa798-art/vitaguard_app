@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:vitaguard_app/core/network/dio_error_mapper.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/doctor/data/doctor_repository.dart';
 
 class DoctorProvider with ChangeNotifier {
@@ -64,7 +64,7 @@ class DoctorProvider with ChangeNotifier {
 
     try {
       final statusData = await _repository.getVerificationStatus();
-      _verificationStatus = statusData['verification_status'] ?? 'pending';
+      _verificationStatus = statusData['verificationStatus'] ?? 'pending';
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -75,6 +75,6 @@ class DoctorProvider with ChangeNotifier {
   }
 
   String _handleError(dynamic e) {
-    return DioErrorMapper.map(e);
+    return ErrorMapper.map(e);
   }
 }

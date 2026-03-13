@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:vitaguard_app/auth/ui/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vitaguard_app/auth/ui/widgets/auth_textfield.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custom_logo.dart';
+import 'package:vitaguard_app/core/providers.dart';
 
 // Import target screens
 import 'package:vitaguard_app/patient/main_patient.dart';
@@ -12,14 +12,14 @@ import 'package:vitaguard_app/doctor/main_doctor.dart';
 import 'package:vitaguard_app/companion/main_companion.dart';
 import 'package:vitaguard_app/facility/main_facility.dart';
 
-class SignInScreen extends StatefulWidget {
+class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 
   @override
-  State<SignInScreen> createState() => _SignInScreenState();
+  ConsumerState<SignInScreen> createState() => _SignInScreenState();
 }
 
-class _SignInScreenState extends State<SignInScreen> {
+class _SignInScreenState extends ConsumerState<SignInScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
 
@@ -31,32 +31,25 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   void _handleSignIn() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final input = emailCtrl.text.trim();
-    final secret = passCtrl.text.trim();
+    final auth = ref.read(authProvider);
+    final email = emailCtrl.text.trim();
+    final password = passCtrl.text.trim();
 
-    if (input.isEmpty || secret.isEmpty) {
+    if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please enter your credentials")),
       );
       return;
     }
 
-    bool success;
-    // Simple heuristic: if input contains '@', it's likely an email (standard login)
-    // Otherwise, treat as Companion Name + Code
-    if (input.contains('@')) {
-      success = await authProvider.login(input, secret);
-    } else {
-      success = await authProvider.loginCompanion(input, secret);
-    }
+    final success = await auth.login(email, password);
 
     if (success) {
-      final role = await authProvider.getUserRole();
+      final role = await auth.getUserRole();
       if (!mounted) return;
 
       Widget nextScreen;
-      final name = authProvider.userName;
+      final name = auth.userName;
 
       switch (role) {
         case 'doctor':
@@ -80,14 +73,14 @@ class _SignInScreenState extends State<SignInScreen> {
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(authProvider.error ?? 'Login failed')),
+        SnackBar(content: Text(auth.error ?? 'Login failed')),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = Provider.of<AuthProvider>(context).isLoading;
+    final isLoading = ref.watch(authProvider).isLoading;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -104,12 +97,12 @@ class _SignInScreenState extends State<SignInScreen> {
                       const VitaGuardLogo(),
                       const SizedBox(height: 20),
                       AuthTextField(
-                        hint: "Name or Email",
+                        hint: "Email",
                         controller: emailCtrl,
                       ),
                       const SizedBox(height: 20),
                       AuthTextField(
-                        hint: "Password or Code",
+                        hint: "Password",
                         controller: passCtrl,
                         obscure: true,
                         suffixIcon: const Icon(Icons.visibility),

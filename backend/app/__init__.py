@@ -1,1 +1,0 @@
-"""VitaGuard Backend package."""

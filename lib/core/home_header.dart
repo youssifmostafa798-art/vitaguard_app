@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
-import 'package:provider/provider.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
-import 'package:vitaguard_app/core/network/health_provider.dart';
+import 'package:vitaguard_app/core/providers.dart';
 
-class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
+class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
   final String name_;
   final ImageProvider profileImage;
   final VoidCallback? onExit;
@@ -16,11 +16,14 @@ class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
     required this.profileImage,
     this.onExit,
   });
+
   @override
   Size get preferredSize => const Size.fromHeight(80);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final health = ref.watch(healthProvider);
+
     return AppBar(
       elevation: 0,
       automaticallyImplyLeading: false,
@@ -36,15 +39,13 @@ class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
                     Positioned(
                       right: 0,
                       bottom: 0,
-                      child: Consumer<HealthProvider>(
-                        builder: (context, health, _) => Container(
-                          width: 14,
-                          height: 14,
-                          decoration: BoxDecoration(
-                            color: health.isAiOnline ? Colors.green : Colors.red,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: health.isAiOnline ? Colors.green : Colors.red,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
                         ),
                       ),
                     ),
@@ -70,14 +71,12 @@ class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
                             size: 20,
                           ),
                           Gap(8),
-                          Consumer<HealthProvider>(
-                            builder: (context, health, _) => Tooltip(
-                              message: health.aiMessage,
-                              child: Icon(
-                                Icons.bolt,
-                                size: 16,
-                                color: health.isAiOnline ? Colors.orange : Colors.grey,
-                              ),
+                          Tooltip(
+                            message: health.aiMessage,
+                            child: Icon(
+                              Icons.bolt,
+                              size: 16,
+                              color: health.isAiOnline ? Colors.orange : Colors.grey,
                             ),
                           ),
                         ],
@@ -103,6 +102,3 @@ class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 }
-
-
-

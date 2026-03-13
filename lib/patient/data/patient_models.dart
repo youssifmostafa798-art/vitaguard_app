@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class MedicalHistory {
   MedicalHistory({
     this.allergies,
@@ -13,19 +15,19 @@ class MedicalHistory {
   final String? surgeries;
   final String? notes;
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toMap() => {
     'allergies': allergies ?? "",
     'medications': medications ?? "",
-    'chronic_diseases': chronicDiseases ?? "",
+    'chronicDiseases': chronicDiseases ?? "",
     'surgeries': surgeries ?? "",
     'notes': notes ?? "",
   };
 
-  factory MedicalHistory.fromJson(Map<String, dynamic> json) {
+  factory MedicalHistory.fromMap(Map<String, dynamic> json) {
     return MedicalHistory(
       allergies: json['allergies'] ?? "",
       medications: json['medications'] ?? "",
-      chronicDiseases: json['chronic_diseases'] ?? "",
+      chronicDiseases: json['chronicDiseases'] ?? json['chronic_diseases'] ?? "",
       surgeries: json['surgeries'] ?? "",
       notes: json['notes'] ?? "",
     );
@@ -47,16 +49,15 @@ class DailyReport {
   final String bloodPressure;
   final DateTime? reportDate;
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toMap() {
     final date = reportDate ?? DateTime.now();
     return {
-      'report_date':
-          "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}",
-      'heart_rate': heartRate,
-      'oxygen_level': oxygenLevel,
+      'reportDate': date,
+      'heartRate': heartRate,
+      'oxygenLevel': oxygenLevel,
       'temperature': temperature,
-      'blood_pressure': bloodPressure,
-      'tasks_activities': "-", // Backend expects this
+      'bloodPressure': bloodPressure,
+      'tasksActivities': "-",
       'notes': "",
     };
   }
@@ -77,13 +78,23 @@ class XRayResult {
     this.imagePath,
   });
 
-  factory XRayResult.fromJson(Map<String, dynamic> json) {
+  Map<String, dynamic> toMap() {
+    return {
+      'isValid': isValid,
+      'prediction': prediction,
+      'confidence': confidence,
+      'reportText': reportText,
+      'imagePath': imagePath,
+    };
+  }
+
+  factory XRayResult.fromMap(Map<String, dynamic> json) {
     return XRayResult(
-      isValid: json['is_valid'] ?? false,
+      isValid: json['isValid'] ?? json['is_valid'] ?? false,
       prediction: json['prediction'],
       confidence: (json['confidence'] as num?)?.toDouble(),
-      reportText: json['report_text'],
-      imagePath: json['image_path'],
+      reportText: json['reportText'] ?? json['report_text'],
+      imagePath: json['imagePath'] ?? json['image_path'],
     );
   }
 }
@@ -105,14 +116,24 @@ class MedicalDocument {
     required this.uploadedAt,
   });
 
-  factory MedicalDocument.fromJson(Map<String, dynamic> json) {
+  factory MedicalDocument.fromMap(Map<String, dynamic> json) {
+    DateTime uploadedAt;
+    final rawUploaded = json['uploadedAt'];
+    if (rawUploaded is Timestamp) {
+      uploadedAt = rawUploaded.toDate();
+    } else if (rawUploaded is DateTime) {
+      uploadedAt = rawUploaded;
+    } else {
+      uploadedAt = DateTime.tryParse(rawUploaded?.toString() ?? '') ?? DateTime.now();
+    }
+
     return MedicalDocument(
       id: json['id'] ?? '',
-      patientId: json['patient_id'] ?? '',
-      fileUrl: json['file_url'] ?? '',
-      documentType: json['document_type'] ?? '',
-      originalFilename: json['original_filename'] ?? '',
-      uploadedAt: DateTime.tryParse(json['uploaded_at'] ?? '') ?? DateTime.now(),
+      patientId: json['patientId'] ?? json['patient_id'] ?? '',
+      fileUrl: json['fileUrl'] ?? json['file_url'] ?? '',
+      documentType: json['documentType'] ?? json['document_type'] ?? '',
+      originalFilename: json['originalFilename'] ?? json['original_filename'] ?? '',
+      uploadedAt: uploadedAt,
     );
   }
 }

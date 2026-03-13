@@ -1,10 +1,16 @@
 import 'dart:io';
-import 'package:dio/dio.dart';
-import 'package:vitaguard_app/core/network/api_endpoints.dart';
-import 'package:vitaguard_app/core/network/dio_client.dart';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+
+import 'package:vitaguard_app/core/firebase/firebase_service.dart';
 
 class FacilityRepository {
-  final Dio _dio = DioClient().dio;
+  final FirebaseService _firebase = FirebaseService.instance;
+
+  FirebaseFirestore get _db => _firebase.firestore;
+  FirebaseStorage get _storage => _firebase.storage;
+  String get _uid => _firebase.currentUid;
 
   Future<void> uploadMedicalTest({
     String? patientId,
@@ -13,18 +19,40 @@ class FacilityRepository {
     required String filePath,
     String? notes,
   }) async {
-    try {
-      final formData = FormData.fromMap({
-        if (patientId != null) 'patient_id': patientId, // ignore: use_null_aware_elements
-        if (patientPhone != null) 'patient_phone': patientPhone, // ignore: use_null_aware_elements
-        'test_type': testType,
-        'file': await MultipartFile.fromFile(filePath),
-        if (notes != null) 'notes': notes, // ignore: use_null_aware_elements
-      });
-      await _dio.post(ApiEndpoints.facilityTests, data: formData);
-    } catch (e) {
-      rethrow;
+    String? resolvedPatientId = patientId;
+
+    if (resolvedPatientId == null && patientPhone != null && patientPhone.isNotEmpty) {
+      final userSnapshot = await _db
+          .collection('users')
+          .where('phone', isEqualTo: patientPhone)
+          .where('role', isEqualTo: 'patient')
+          .limit(1)
+          .get();
+      if (userSnapshot.docs.isNotEmpty) {
+        resolvedPatientId = userSnapshot.docs.first.id;
+      }
     }
+
+    final docRef = _db
+        .collection('facilities')
+        .doc(_uid)
+        .collection('tests')
+        .doc();
+
+    final file = File(filePath);
+    final ext = _fileExtension(file);
+    final ref = _storage.ref('lab_reports/$_uid/${docRef.id}$ext');
+    await ref.putFile(file);
+
+    await docRef.set({
+      'id': docRef.id,
+      'facilityId': _uid,
+      'patientId': resolvedPatientId,
+      'testType': testType,
+      'filePath': ref.fullPath,
+      'notes': notes,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
   Future<void> createOffer({
@@ -32,28 +60,45 @@ class FacilityRepository {
     required String description,
     File? image,
   }) async {
-    try {
-      final formData = FormData.fromMap({
-        'title': title,
-        'description': description,
-        if (image != null)
-          'image': await MultipartFile.fromFile(
-            image.path,
-            filename: image.path.split('/').last,
-          ),
-      });
-      await _dio.post(ApiEndpoints.facilityOffers, data: formData);
-    } catch (e) {
-      rethrow;
+    final docRef = _db
+        .collection('facilities')
+        .doc(_uid)
+        .collection('offers')
+        .doc();
+
+    String? imagePath;
+    if (image != null) {
+      final ext = _fileExtension(image);
+      final ref = _storage.ref('lab_offers/$_uid/${docRef.id}$ext');
+      await ref.putFile(image);
+      imagePath = ref.fullPath;
     }
+
+    await docRef.set({
+      'id': docRef.id,
+      'facilityId': _uid,
+      'title': title,
+      'description': description,
+      'imageUrl': imagePath,
+      'isActive': true,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
   Future<List<dynamic>> getAppointments() async {
-    try {
-      final response = await _dio.get(ApiEndpoints.facilityAppointments);
-      return response.data;
-    } catch (e) {
-      rethrow;
-    }
+    final snapshot = await _db
+        .collection('facilities')
+        .doc(_uid)
+        .collection('appointments')
+        .orderBy('scheduledAt', descending: true)
+        .get();
+
+    return snapshot.docs.map((doc) => doc.data()).toList();
+  }
+
+  String _fileExtension(File file) {
+    final parts = file.path.split('.');
+    if (parts.length < 2) return '';
+    return '.${parts.last.toLowerCase()}';
   }
 }

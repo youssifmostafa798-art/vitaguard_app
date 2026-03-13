@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custom_logo.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
@@ -19,10 +20,12 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
   final _repository = PatientRepository();
   final _chronicController = TextEditingController();
   final _medicationsController = TextEditingController();
-  
+
   bool _isLoading = true;
   bool _isSaving = false;
   File? _selectedImage;
+
+  bool get _isLoggedIn => FirebaseAuth.instance.currentUser != null;
 
   @override
   void initState() {
@@ -31,6 +34,11 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
   }
 
   Future<void> _loadHistory() async {
+    if (!_isLoggedIn) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
     try {
       final history = await _repository.getMedicalHistory();
       _chronicController.text = history.chronicDiseases ?? '';
@@ -56,18 +64,24 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
     if (_isSaving) return;
     setState(() => _isSaving = true);
 
+    final history = MedicalHistory(
+      chronicDiseases: _chronicController.text,
+      medications: _medicationsController.text,
+      allergies: "",
+      surgeries: "",
+      notes: "",
+    );
+
     try {
-      // 1. Update text history
-      final history = MedicalHistory(
-        chronicDiseases: _chronicController.text,
-        medications: _medicationsController.text,
-        allergies: "",
-        surgeries: "",
-        notes: "",
-      );
+      if (!_isLoggedIn) {
+        if (mounted) {
+          Navigator.pop(context, history);
+        }
+        return;
+      }
+
       await _repository.updateMedicalHistory(history);
 
-      // 2. Upload document if selected
       if (_selectedImage != null) {
         await _repository.uploadMedicalDocument(_selectedImage!);
       }
@@ -111,8 +125,7 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
                   const Gap(16),
                   _box(hint: "Medications", controller: _medicationsController),
                   const Gap(16),
-                  
-                  // X-ray or lab tests upload
+
                   GestureDetector(
                     onTap: _pickImage,
                     child: Container(
@@ -125,9 +138,9 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              _selectedImage != null 
-                                ? _selectedImage!.path.split('/').last 
-                                : "X-ray or lab tests (optional)",
+                              _selectedImage != null
+                                  ? _selectedImage!.path.split('/').last
+                                  : "X-ray or lab tests (optional)",
                               style: TextStyle(
                                 color: _selectedImage != null ? Colors.black : Colors.grey[600],
                               ),
@@ -143,12 +156,12 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
 
                   const Gap(40),
 
-                  _isSaving 
-                    ? const CircularProgressIndicator()
-                    : Button(
-                        title: "Confirm",
-                        onTap: _saveData,
-                      ),
+                  _isSaving
+                      ? const CircularProgressIndicator()
+                      : Button(
+                          title: "Confirm",
+                          onTap: _saveData,
+                        ),
                 ],
               ),
             ),

@@ -1,17 +1,35 @@
-import 'package:dio/dio.dart';
-import 'package:vitaguard_app/core/network/api_endpoints.dart';
-import 'package:vitaguard_app/core/network/dio_client.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'package:vitaguard_app/core/firebase/firebase_service.dart';
 
 class DoctorRepository {
-  final Dio _dio = DioClient().dio;
+  final FirebaseService _firebase = FirebaseService.instance;
 
-  Future<List<dynamic>> getAssignedPatients() async {
-    try {
-      final response = await _dio.get(ApiEndpoints.assignedPatients);
-      return response.data;
-    } catch (e) {
-      rethrow;
+  FirebaseFirestore get _db => _firebase.firestore;
+  String get _uid => _firebase.currentUid;
+
+  Future<List<Map<String, dynamic>>> getAssignedPatients() async {
+    final query = await _db
+        .collection('patients')
+        .where('assignedDoctorId', isEqualTo: _uid)
+        .get();
+
+    final results = <Map<String, dynamic>>[];
+    for (final doc in query.docs) {
+      final patientId = doc.id;
+      final patientData = doc.data();
+      final userDoc = await _db.collection('users').doc(patientId).get();
+      final userData = userDoc.data() ?? {};
+
+      results.add({
+        'patient_id': patientId,
+        'name': userData['name'] ?? 'Unknown',
+        'age': patientData['age'],
+        'gender': patientData['gender'],
+      });
     }
+
+    return results;
   }
 
   Future<void> sendFeedback({
@@ -19,27 +37,26 @@ class DoctorRepository {
     required String feedbackText,
     String? xrayResultId,
   }) async {
-    try {
-      await _dio.post(
-        ApiEndpoints.postFeedback,
-        data: {
-          'patient_id': patientId,
-          'feedback_text': feedbackText,
-          if (xrayResultId != null && xrayResultId.isNotEmpty)
-            'xray_result_id': xrayResultId,
-        },
-      );
-    } catch (e) {
-      rethrow;
-    }
+    await _db
+        .collection('patients')
+        .doc(patientId)
+        .collection('medical_feedback')
+        .add({
+      'doctorId': _uid,
+      'patientId': patientId,
+      'xrayResultId': xrayResultId,
+      'feedbackText': feedbackText,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
   Future<Map<String, dynamic>> getVerificationStatus() async {
-    try {
-      final response = await _dio.get(ApiEndpoints.doctorVerificationStatus);
-      return response.data;
-    } catch (e) {
-      rethrow;
-    }
+    final doc = await _db.collection('doctors').doc(_uid).get();
+    final data = doc.data() ?? {};
+    return {
+      'verificationStatus': data['verificationStatus'] ?? 'pending',
+      'idCardImageUrl': data['idCardImageUrl'],
+      'reviewedAt': data['reviewedAt'],
+    };
   }
 }

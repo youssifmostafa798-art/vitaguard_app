@@ -1,0 +1,143 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc(uid) {
+      return get(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function userRole(uid) {
+      return userDoc(uid).data.role;
+    }
+
+    function isAdmin() {
+      return signedIn() && userRole(request.auth.uid) == 'admin';
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function patientDoc(uid) {
+      return get(/databases/$(database)/documents/patients/$(uid));
+    }
+
+    function isAssignedDoctor(patientId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/patients/$(patientId))
+        && patientDoc(patientId).data.assignedDoctorId == request.auth.uid;
+    }
+
+    function isLinkedCompanion(patientId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/companions/$(request.auth.uid))
+        && get(/databases/$(database)/documents/companions/$(request.auth.uid))
+            .data.linkedPatientId == patientId;
+    }
+
+    function canReadPatient(patientId) {
+      return isOwner(patientId) || isAssignedDoctor(patientId) || isLinkedCompanion(patientId) || isAdmin();
+    }
+
+    function canWritePatient(patientId) {
+      return isOwner(patientId) || isAdmin();
+    }
+
+    function isUpdatingVerification() {
+      return request.resource.data.diff(resource.data).changedKeys()
+        .hasAny(['verificationStatus', 'reviewedBy', 'reviewedAt']);
+    }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /patients/{uid} {
+      allow read: if canReadPatient(uid);
+      allow create: if isOwner(uid);
+      allow update: if canWritePatient(uid);
+      allow delete: if isAdmin();
+
+      match /medical_history/{docId} {
+        allow read: if canReadPatient(uid);
+        allow write: if canWritePatient(uid);
+      }
+
+      match /daily_reports/{docId} {
+        allow read: if canReadPatient(uid);
+        allow write: if canWritePatient(uid);
+      }
+
+      match /xray_results/{docId} {
+        allow read: if canReadPatient(uid);
+        allow write: if canWritePatient(uid);
+      }
+
+      match /documents/{docId} {
+        allow read: if canReadPatient(uid);
+        allow write: if canWritePatient(uid);
+      }
+
+      match /medical_feedback/{docId} {
+        allow read: if canReadPatient(uid);
+        allow create: if isAssignedDoctor(uid) || isAdmin();
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    match /doctors/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isAdmin() || (isOwner(uid) && !isUpdatingVerification());
+      allow delete: if isAdmin();
+    }
+
+    match /companions/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /facilities/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isAdmin() || (isOwner(uid) && !isUpdatingVerification());
+      allow delete: if isAdmin();
+
+      match /tests/{testId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow write: if isOwner(uid) || isAdmin();
+      }
+
+      match /appointments/{appointmentId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow write: if isOwner(uid) || isAdmin();
+      }
+
+      match /offers/{offerId} {
+        allow read: if true;
+        allow write: if isOwner(uid) || isAdmin();
+      }
+    }
+
+    match /conversations/{conversationId} {
+      allow read: if signedIn() && request.auth.uid in resource.data.participantIds;
+      allow create: if signedIn() && request.auth.uid in request.resource.data.participantIds;
+      allow update: if signedIn() && request.auth.uid in resource.data.participantIds;
+      allow delete: if isAdmin();
+
+      match /messages/{messageId} {
+        allow read: if signedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+        allow create: if signedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+        allow update, delete: if isAdmin();
+      }
+    }
+  }
+}

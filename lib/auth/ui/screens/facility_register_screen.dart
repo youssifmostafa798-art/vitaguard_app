@@ -1,19 +1,19 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:vitaguard_app/auth/ui/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vitaguard_app/auth/ui/screens/create_account_screen.dart';
 import 'package:vitaguard_app/auth/ui/widgets/image_of_the_record.dart';
 import 'package:vitaguard_app/auth/ui/widgets/signup_success_dialog.dart';
+import 'package:vitaguard_app/core/providers.dart';
 
-class FacilityRegisterScreen extends StatefulWidget {
+class FacilityRegisterScreen extends ConsumerStatefulWidget {
   const FacilityRegisterScreen({super.key});
 
   @override
-  State<FacilityRegisterScreen> createState() => _FacilityRegisterScreenState();
+  ConsumerState<FacilityRegisterScreen> createState() => _FacilityRegisterScreenState();
 }
 
-class _FacilityRegisterScreenState extends State<FacilityRegisterScreen> {
+class _FacilityRegisterScreenState extends ConsumerState<FacilityRegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -98,8 +98,15 @@ class _FacilityRegisterScreenState extends State<FacilityRegisterScreen> {
           return;
         }
 
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        final success = await authProvider.registerFacility(
+        if (_passwordController.text != _confirmPasswordController.text) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Passwords do not match")),
+          );
+          return;
+        }
+
+        final authController = ref.read(authProvider);
+        final success = await authController.registerFacility(
           name: _nameController.text.trim(),
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
@@ -116,7 +123,7 @@ class _FacilityRegisterScreenState extends State<FacilityRegisterScreen> {
           if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(authProvider.error ?? "Registration failed"),
+              content: Text(authController.error ?? "Registration failed"),
             ),
           );
         }

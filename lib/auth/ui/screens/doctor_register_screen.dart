@@ -1,19 +1,19 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:vitaguard_app/auth/ui/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vitaguard_app/auth/ui/screens/create_account_screen.dart';
 import 'package:vitaguard_app/auth/ui/widgets/professional_id.dart';
 import 'package:vitaguard_app/auth/ui/widgets/signup_success_dialog.dart';
+import 'package:vitaguard_app/core/providers.dart';
 
-class DoctorRegisterScreen extends StatefulWidget {
+class DoctorRegisterScreen extends ConsumerStatefulWidget {
   const DoctorRegisterScreen({super.key});
 
   @override
-  State<DoctorRegisterScreen> createState() => _DoctorRegisterScreenState();
+  ConsumerState<DoctorRegisterScreen> createState() => _DoctorRegisterScreenState();
 }
 
-class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
+class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -97,8 +97,15 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
           return;
         }
 
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        final success = await authProvider.registerDoctor(
+        if (_passwordController.text != _confirmPasswordController.text) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Passwords do not match")),
+          );
+          return;
+        }
+
+        final authController = ref.read(authProvider);
+        final success = await authController.registerDoctor(
           fullName: _nameController.text.trim(),
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
@@ -116,7 +123,7 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
           if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(authProvider.error ?? "Registration failed"),
+              content: Text(authController.error ?? "Registration failed"),
             ),
           );
         }

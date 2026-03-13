@@ -1,32 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:vitaguard_app/auth/ui/auth_provider.dart';
-import 'package:vitaguard_app/patient/ui/patient_provider.dart';
-import 'package:vitaguard_app/doctor/ui/doctor_provider.dart';
-import 'package:vitaguard_app/companion/ui/companion_provider.dart';
-import 'package:vitaguard_app/facility/ui/facility_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:vitaguard_app/onbording/ui/onbording_screen/onboarding_screen.dart';
-
-import 'package:vitaguard_app/core/network/health_provider.dart';
-import 'package:vitaguard_app/core/network/backend_manager.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Start backend automatically if on Windows
-  await BackendManager().autoStartBackend();
-  
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => PatientProvider()),
-        ChangeNotifierProvider(create: (_) => DoctorProvider()),
-        ChangeNotifierProvider(create: (_) => CompanionProvider()),
-        ChangeNotifierProvider(create: (_) => FacilityProvider()),
-        ChangeNotifierProvider(create: (_) => HealthProvider()),
-      ],
-      child: const MyApp(),
+    const ProviderScope(
+      child: MyApp(),
     ),
   );
 }

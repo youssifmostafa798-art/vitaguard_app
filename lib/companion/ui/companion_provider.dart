@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:vitaguard_app/core/network/dio_error_mapper.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/companion/data/companion_repository.dart';
 
 class CompanionProvider with ChangeNotifier {
@@ -48,6 +48,6 @@ class CompanionProvider with ChangeNotifier {
   }
 
   String _handleError(dynamic e) {
-    return DioErrorMapper.map(e);
+    return ErrorMapper.map(e);
   }
 }

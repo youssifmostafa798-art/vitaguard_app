@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:vitaguard_app/auth/data/auth_repository.dart';
-import 'package:vitaguard_app/core/network/dio_error_mapper.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthRepository _repository = AuthRepository();
@@ -12,24 +12,18 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   Map<String, dynamic>? get currentUser => _currentUser;
-  String get userName =>
-      _currentUser?['full_name'] ?? _currentUser?['name'] ?? 'User';
+  String get userName => _currentUser?['name'] ?? 'User';
 
   Future<bool> login(String email, String password) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-
+    _setLoading(true);
     try {
       await _repository.login(email, password);
       _currentUser = await _repository.getMe();
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return true;
     } catch (e) {
-      _error = _handleError(e);
-      _isLoading = false;
-      notifyListeners();
+      _error = ErrorMapper.map(e);
+      _setLoading(false);
       return false;
     }
   }
@@ -42,10 +36,7 @@ class AuthProvider with ChangeNotifier {
     String? gender,
     String? age,
   }) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-
+    _setLoading(true);
     try {
       await _repository.registerPatient(
         fullName: fullName,
@@ -56,13 +47,11 @@ class AuthProvider with ChangeNotifier {
         age: age,
       );
       _currentUser = await _repository.getMe();
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return true;
     } catch (e) {
-      _error = _handleError(e);
-      _isLoading = false;
-      notifyListeners();
+      _error = ErrorMapper.map(e);
+      _setLoading(false);
       return false;
     }
   }
@@ -77,10 +66,7 @@ class AuthProvider with ChangeNotifier {
     String? gender,
     String? age,
   }) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-
+    _setLoading(true);
     try {
       await _repository.registerDoctor(
         fullName: fullName,
@@ -93,38 +79,35 @@ class AuthProvider with ChangeNotifier {
         age: age,
       );
       _currentUser = await _repository.getMe();
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return true;
     } catch (e) {
-      _error = _handleError(e);
-      _isLoading = false;
-      notifyListeners();
+      _error = ErrorMapper.map(e);
+      _setLoading(false);
       return false;
     }
   }
 
   Future<bool> registerCompanion({
     required String name,
+    required String email,
+    required String password,
     required String companionCode,
   }) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-
+    _setLoading(true);
     try {
       await _repository.registerCompanion(
         name: name,
+        email: email,
+        password: password,
         companionCode: companionCode,
       );
       _currentUser = await _repository.getMe();
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return true;
     } catch (e) {
-      _error = _handleError(e);
-      _isLoading = false;
-      notifyListeners();
+      _error = ErrorMapper.map(e);
+      _setLoading(false);
       return false;
     }
   }
@@ -138,10 +121,7 @@ class AuthProvider with ChangeNotifier {
     required String facilityType,
     required File? recordImage,
   }) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-
+    _setLoading(true);
     try {
       await _repository.registerFacility(
         name: name,
@@ -153,32 +133,11 @@ class AuthProvider with ChangeNotifier {
         recordImage: recordImage,
       );
       _currentUser = await _repository.getMe();
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return true;
     } catch (e) {
-      _error = _handleError(e);
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    }
-  }
-
-  Future<bool> loginCompanion(String name, String code) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-
-    try {
-      await _repository.loginCompanion(name, code);
-      _currentUser = await _repository.getMe();
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _error = _handleError(e);
-      _isLoading = false;
-      notifyListeners();
+      _error = ErrorMapper.map(e);
+      _setLoading(false);
       return false;
     }
   }
@@ -191,8 +150,8 @@ class AuthProvider with ChangeNotifier {
 
     try {
       _currentUser = await _repository.getMe();
-      return _currentUser?['role'];
-    } catch (e) {
+      return _currentUser?['role'] as String?;
+    } catch (_) {
       return null;
     }
   }
@@ -203,8 +162,9 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  String _handleError(dynamic e) {
-    debugPrint('Auth Error: $e');
-    return DioErrorMapper.map(e);
+  void _setLoading(bool value) {
+    _isLoading = value;
+    _error = null;
+    notifyListeners();
   }
 }

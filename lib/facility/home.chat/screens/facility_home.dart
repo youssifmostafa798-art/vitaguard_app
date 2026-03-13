@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/facility/home.chat/screens/chat_facility_detail.dart';
 import 'package:vitaguard_app/models/chat_preview_card.dart';
@@ -7,11 +8,10 @@ import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/core/home_header.dart';
 import 'package:vitaguard_app/patient/home/widget/home_search.dart';
-import 'package:provider/provider.dart';
-import 'package:vitaguard_app/auth/ui/auth_provider.dart';
 import 'package:vitaguard_app/auth/ui/screens/role_screen.dart';
+import 'package:vitaguard_app/core/providers.dart';
 
-class FacilityHome extends StatelessWidget {
+class FacilityHome extends ConsumerWidget {
   final String name;
 
   FacilityHome({super.key, required this.name});
@@ -123,13 +123,13 @@ class FacilityHome extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: HomeHeader(
         name_: name,
         profileImage: const AssetImage("assets/PNG/youth_14.png"),
         onExit: () {
-          context.read<AuthProvider>().logout();
+          ref.read(authProvider).logout();
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const RoleScreen()),
@@ -146,7 +146,6 @@ class FacilityHome extends StatelessWidget {
                 Gap(20),
                 HomeSearch(),
                 Gap(10),
-                // Active chats section
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Row(
@@ -169,7 +168,6 @@ class FacilityHome extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Chat list
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),

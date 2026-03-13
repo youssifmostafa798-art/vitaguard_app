@@ -1,36 +1,42 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:vitaguard_app/auth/ui/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vitaguard_app/auth/ui/widgets/auth_textfield.dart';
 import 'package:vitaguard_app/auth/ui/widgets/signup_success_dialog.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/components/custom_logo.dart';
+import 'package:vitaguard_app/core/providers.dart';
 
-class CompanionRegisterScreen extends StatefulWidget {
+class CompanionRegisterScreen extends ConsumerStatefulWidget {
   const CompanionRegisterScreen({super.key});
 
   @override
-  State<CompanionRegisterScreen> createState() =>
+  ConsumerState<CompanionRegisterScreen> createState() =>
       _CompanionRegisterScreenState();
 }
 
-class _CompanionRegisterScreenState extends State<CompanionRegisterScreen> {
+class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScreen> {
   final codeCtrl = TextEditingController();
   final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
   @override
   void dispose() {
     codeCtrl.dispose();
     _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-    final isLoading = authProvider.isLoading;
+    final authState = ref.watch(authProvider);
+    final isLoading = authState.isLoading;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -91,7 +97,35 @@ class _CompanionRegisterScreenState extends State<CompanionRegisterScreen> {
 
                       const SizedBox(height: 20),
 
-                      AuthTextField(hint: "Enter 6-digit Patient Code", controller: codeCtrl),
+                      AuthTextField(
+                        hint: "Email",
+                        controller: _emailController,
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      AuthTextField(
+                        hint: "Password",
+                        controller: _passwordController,
+                        obscure: true,
+                        suffixIcon: const Icon(Icons.visibility),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      AuthTextField(
+                        hint: "Confirm Password",
+                        controller: _confirmPasswordController,
+                        obscure: true,
+                        suffixIcon: const Icon(Icons.visibility),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      AuthTextField(
+                        hint: "Enter 6-digit Patient Code",
+                        controller: codeCtrl,
+                      ),
 
                       const SizedBox(height: 50),
 
@@ -101,6 +135,9 @@ class _CompanionRegisterScreenState extends State<CompanionRegisterScreen> {
                             ? null
                             : () async {
                                 if (_nameController.text.isEmpty ||
+                                    _emailController.text.isEmpty ||
+                                    _passwordController.text.isEmpty ||
+                                    _confirmPasswordController.text.isEmpty ||
                                     codeCtrl.text.isEmpty) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
@@ -110,9 +147,22 @@ class _CompanionRegisterScreenState extends State<CompanionRegisterScreen> {
                                   return;
                                 }
 
-                                final success = await authProvider
+                                if (_passwordController.text !=
+                                    _confirmPasswordController.text) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Passwords do not match"),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                final success = await ref
+                                    .read(authProvider)
                                     .registerCompanion(
                                       name: _nameController.text.trim(),
+                                      email: _emailController.text.trim(),
+                                      password: _passwordController.text.trim(),
                                       companionCode: codeCtrl.text.trim(),
                                     );
 
@@ -124,7 +174,7 @@ class _CompanionRegisterScreenState extends State<CompanionRegisterScreen> {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        authProvider.error ??
+                                        authState.error ??
                                             "Registration failed",
                                       ),
                                     ),

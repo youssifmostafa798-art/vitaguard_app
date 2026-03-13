@@ -1,31 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
-import 'package:provider/provider.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/core/simple_buttom.dart';
 import 'package:vitaguard_app/core/simple_header.dart';
-import 'package:vitaguard_app/patient/ui/patient_provider.dart';
+import 'package:vitaguard_app/core/providers.dart';
 
-class CompanionCode extends StatefulWidget {
+class CompanionCode extends ConsumerStatefulWidget {
   const CompanionCode({super.key});
 
   @override
-  State<CompanionCode> createState() => _CompanionCodeState();
+  ConsumerState<CompanionCode> createState() => _CompanionCodeState();
 }
 
-class _CompanionCodeState extends State<CompanionCode> {
+class _CompanionCodeState extends ConsumerState<CompanionCode> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PatientProvider>().fetchCompanionCode();
+      ref.read(patientProvider).fetchCompanionCode();
     });
   }
 
   Future<void> _regenerateCode() async {
-    final success = await context.read<PatientProvider>().regenerateCompanionCode();
+    final success = await ref.read(patientProvider).regenerateCompanionCode();
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Companion code regenerated successfully")),
@@ -42,86 +42,83 @@ class _CompanionCodeState extends State<CompanionCode> {
 
   @override
   Widget build(BuildContext context) {
+    final patient = ref.watch(patientProvider);
+    final displayCode = patient.companionCode ?? "......";
+
     return Scaffold(
       appBar: SimpleHeader(title: "Companion Code"),
       body: SafeArea(
         child: AppBackground(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Consumer<PatientProvider>(
-              builder: (context, patient, _) {
-                final displayCode = patient.companionCode ?? "......";
-                
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Gap(10),
-                    const Gap(40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Gap(10),
+                const Gap(40),
 
-                    CustemText(
-                      text: "Code",
-                      size: 18,
-                      color: const Color(0xff0E3C63),
-                      weight: FontWeight.bold,
+                CustemText(
+                  text: "Code",
+                  size: 18,
+                  color: const Color(0xff0E3C63),
+                  weight: FontWeight.bold,
+                ),
+
+                const Gap(10),
+
+                GestureDetector(
+                  onLongPress: () => _copyToClipboard(displayCode),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
                     ),
-
-                    const Gap(10),
-
-                    GestureDetector(
-                      onLongPress: () => _copyToClipboard(displayCode),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 16,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(25),
-                          border: Border.all(color: const Color(0xff0E3C63)),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: CustemText(
-                                text: displayCode,
-                                size: 24,
-                                color: Colors.black,
-                                weight: FontWeight.w700,
-                              ),
-                            ),
-                            if (patient.isLoading)
-                              const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            else
-                              IconButton(
-                                icon: const Icon(Icons.copy, size: 20, color: Color(0xff0E3C63)),
-                                onPressed: () => _copyToClipboard(displayCode),
-                              ),
-                          ],
-                        ),
-                      ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(color: const Color(0xff0E3C63)),
                     ),
-
-                    const Gap(30),
-
-                    SimpleButtom(
-                      text: patient.isLoading ? "Regenerating..." : "Change Code",
-                      onTap: patient.isLoading ? null : _regenerateCode,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: CustemText(
+                            text: displayCode,
+                            size: 24,
+                            color: Colors.black,
+                            weight: FontWeight.w700,
+                          ),
+                        ),
+                        if (patient.isLoading)
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        else
+                          IconButton(
+                            icon: const Icon(Icons.copy, size: 20, color: Color(0xff0E3C63)),
+                            onPressed: () => _copyToClipboard(displayCode),
+                          ),
+                      ],
                     ),
-                    
-                    if (patient.error != null) ...[
-                      const Gap(10),
-                      Text(
-                        patient.error!,
-                        style: const TextStyle(color: Colors.red, fontSize: 12),
-                      ),
-                    ],
-                  ],
-                );
-              },
+                  ),
+                ),
+
+                const Gap(30),
+
+                SimpleButtom(
+                  text: patient.isLoading ? "Regenerating..." : "Change Code",
+                  onTap: patient.isLoading ? null : _regenerateCode,
+                ),
+
+                if (patient.error != null) ...[
+                  const Gap(10),
+                  Text(
+                    patient.error!,
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ],
+              ],
             ),
           ),
         ),
