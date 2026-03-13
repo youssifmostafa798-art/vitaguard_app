@@ -25,12 +25,15 @@ class _PatientRegisterScreenState extends ConsumerState<PatientRegisterScreen> {
   final _medicalHistoryController = TextEditingController();
 
   MedicalHistory? _draftHistory;
+  String? _localError;
 
   void _handleSignUp() async {
+    if (_localError != null) {
+      setState(() => _localError = null);
+    }
+
     if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
+      setState(() => _localError = 'Passwords do not match');
       return;
     }
 
@@ -54,7 +57,11 @@ class _PatientRegisterScreenState extends ConsumerState<PatientRegisterScreen> {
       }
 
       if (!mounted) return;
+      setState(() => _localError = null);
       await showSignupSuccessDialog(context);
+    } else {
+      if (!mounted) return;
+      setState(() => _localError = auth.error ?? 'Registration failed');
     }
   }
 
@@ -64,7 +71,7 @@ class _PatientRegisterScreenState extends ConsumerState<PatientRegisterScreen> {
     return CreateAccountScreen(
       title: "Create Patient Account",
       buttonText: "sign up",
-      errorMessage: authState.error,
+      errorMessage: _localError ?? authState.error,
       fields: [
         {
           'hint': 'User Name',

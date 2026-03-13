@@ -23,6 +23,7 @@ class _FacilityRegisterScreenState extends ConsumerState<FacilityRegisterScreen>
   final _typeController = TextEditingController();
   final _attachimageController = TextEditingController();
   File? _selectedRecordImage;
+  String? _localError;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +31,7 @@ class _FacilityRegisterScreenState extends ConsumerState<FacilityRegisterScreen>
     return CreateAccountScreen(
       title: "Create Facility Account",
       buttonText: "Sign up",
-      errorMessage: authState.error,
+      errorMessage: _localError ?? authState.error,
       fields: [
         {
           'hint': 'Name of Facility',
@@ -89,21 +90,21 @@ class _FacilityRegisterScreenState extends ConsumerState<FacilityRegisterScreen>
         },
       ],
       onSubmit: () async {
+        if (_localError != null) {
+          setState(() => _localError = null);
+        }
+
         if (_nameController.text.isEmpty ||
             _emailController.text.isEmpty ||
             _passwordController.text.isEmpty ||
             _addressController.text.isEmpty ||
             _typeController.text.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Please fill all required fields")),
-          );
+          setState(() => _localError = 'Please fill all required fields');
           return;
         }
 
         if (_passwordController.text != _confirmPasswordController.text) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Passwords do not match")),
-          );
+          setState(() => _localError = 'Passwords do not match');
           return;
         }
 
@@ -120,7 +121,13 @@ class _FacilityRegisterScreenState extends ConsumerState<FacilityRegisterScreen>
 
         if (success) {
           if (!context.mounted) return;
+          setState(() => _localError = null);
           await showSignupSuccessDialog(context);
+        } else {
+          if (!context.mounted) return;
+          setState(
+            () => _localError = authController.error ?? 'Registration failed',
+          );
         }
       },
     );

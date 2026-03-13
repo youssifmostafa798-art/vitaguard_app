@@ -23,6 +23,7 @@ class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScree
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  String? _localError;
 
   @override
   void dispose() {
@@ -38,7 +39,8 @@ class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScree
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final isLoading = authState.isLoading;
-    final hasError = authState.error != null && authState.error!.trim().isNotEmpty;
+    final effectiveError = _localError ?? authState.error ?? '';
+    final hasError = effectiveError.trim().isNotEmpty;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -108,8 +110,8 @@ class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScree
                         },
                         child: hasError
                             ? AuthErrorBanner(
-                                key: ValueKey(authState.error),
-                                message: authState.error!,
+                                key: ValueKey(effectiveError),
+                                message: effectiveError,
                               )
                             : const SizedBox.shrink(),
                       ),
@@ -160,25 +162,24 @@ class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScree
                         onTap: isLoading
                             ? null
                             : () async {
+                                if (_localError != null) {
+                                  setState(() => _localError = null);
+                                }
                                 if (_nameController.text.isEmpty ||
                                     _emailController.text.isEmpty ||
                                     _passwordController.text.isEmpty ||
                                     _confirmPasswordController.text.isEmpty ||
                                     codeCtrl.text.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text("Please fill all fields"),
-                                    ),
+                                  setState(
+                                    () => _localError = 'Please fill all fields',
                                   );
                                   return;
                                 }
 
                                 if (_passwordController.text !=
                                     _confirmPasswordController.text) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text("Passwords do not match"),
-                                    ),
+                                  setState(
+                                    () => _localError = 'Passwords do not match',
                                   );
                                   return;
                                 }
@@ -196,6 +197,9 @@ class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScree
 
                                 if (success) {
                                   await showSignupSuccessDialog(context);
+                                  if (context.mounted) {
+                                    setState(() => _localError = null);
+                                  }
                                 }
                               },
                       ),
