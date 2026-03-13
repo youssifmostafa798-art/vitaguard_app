@@ -16,6 +16,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int currentIndex = 0;
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
@@ -42,7 +48,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 controller: _controller,
                 isLast: onboardingList[currentIndex].isLast,
               ),
-              SizedBox(height: 50),
+              const SizedBox(height: 50),
             ],
           ),
         ),

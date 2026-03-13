@@ -1,6 +1,5 @@
 import 'dart:io';
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:tflite_flutter/tflite_flutter.dart';
 
@@ -105,84 +104,27 @@ class XrayInferenceService {
     );
   }
 
-  Future<String?> _validateImage(File file) async {
-    final ext = file.path.toLowerCase();
-    if (!(ext.endsWith('.jpg') || ext.endsWith('.jpeg') || ext.endsWith('.png'))) {
-      return 'Invalid file type. Please upload a JPEG or PNG image.';
-    }
-
-    final size = await file.length();
-    const maxBytes = 10 * 1024 * 1024;
-    if (size > maxBytes) {
-      return 'File too large. Maximum size is 10 MB.';
-    }
-
-    try {
-      final bytes = await file.readAsBytes();
-      final decoded = img.decodeImage(bytes);
-      if (decoded == null) {
-        return 'Invalid image file.';
-      }
-      if (decoded.width < 50 || decoded.height < 50) {
-        return 'Image too small. Please upload a higher resolution X-ray.';
-      }
-      if (decoded.width > 10000 || decoded.height > 10000) {
-        return 'Image dimensions too large.';
-      }
-    } catch (_) {
-      return 'Invalid image file.';
-    }
-
-    return null;
+  Future<String?> _validateImage(File file) {
+    return compute(_validateImageIsolate, file.path);
   }
 
   Future<Object> _preprocess(File file, List<int> inputShape) async {
-    final bytes = await file.readAsBytes();
-    final decoded = img.decodeImage(bytes);
-    if (decoded == null) {
-      throw StateError('Failed to decode image.');
-    }
-
     final height = inputShape[1];
     final width = inputShape[2];
     final channels = inputShape.length > 3 ? inputShape[3] : 1;
-    final resized = img.copyResize(decoded, width: width, height: height);
+    final args = <String, dynamic>{
+      'path': file.path,
+      'width': width,
+      'height': height,
+      'channels': channels,
+    };
 
     if (_inputType == TensorType.uint8) {
-      final buffer = Uint8List(width * height * channels);
-      int i = 0;
-      for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-          final pixel = resized.getPixel(x, y);
-          if (channels == 1) {
-            final luminance = pixel.luminance.toInt();
-            buffer[i++] = luminance;
-          } else {
-            buffer[i++] = pixel.r.toInt();
-            buffer[i++] = pixel.g.toInt();
-            buffer[i++] = pixel.b.toInt();
-          }
-        }
-      }
+      final buffer = await compute(_preprocessUint8Isolate, args);
       return buffer.reshape([1, height, width, channels]);
     }
 
-    final buffer = Float32List(width * height * channels);
-    int i = 0;
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width; x++) {
-        final pixel = resized.getPixel(x, y);
-        if (channels == 1) {
-          final luminance = pixel.luminance;
-          buffer[i++] = luminance / 255.0;
-        } else {
-          buffer[i++] = pixel.r / 255.0;
-          buffer[i++] = pixel.g / 255.0;
-          buffer[i++] = pixel.b / 255.0;
-        }
-      }
-    }
-
+    final buffer = await compute(_preprocessFloat32Isolate, args);
     return buffer.reshape([1, height, width, channels]);
   }
 
@@ -226,4 +168,96 @@ class XrayInferenceService {
       'This is a preliminary automated report and does not replace a physician diagnosis.',
     ].join('\n');
   }
+}
+
+Future<String?> _validateImageIsolate(String path) async {
+  final ext = path.toLowerCase();
+  if (!(ext.endsWith('.jpg') || ext.endsWith('.jpeg') || ext.endsWith('.png'))) {
+    return 'Invalid file type. Please upload a JPEG or PNG image.';
+  }
+
+  final file = File(path);
+  final size = await file.length();
+  const maxBytes = 10 * 1024 * 1024;
+  if (size > maxBytes) {
+    return 'File too large. Maximum size is 10 MB.';
+  }
+
+  try {
+    final bytes = await file.readAsBytes();
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) {
+      return 'Invalid image file.';
+    }
+    if (decoded.width < 50 || decoded.height < 50) {
+      return 'Image too small. Please upload a higher resolution X-ray.';
+    }
+    if (decoded.width > 10000 || decoded.height > 10000) {
+      return 'Image dimensions too large.';
+    }
+  } catch (_) {
+    return 'Invalid image file.';
+  }
+
+  return null;
+}
+
+Uint8List _preprocessUint8Isolate(Map<String, dynamic> args) {
+  final path = args['path'] as String;
+  final width = args['width'] as int;
+  final height = args['height'] as int;
+  final channels = args['channels'] as int;
+
+  final bytes = File(path).readAsBytesSync();
+  final decoded = img.decodeImage(bytes);
+  if (decoded == null) {
+    throw StateError('Failed to decode image.');
+  }
+  final resized = img.copyResize(decoded, width: width, height: height);
+
+  final buffer = Uint8List(width * height * channels);
+  int i = 0;
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      final pixel = resized.getPixel(x, y);
+      if (channels == 1) {
+        buffer[i++] = pixel.luminance.toInt();
+      } else {
+        buffer[i++] = pixel.r.toInt();
+        buffer[i++] = pixel.g.toInt();
+        buffer[i++] = pixel.b.toInt();
+      }
+    }
+  }
+  return buffer;
+}
+
+Float32List _preprocessFloat32Isolate(Map<String, dynamic> args) {
+  final path = args['path'] as String;
+  final width = args['width'] as int;
+  final height = args['height'] as int;
+  final channels = args['channels'] as int;
+
+  final bytes = File(path).readAsBytesSync();
+  final decoded = img.decodeImage(bytes);
+  if (decoded == null) {
+    throw StateError('Failed to decode image.');
+  }
+  final resized = img.copyResize(decoded, width: width, height: height);
+
+  final buffer = Float32List(width * height * channels);
+  int i = 0;
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      final pixel = resized.getPixel(x, y);
+      if (channels == 1) {
+        buffer[i++] = pixel.luminance / 255.0;
+      } else {
+        buffer[i++] = pixel.r / 255.0;
+        buffer[i++] = pixel.g / 255.0;
+        buffer[i++] = pixel.b / 255.0;
+      }
+    }
+  }
+  return buffer;
 }
