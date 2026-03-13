@@ -1,0 +1,40 @@
+import { supabase } from "../_shared/supabase_client.ts";
+import { assertAdmin, getUserIdFromRequest } from "../_shared/auth.ts";
+
+Deno.serve(async (req) => {
+  try {
+    const userId = await getUserIdFromRequest(req);
+    await assertAdmin(userId);
+
+    const payload = await req.json();
+    const facilityId = payload?.facilityId as string | undefined;
+    const status = payload?.status as string | undefined;
+
+    if (!facilityId || !status) {
+      return new Response(JSON.stringify({ error: "facilityId and status required." }), {
+        status: 400,
+      });
+    }
+
+    if (!["approved", "rejected"].includes(status)) {
+      return new Response(JSON.stringify({ error: "Invalid status." }), { status: 400 });
+    }
+
+    const { error } = await supabase.from("facilities").update({
+      verification_status: status,
+      reviewed_by: userId,
+      reviewed_at: new Date().toISOString(),
+    }).eq("id", facilityId);
+
+    if (error) throw error;
+
+    return new Response(JSON.stringify({ facilityId, verificationStatus: status }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: String(error) }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+});

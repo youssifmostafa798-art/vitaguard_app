@@ -1,164 +1,193 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:vitaguard_app/core/ai/xray_inference_service.dart';
-import 'package:vitaguard_app/core/firebase/firebase_service.dart';
+import 'package:vitaguard_app/core/supabase/supabase_service.dart';
+import 'package:vitaguard_app/core/utils/uuid.dart';
 import 'package:vitaguard_app/patient/data/patient_models.dart';
 
 class PatientRepository {
-  final FirebaseService _firebase = FirebaseService.instance;
+  final SupabaseService _supabase = SupabaseService.instance;
 
-  FirebaseFirestore get _db => _firebase.firestore;
-  FirebaseStorage get _storage => _firebase.storage;
+  SupabaseClient get _client => _supabase.client;
 
-  String get _uid => _firebase.currentUid;
+  String get _uid => _supabase.currentUid;
 
   Future<void> submitDailyReport(DailyReport report) async {
     final data = report.toMap();
-    data['createdAt'] = FieldValue.serverTimestamp();
-
-    await _db
-        .collection('patients')
-        .doc(_uid)
-        .collection('daily_reports')
-        .add(data);
+    await _client.from('patient_daily_reports').insert({
+      'patient_id': _uid,
+      'report_date': (data['reportDate'] as DateTime?)?.toIso8601String(),
+      'heart_rate': data['heartRate'],
+      'oxygen_level': data['oxygenLevel'],
+      'temperature': data['temperature'],
+      'blood_pressure': data['bloodPressure'],
+      'tasks_activities': data['tasksActivities'],
+      'notes': data['notes'],
+    });
   }
 
   Future<void> updateMedicalHistory(MedicalHistory history) async {
     final data = history.toMap();
-    data['updatedAt'] = FieldValue.serverTimestamp();
-
-    await _db
-        .collection('patients')
-        .doc(_uid)
-        .collection('medical_history')
-        .doc('current')
-        .set(data, SetOptions(merge: true));
+    await _client.from('patient_medical_history').upsert({
+      'patient_id': _uid,
+      'allergies': data['allergies'],
+      'medications': data['medications'],
+      'chronic_diseases': data['chronicDiseases'],
+      'surgeries': data['surgeries'],
+      'notes': data['notes'],
+      'updated_at': DateTime.now().toIso8601String(),
+    });
   }
 
   Future<MedicalHistory> getMedicalHistory() async {
-    final doc = await _db
-        .collection('patients')
-        .doc(_uid)
-        .collection('medical_history')
-        .doc('current')
-        .get();
+    final data = await _client
+        .from('patient_medical_history')
+        .select()
+        .eq('patient_id', _uid)
+        .limit(1);
 
-    if (!doc.exists || doc.data() == null) {
-      return MedicalHistory(
-        chronicDiseases: '',
-        medications: '',
-        allergies: '',
-        surgeries: '',
-        notes: '',
+    if (data is List && data.isNotEmpty) {
+      return MedicalHistory.fromMap(
+        Map<String, dynamic>.from(data.first as Map),
       );
     }
 
-    return MedicalHistory.fromMap(doc.data()!);
+    return MedicalHistory(
+      chronicDiseases: '',
+      medications: '',
+      allergies: '',
+      surgeries: '',
+      notes: '',
+    );
   }
 
   Future<XRayResult> analyzeXRay(File imageFile) async {
     final result = await XrayInferenceService.instance.analyze(imageFile);
 
-    final docRef = _db
-        .collection('patients')
-        .doc(_uid)
-        .collection('xray_results')
-        .doc();
+    if (!result.isValid) {
+      await _client.from('patient_xray_results').insert({
+        'patient_id': _uid,
+        'is_valid': false,
+        'prediction': result.prediction,
+        'confidence': result.confidence,
+        'report_text': result.reportText,
+        'image_path': null,
+      });
 
-    String? storagePath;
-    if (result.isValid) {
-      final ext = _fileExtension(imageFile);
-      final ref = _storage.ref('xray_results/$_uid/${docRef.id}$ext');
-      await ref.putFile(imageFile);
-      storagePath = ref.fullPath;
+      return result;
     }
 
-    final data = result.toMap();
-    data['imagePath'] = storagePath;
-    data['createdAt'] = FieldValue.serverTimestamp();
+    final uploadResponse = await _client.functions.invoke(
+      'upload_xray_result',
+      body: {
+        'patient_id': _uid,
+        'filename': _basename(imageFile.path),
+        'content_type': _contentTypeForFile(imageFile.path),
+        'data': base64Encode(await imageFile.readAsBytes()),
+        'report_text': result.reportText,
+        'prediction': result.prediction,
+        'confidence': result.confidence,
+      },
+    );
 
-    await docRef.set(data);
+    final data = uploadResponse.data;
+    final imagePath =
+        (data is Map<String, dynamic>) ? data['image_path'] as String? : null;
 
     return XRayResult(
       isValid: result.isValid,
       prediction: result.prediction,
       confidence: result.confidence,
       reportText: result.reportText,
-      imagePath: storagePath,
+      imagePath: imagePath,
     );
   }
 
   Future<void> uploadMedicalDocument(File documentFile) async {
-    final docRef = _db
-        .collection('patients')
-        .doc(_uid)
-        .collection('documents')
-        .doc();
-
-    final ext = _fileExtension(documentFile);
-    final ref = _storage.ref('medical_records/$_uid/${docRef.id}$ext');
-    await ref.putFile(documentFile);
-
-    await docRef.set({
-      'id': docRef.id,
-      'patientId': _uid,
-      'fileUrl': ref.fullPath,
-      'documentType': ext == '.pdf' ? 'pdf' : 'image',
-      'originalFilename': documentFile.path.split('/').last,
-      'uploadedAt': FieldValue.serverTimestamp(),
-    });
+    await _client.functions.invoke(
+      'upload_medical_record',
+      body: {
+        'patient_id': _uid,
+        'document_id': Uuid.v4(),
+        'filename': _basename(documentFile.path),
+        'content_type': _contentTypeForFile(documentFile.path),
+        'data': base64Encode(await documentFile.readAsBytes()),
+      },
+    );
   }
 
   Future<String> getCompanionCode() async {
-    final doc = await _db.collection('patients').doc(_uid).get();
-    final data = doc.data();
-    final code = data?['companionCode'];
-    if (code is String && code.isNotEmpty) {
-      return code;
+    final data =
+        await _client.from('patients').select('companion_code').eq('id', _uid).limit(1);
+    if (data is List && data.isNotEmpty) {
+      final code = data.first['companion_code'];
+      if (code is String && code.isNotEmpty) {
+        return code;
+      }
     }
 
     final newCode = await _generateUniqueCompanionCode();
-    await _db.collection('patients').doc(_uid).set({
-      'companionCode': newCode,
-    }, SetOptions(merge: true));
+    await _client.from('patients').update({
+      'companion_code': newCode,
+    }).eq('id', _uid);
     return newCode;
   }
 
   Future<String> regenerateCompanionCode() async {
     final newCode = await _generateUniqueCompanionCode();
-    await _db.collection('patients').doc(_uid).set({
-      'companionCode': newCode,
-    }, SetOptions(merge: true));
+    await _client.from('patients').update({
+      'companion_code': newCode,
+    }).eq('id', _uid);
     return newCode;
   }
 
   Future<String> _generateUniqueCompanionCode() async {
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final random = Random.secure();
+    try {
+      final response = await _client.functions.invoke('generate_companion_code');
+      final data = response.data;
+      if (data is Map && data['code'] is String) {
+        return data['code'] as String;
+      }
+    } catch (_) {
+      // fall back to local generation if edge function unavailable
+    }
 
-    for (var attempt = 0; attempt < 6; attempt++) {
-      final code = List.generate(6, (_) => alphabet[random.nextInt(alphabet.length)])
+    return _generateLocalCompanionCode();
+  }
+
+  Future<String> _generateLocalCompanionCode() async {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+    for (var attempt = 0; attempt < 10; attempt++) {
+      final code = List.generate(6, (_) => alphabet[Random.secure().nextInt(alphabet.length)])
           .join();
-      final existing = await _db
-          .collection('patients')
-          .where('companionCode', isEqualTo: code)
-          .limit(1)
-          .get();
-      if (existing.docs.isEmpty) {
+      final existing = await _client
+          .from('patients')
+          .select('id')
+          .eq('companion_code', code)
+          .limit(1);
+      if (existing is List && existing.isEmpty) {
         return code;
       }
     }
 
-    throw StateError('Failed to generate unique companion code.');
+    return List.generate(6, (_) => alphabet[Random.secure().nextInt(alphabet.length)])
+        .join();
   }
 
-  String _fileExtension(File file) {
-    final parts = file.path.split('.');
-    if (parts.length < 2) return '';
-    return '.${parts.last.toLowerCase()}';
+  String _basename(String path) {
+    return path.split(Platform.pathSeparator).last;
+  }
+
+  String _contentTypeForFile(String path) {
+    final ext = path.toLowerCase();
+    if (ext.endsWith('.png')) return 'image/png';
+    if (ext.endsWith('.jpg') || ext.endsWith('.jpeg')) return 'image/jpeg';
+    if (ext.endsWith('.pdf')) return 'application/pdf';
+    return 'application/octet-stream';
   }
 }

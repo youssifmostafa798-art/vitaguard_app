@@ -1,45 +1,62 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:vitaguard_app/core/firebase/firebase_service.dart';
+import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 
 class CompanionRepository {
-  final FirebaseService _firebase = FirebaseService.instance;
+  final SupabaseService _supabase = SupabaseService.instance;
 
-  FirebaseFirestore get _db => _firebase.firestore;
-  String get _uid => _firebase.currentUid;
+  SupabaseClient get _client => _supabase.client;
+  String get _uid => _supabase.currentUid;
 
   Future<void> linkPatient(String code) async {
-    final snapshot = await _db
-        .collection('patients')
-        .where('companionCode', isEqualTo: code)
-        .limit(1)
-        .get();
+    final snapshot = await _client
+        .from('patients')
+        .select('id')
+        .eq('companion_code', code)
+        .limit(1);
 
-    if (snapshot.docs.isEmpty) {
+    final patientId = (snapshot is List && snapshot.isNotEmpty)
+        ? snapshot.first['id'] as String?
+        : null;
+    if (patientId == null) {
       throw StateError('Invalid companion code.');
     }
 
-    final patientId = snapshot.docs.first.id;
-    await _db.collection('companions').doc(_uid).set({
-      'linkedPatientId': patientId,
-    }, SetOptions(merge: true));
+    await _client.from('companions').upsert({
+      'id': _uid,
+      'linked_patient_id': patientId,
+    });
   }
 
   Future<dynamic> getPatientStatus() async {
-    final companionDoc = await _db.collection('companions').doc(_uid).get();
-    final linkedPatientId = companionDoc.data()?['linkedPatientId'];
+    final companionData =
+        await _client.from('companions').select().eq('id', _uid).limit(1);
+    if (companionData is! List || companionData.isEmpty) {
+      throw StateError('No linked patient found.');
+    }
+
+    final linkedPatientId = companionData.first['linked_patient_id'];
     if (linkedPatientId == null) {
       throw StateError('No linked patient found.');
     }
 
-    final patientDoc = await _db.collection('patients').doc(linkedPatientId).get();
-    final userDoc = await _db.collection('users').doc(linkedPatientId).get();
+    final patientData = await _client
+        .from('patients')
+        .select('id, gender, age, profiles(name)')
+        .eq('id', linkedPatientId)
+        .limit(1);
 
-    return {
-      'patient_id': linkedPatientId,
-      'name': userDoc.data()?['name'] ?? 'Unknown',
-      'age': patientDoc.data()?['age'],
-      'gender': patientDoc.data()?['gender'],
-    };
+    if (patientData is List && patientData.isNotEmpty) {
+      final row = Map<String, dynamic>.from(patientData.first as Map);
+      final profile = row['profiles'] as Map?;
+      return {
+        'patient_id': row['id'],
+        'name': profile?['name'] ?? 'Unknown',
+        'age': row['age'],
+        'gender': row['gender'],
+      };
+    }
+
+    throw StateError('No linked patient found.');
   }
 }

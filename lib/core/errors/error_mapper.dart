@@ -1,42 +1,33 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ErrorMapper {
   static String map(Object error) {
-    if (error is FirebaseAuthException) {
-      final message = error.message ?? '';
-      if (message.contains('CONFIGURATION_NOT_FOUND')) {
-        return 'Sign up blocked: app verification is not configured. '
-            'Add your SHA-256 fingerprint in Firebase and use a Google Play device/emulator.';
-      }
-      switch (error.code) {
-        case 'invalid-email':
-          return 'Invalid email address.';
-        case 'user-disabled':
-          return 'This account has been disabled.';
-        case 'user-not-found':
-          return 'No account found for that email.';
-        case 'wrong-password':
-          return 'Incorrect password.';
-        case 'email-already-in-use':
-          return 'Email is already registered.';
-        case 'weak-password':
-          return 'Password is too weak.';
-        case 'internal-error':
-          return message.isNotEmpty ? message : 'Authentication error (${error.code}).';
+    if (error is AuthException) {
+      final message = error.message;
+      switch (error.statusCode) {
+        case '400':
+          return message.isNotEmpty ? message : 'Authentication failed.';
         default:
-          return message.isNotEmpty
-              ? message
-              : 'Authentication error (${error.code}).';
+          return message.isNotEmpty ? message : 'Authentication error.';
       }
     }
 
-    if (error is FirebaseException) {
-      final message = error.message ?? '';
-      if (message.contains('CONFIGURATION_NOT_FOUND')) {
-        return 'Sign up blocked: app verification is not configured. '
-            'Add your SHA-256 fingerprint in Firebase and use a Google Play device/emulator.';
-      }
-      return message.isNotEmpty ? message : 'Firebase error (${error.code}).';
+    if (error is PostgrestException) {
+      return error.message.isNotEmpty
+          ? error.message
+          : 'Database error (${error.code}).';
+    }
+
+    if (error is StorageException) {
+      return error.message.isNotEmpty
+          ? error.message
+          : 'Storage error (${error.statusCode}).';
+    }
+
+    if (error is FunctionsException) {
+      return error.message.isNotEmpty
+          ? error.message
+          : 'Function error (${error.status}).';
     }
 
     return error.toString();

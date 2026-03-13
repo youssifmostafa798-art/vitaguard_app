@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custom_logo.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
@@ -25,7 +25,7 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
   bool _isSaving = false;
   File? _selectedImage;
 
-  bool get _isLoggedIn => FirebaseAuth.instance.currentUser != null;
+  bool get _isLoggedIn => SupabaseService.instance.currentUser != null;
 
   @override
   void initState() {

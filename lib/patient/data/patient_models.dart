@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class MedicalHistory {
   MedicalHistory({
     this.allergies,
@@ -118,21 +116,21 @@ class MedicalDocument {
 
   factory MedicalDocument.fromMap(Map<String, dynamic> json) {
     DateTime uploadedAt;
-    final rawUploaded = json['uploadedAt'];
-    if (rawUploaded is Timestamp) {
-      uploadedAt = rawUploaded.toDate();
-    } else if (rawUploaded is DateTime) {
+    final rawUploaded = json['uploadedAt'] ?? json['uploaded_at'];
+    if (rawUploaded is DateTime) {
       uploadedAt = rawUploaded;
     } else {
-      uploadedAt = DateTime.tryParse(rawUploaded?.toString() ?? '') ?? DateTime.now();
+      uploadedAt =
+          DateTime.tryParse(rawUploaded?.toString() ?? '') ?? DateTime.now();
     }
 
     return MedicalDocument(
       id: json['id'] ?? '',
       patientId: json['patientId'] ?? json['patient_id'] ?? '',
-      fileUrl: json['fileUrl'] ?? json['file_url'] ?? '',
+      fileUrl: json['fileUrl'] ?? json['file_url'] ?? json['file_path'] ?? '',
       documentType: json['documentType'] ?? json['document_type'] ?? '',
-      originalFilename: json['originalFilename'] ?? json['original_filename'] ?? '',
+      originalFilename:
+          json['originalFilename'] ?? json['original_filename'] ?? '',
       uploadedAt: uploadedAt,
     );
   }

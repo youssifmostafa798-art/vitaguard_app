@@ -1,32 +1,32 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:vitaguard_app/core/firebase/firebase_service.dart';
+import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 
 class DoctorRepository {
-  final FirebaseService _firebase = FirebaseService.instance;
+  final SupabaseService _supabase = SupabaseService.instance;
 
-  FirebaseFirestore get _db => _firebase.firestore;
-  String get _uid => _firebase.currentUid;
+  SupabaseClient get _client => _supabase.client;
+  String get _uid => _supabase.currentUid;
 
   Future<List<Map<String, dynamic>>> getAssignedPatients() async {
-    final query = await _db
-        .collection('patients')
-        .where('assignedDoctorId', isEqualTo: _uid)
-        .get();
-
     final results = <Map<String, dynamic>>[];
-    for (final doc in query.docs) {
-      final patientId = doc.id;
-      final patientData = doc.data();
-      final userDoc = await _db.collection('users').doc(patientId).get();
-      final userData = userDoc.data() ?? {};
 
-      results.add({
-        'patient_id': patientId,
-        'name': userData['name'] ?? 'Unknown',
-        'age': patientData['age'],
-        'gender': patientData['gender'],
-      });
+    final patients = await _client
+        .from('patients')
+        .select('id, gender, age, profiles(name)')
+        .eq('assigned_doctor_id', _uid);
+
+    if (patients is List) {
+      for (final entry in patients) {
+        final data = Map<String, dynamic>.from(entry as Map);
+        final profile = data['profiles'] as Map?;
+        results.add({
+          'patient_id': data['id'],
+          'name': profile?['name'] ?? 'Unknown',
+          'age': data['age'],
+          'gender': data['gender'],
+        });
+      }
     }
 
     return results;
@@ -37,26 +37,30 @@ class DoctorRepository {
     required String feedbackText,
     String? xrayResultId,
   }) async {
-    await _db
-        .collection('patients')
-        .doc(patientId)
-        .collection('medical_feedback')
-        .add({
-      'doctorId': _uid,
-      'patientId': patientId,
-      'xrayResultId': xrayResultId,
-      'feedbackText': feedbackText,
-      'createdAt': FieldValue.serverTimestamp(),
+    await _client.from('medical_feedback').insert({
+      'doctor_id': _uid,
+      'patient_id': patientId,
+      'xray_result_id': xrayResultId,
+      'feedback_text': feedbackText,
     });
   }
 
   Future<Map<String, dynamic>> getVerificationStatus() async {
-    final doc = await _db.collection('doctors').doc(_uid).get();
-    final data = doc.data() ?? {};
+    final data =
+        await _client.from('doctors').select().eq('id', _uid).limit(1);
+    if (data is List && data.isNotEmpty) {
+      final row = Map<String, dynamic>.from(data.first as Map);
+      return {
+        'verificationStatus': row['verification_status'] ?? 'pending',
+        'idCardImageUrl': row['id_card_path'],
+        'reviewedAt': row['reviewed_at'],
+      };
+    }
+
     return {
-      'verificationStatus': data['verificationStatus'] ?? 'pending',
-      'idCardImageUrl': data['idCardImageUrl'],
-      'reviewedAt': data['reviewedAt'],
+      'verificationStatus': 'pending',
+      'idCardImageUrl': null,
+      'reviewedAt': null,
     };
   }
 }

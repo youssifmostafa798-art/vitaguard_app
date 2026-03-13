@@ -1,16 +1,16 @@
+import 'dart:convert';
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:vitaguard_app/core/firebase/firebase_service.dart';
+import 'package:vitaguard_app/core/supabase/supabase_service.dart';
+import 'package:vitaguard_app/core/utils/uuid.dart';
 
 class FacilityRepository {
-  final FirebaseService _firebase = FirebaseService.instance;
+  final SupabaseService _supabase = SupabaseService.instance;
 
-  FirebaseFirestore get _db => _firebase.firestore;
-  FirebaseStorage get _storage => _firebase.storage;
-  String get _uid => _firebase.currentUid;
+  SupabaseClient get _client => _supabase.client;
+  String get _uid => _supabase.currentUid;
 
   Future<void> uploadMedicalTest({
     String? patientId,
@@ -22,37 +22,32 @@ class FacilityRepository {
     String? resolvedPatientId = patientId;
 
     if (resolvedPatientId == null && patientPhone != null && patientPhone.isNotEmpty) {
-      final userSnapshot = await _db
-          .collection('users')
-          .where('phone', isEqualTo: patientPhone)
-          .where('role', isEqualTo: 'patient')
-          .limit(1)
-          .get();
-      if (userSnapshot.docs.isNotEmpty) {
-        resolvedPatientId = userSnapshot.docs.first.id;
+      final userSnapshot = await _client
+          .from('profiles')
+          .select('id')
+          .eq('phone', patientPhone)
+          .eq('role', 'patient')
+          .limit(1);
+      if (userSnapshot is List && userSnapshot.isNotEmpty) {
+        resolvedPatientId = userSnapshot.first['id'] as String?;
       }
     }
 
-    final docRef = _db
-        .collection('facilities')
-        .doc(_uid)
-        .collection('tests')
-        .doc();
-
     final file = File(filePath);
-    final ext = _fileExtension(file);
-    final ref = _storage.ref('lab_reports/$_uid/${docRef.id}$ext');
-    await ref.putFile(file);
 
-    await docRef.set({
-      'id': docRef.id,
-      'facilityId': _uid,
-      'patientId': resolvedPatientId,
-      'testType': testType,
-      'filePath': ref.fullPath,
-      'notes': notes,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    await _client.functions.invoke(
+      'upload_lab_report',
+      body: {
+        'facility_id': _uid,
+        'patient_id': resolvedPatientId,
+        'test_type': testType,
+        'notes': notes,
+        'report_id': Uuid.v4(),
+        'filename': _basename(file.path),
+        'content_type': _contentTypeForFile(file.path),
+        'data': base64Encode(await file.readAsBytes()),
+      },
+    );
   }
 
   Future<void> createOffer({
@@ -60,45 +55,49 @@ class FacilityRepository {
     required String description,
     File? image,
   }) async {
-    final docRef = _db
-        .collection('facilities')
-        .doc(_uid)
-        .collection('offers')
-        .doc();
-
-    String? imagePath;
     if (image != null) {
-      final ext = _fileExtension(image);
-      final ref = _storage.ref('lab_offers/$_uid/${docRef.id}$ext');
-      await ref.putFile(image);
-      imagePath = ref.fullPath;
+      await _client.functions.invoke(
+        'upload_lab_offer',
+        body: {
+          'facility_id': _uid,
+          'offer_id': Uuid.v4(),
+          'title': title,
+          'description': description,
+          'filename': _basename(image.path),
+          'content_type': _contentTypeForFile(image.path),
+          'data': base64Encode(await image.readAsBytes()),
+        },
+      );
+      return;
     }
 
-    await docRef.set({
-      'id': docRef.id,
-      'facilityId': _uid,
+    await _client.from('facility_offers').insert({
+      'facility_id': _uid,
       'title': title,
       'description': description,
-      'imageUrl': imagePath,
-      'isActive': true,
-      'createdAt': FieldValue.serverTimestamp(),
+      'is_active': true,
     });
   }
 
   Future<List<dynamic>> getAppointments() async {
-    final snapshot = await _db
-        .collection('facilities')
-        .doc(_uid)
-        .collection('appointments')
-        .orderBy('scheduledAt', descending: true)
-        .get();
+    final snapshot = await _client
+        .from('facility_appointments')
+        .select()
+        .eq('facility_id', _uid)
+        .order('scheduled_at', ascending: false);
 
-    return snapshot.docs.map((doc) => doc.data()).toList();
+    return snapshot is List ? snapshot : <dynamic>[];
   }
 
-  String _fileExtension(File file) {
-    final parts = file.path.split('.');
-    if (parts.length < 2) return '';
-    return '.${parts.last.toLowerCase()}';
+  String _basename(String path) {
+    return path.split(Platform.pathSeparator).last;
+  }
+
+  String _contentTypeForFile(String path) {
+    final ext = path.toLowerCase();
+    if (ext.endsWith('.png')) return 'image/png';
+    if (ext.endsWith('.jpg') || ext.endsWith('.jpeg')) return 'image/jpeg';
+    if (ext.endsWith('.pdf')) return 'application/pdf';
+    return 'application/octet-stream';
   }
 }
