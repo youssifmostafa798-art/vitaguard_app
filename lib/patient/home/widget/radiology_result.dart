@@ -15,7 +15,7 @@ class RadiologyResult extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isInfected = result.prediction == 'PNEUMONIA';
     final String confidenceText = result.confidence != null
-        ? "${(result.confidence! * 100).toStringAsFixed(1)}%"
+        ? "${(result.confidence! * 100).clamp(0, 100).toStringAsFixed(1)}%"
         : "N/A";
 
     return Scaffold(
