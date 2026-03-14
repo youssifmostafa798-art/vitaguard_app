@@ -23,7 +23,7 @@ class XrayInferenceService {
     _loading = true;
     try {
       _interpreter = await Interpreter.fromAsset(
-        'models/model_optimized.tflite',
+        'assets/models/model_optimized.tflite',
       );
       _inputShape = _interpreter!.getInputTensor(0).shape;
       _inputType = _interpreter!.getInputTensor(0).type;

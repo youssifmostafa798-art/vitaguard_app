@@ -7,6 +7,8 @@ class ErrorMapper {
       switch (error.statusCode) {
         case '400':
           return message.isNotEmpty ? message : 'Authentication failed.';
+        case '429':
+          return 'Rate limit exceeded. Please wait a few minutes before trying again or use a different email.';
         default:
           return message.isNotEmpty ? message : 'Authentication error.';
       }
