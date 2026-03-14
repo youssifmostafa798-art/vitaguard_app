@@ -152,42 +152,21 @@ class XrayInferenceService {
   }
 
   String _generateReport(String prediction, double confidence) {
-    final now = DateTime.now();
-    final dateStr = "${now.day}/${now.month}/${now.year}";
-    final bool isInfected = prediction == 'PNEUMONIA';
     final confidencePct = (confidence * 100).clamp(0, 100).toStringAsFixed(1);
-    
-    final qualitativeConfidence = isInfected 
-        ? (confidence > 0.9 ? "Very High" : "High")
-        : (confidence > 0.9 ? "Very High" : "High");
-
-    return """
-1. Report Header
-Preliminary AI-Assisted Screening Report
-Status: Automated - Requires Review
-Date: $dateStr
-
-2. Primary Diagnostic Impression
-Result: ${isInfected ? 'POSITIVE' : 'NEGATIVE'} for pneumonia.
-${isInfected ? 'Findings highly suggestive of infectious airspace disease (bacterial/viral pneumonia).' : 'No significant evidence of active infectious airspace disease identified.'}
-
-3. Confidence & Metrics
-AI Detection Probability: $confidencePct%
-Qualitative Confidence: $qualitativeConfidence
-
-4. Radiographic Findings
-${isInfected ? 'Identified focal areas of increased opacification (consolidation/ground-glass) within lung parenchyma. Silhouetting of borders may be present. No definitive cavitation or large effusion noted.' : 'Lung fields appear clear without focal consolidation or suspicious opacities. Cardiomediastinal silhouette and pleural spaces are within normal limits.'}
-
-5. Differential Diagnosis
-- ${isInfected ? '1. Infectious Pneumonia\n- 2. Focal Atelectasis\n- 3. Aspiration' : '1. Normal Radiograph\n- 2. Minor Scarring'}
-
-6. Clinical Recommendations
-- Immediate correlation with symptoms/lab markers (WBC, CRP).
-- Suggested: Follow-up imaging in 48-72h if symptoms persist. Urgent evaluation advised if clinically severe.
-
-7. Legal Disclaimer
-Preliminary AI-generated screening only; not a final diagnosis. Must not replace professional judgment.
-""";
+    if (prediction == 'PNEUMONIA') {
+      return [
+        'The scan shows findings suggestive of pneumonia.',
+        'Confidence: $confidencePct%.',
+        'Clinical correlation and medical follow-up are recommended.',
+        'This is a preliminary automated report and does not replace a physician diagnosis.',
+      ].join('\n');
+    }
+    return [
+      'The scan does not show significant findings suggestive of pneumonia.',
+      'Confidence: $confidencePct%.',
+      'Routine follow-up is recommended as appropriate.',
+      'This is a preliminary automated report and does not replace a physician diagnosis.',
+    ].join('\n');
   }
 }
 
