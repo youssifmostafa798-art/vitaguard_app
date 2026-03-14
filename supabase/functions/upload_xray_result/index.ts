@@ -12,6 +12,8 @@ Deno.serve(async (req) => {
 
   try {
     const payload = await req.json();
+    console.log("Received payload keys:", Object.keys(payload));
+    
     const patientId = payload?.patient_id as string | undefined;
     const filename = payload?.filename as string | undefined;
     const contentType = payload?.content_type as string | undefined;
@@ -22,7 +24,15 @@ Deno.serve(async (req) => {
     const resultId = payload?.result_id as string | undefined;
 
     if (!patientId || !filename || !contentType || !data) {
-      return new Response(JSON.stringify({ error: "Missing required fields." }), {
+      const missing = [];
+      if (!patientId) missing.push("patient_id");
+      if (!filename) missing.push("filename");
+      if (!contentType) missing.push("content_type");
+      if (!data) missing.push("data");
+      
+      return new Response(JSON.stringify({ 
+        error: `Missing required fields: ${missing.join(", ")}` 
+      }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -57,7 +67,16 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), {
+    const errorDetails = error instanceof Error ? {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    } : { error: String(error) };
+
+    return new Response(JSON.stringify({ 
+      error: "Internal Function Error", 
+      details: errorDetails 
+    }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

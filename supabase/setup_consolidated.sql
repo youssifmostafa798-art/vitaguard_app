@@ -192,6 +192,7 @@ alter table messages enable row level security;
 
 -- NOTE: RLS on storage.objects is usually managed by Supabase. 
 -- If the line below fails, it can be skipped as Supabase often enables it by default.
+-- NOTE: RLS on storage.objects is managed by Supabase. Only apply policies.
 -- alter table storage.objects enable row level security;
 
 -- Helper Functions
@@ -244,79 +245,161 @@ as $$
 $$;
 
 -- Table Policies
+drop policy if exists "profiles read own or admin" on profiles;
 create policy "profiles read own or admin" on profiles for select using (public.is_owner(id) or public.is_admin());
+
+drop policy if exists "profiles insert self" on profiles;
 create policy "profiles insert self" on profiles for insert with check (public.is_owner(id));
+
+drop policy if exists "profiles update self" on profiles;
 create policy "profiles update self" on profiles for update using (public.is_owner(id) or public.is_admin());
 
+drop policy if exists "patients read" on patients;
 create policy "patients read" on patients for select using (public.is_owner(id) or public.assigned_doctor(id) or public.linked_companion(id) or public.is_admin());
+
+drop policy if exists "patients write" on patients;
 create policy "patients write" on patients for insert with check (public.is_owner(id));
+
+drop policy if exists "patients update" on patients;
 create policy "patients update" on patients for update using (public.is_owner(id) or public.is_admin());
 
+drop policy if exists "doctors read" on doctors;
 create policy "doctors read" on doctors for select using (public.is_owner(id) or public.is_admin());
+
+drop policy if exists "doctors write" on doctors;
 create policy "doctors write" on doctors for insert with check (public.is_owner(id));
+
+drop policy if exists "doctors update" on doctors;
 create policy "doctors update" on doctors for update using (public.is_admin() or public.is_owner(id));
 
+drop policy if exists "companions read" on companions;
 create policy "companions read" on companions for select using (public.is_owner(id) or public.is_admin());
+
+drop policy if exists "companions write" on companions;
 create policy "companions write" on companions for insert with check (public.is_owner(id));
+
+drop policy if exists "companions update" on companions;
 create policy "companions update" on companions for update using (public.is_owner(id) or public.is_admin());
 
+drop policy if exists "facilities read" on facilities;
 create policy "facilities read" on facilities for select using (public.is_owner(id) or public.is_admin());
+
+drop policy if exists "facilities write" on facilities;
 create policy "facilities write" on facilities for insert with check (public.is_owner(id));
+
+drop policy if exists "facilities update" on facilities;
 create policy "facilities update" on facilities for update using (public.is_admin() or public.is_owner(id));
 
+drop policy if exists "patient medical history read" on patient_medical_history;
 create policy "patient medical history read" on patient_medical_history for select using (public.is_owner(patient_id) or public.assigned_doctor(patient_id) or public.linked_companion(patient_id) or public.is_admin());
+
+drop policy if exists "patient medical history write" on patient_medical_history;
 create policy "patient medical history write" on patient_medical_history for insert with check (public.is_owner(patient_id) or public.is_admin());
+
+drop policy if exists "patient medical history update" on patient_medical_history;
 create policy "patient medical history update" on patient_medical_history for update using (public.is_owner(patient_id) or public.is_admin());
 
+drop policy if exists "patient daily reports read" on patient_daily_reports;
 create policy "patient daily reports read" on patient_daily_reports for select using (public.is_owner(patient_id) or public.assigned_doctor(patient_id) or public.linked_companion(patient_id) or public.is_admin());
+
+drop policy if exists "patient daily reports write" on patient_daily_reports;
 create policy "patient daily reports write" on patient_daily_reports for insert with check (public.is_owner(patient_id) or public.is_admin());
+
+drop policy if exists "patient daily reports update" on patient_daily_reports;
 create policy "patient daily reports update" on patient_daily_reports for update using (public.is_owner(patient_id) or public.is_admin());
 
+drop policy if exists "patient xray read" on patient_xray_results;
 create policy "patient xray read" on patient_xray_results for select using (public.is_owner(patient_id) or public.assigned_doctor(patient_id) or public.linked_companion(patient_id) or public.is_admin());
-create policy "patient xray write" on patient_xray_results for insert with check (public.is_owner(patient_id) or public.is_admin());
 
+drop policy if exists "patient xray write" on patient_xray_results;
+create policy "patient xray write" on patient_xray_results for insert with check (public.is_owner(patient_id) or public.is_admin() or auth.role() = 'service_role');
+
+drop policy if exists "patient documents read" on patient_documents;
 create policy "patient documents read" on patient_documents for select using (public.is_owner(patient_id) or public.assigned_doctor(patient_id) or public.linked_companion(patient_id) or public.is_admin());
+
+drop policy if exists "patient documents write" on patient_documents;
 create policy "patient documents write" on patient_documents for insert with check (public.is_owner(patient_id) or public.is_admin());
 
+drop policy if exists "medical feedback read" on medical_feedback;
 create policy "medical feedback read" on medical_feedback for select using (public.is_owner(patient_id) or public.assigned_doctor(patient_id) or public.is_admin());
+
+drop policy if exists "medical feedback create" on medical_feedback;
 create policy "medical feedback create" on medical_feedback for insert with check (public.assigned_doctor(patient_id) or public.is_admin());
 
+drop policy if exists "facility tests read" on facility_tests;
 create policy "facility tests read" on facility_tests for select using (public.is_owner(facility_id) or public.is_admin());
+
+drop policy if exists "facility tests write" on facility_tests;
 create policy "facility tests write" on facility_tests for insert with check (public.is_owner(facility_id) or public.is_admin());
 
+drop policy if exists "facility offers read" on facility_offers;
 create policy "facility offers read" on facility_offers for select using (true);
+
+drop policy if exists "facility offers write" on facility_offers;
 create policy "facility offers write" on facility_offers for insert with check (public.is_owner(facility_id) or public.is_admin());
+
+drop policy if exists "facility offers update" on facility_offers;
 create policy "facility offers update" on facility_offers for update using (public.is_owner(facility_id) or public.is_admin());
 
+drop policy if exists "facility appointments read" on facility_appointments;
 create policy "facility appointments read" on facility_appointments for select using (public.is_owner(facility_id) or public.is_admin());
+
+drop policy if exists "facility appointments write" on facility_appointments;
 create policy "facility appointments write" on facility_appointments for insert with check (public.is_owner(facility_id) or public.is_admin());
 
+drop policy if exists "conversation participants read" on conversation_participants;
 create policy "conversation participants read" on conversation_participants for select using (public.is_owner(user_id) or public.is_admin());
+
+drop policy if exists "conversation participants write" on conversation_participants;
 create policy "conversation participants write" on conversation_participants for insert with check (public.is_owner(user_id) or public.is_admin());
 
+drop policy if exists "conversations read" on conversations;
 create policy "conversations read" on conversations for select using (exists (select 1 from conversation_participants cp where cp.conversation_id = conversations.id and cp.user_id = auth.uid()));
+
+drop policy if exists "conversations write" on conversations;
 create policy "conversations write" on conversations for insert with check (true);
 
+drop policy if exists "messages read" on messages;
 create policy "messages read" on messages for select using (exists (select 1 from conversation_participants cp where cp.conversation_id = messages.conversation_id and cp.user_id = auth.uid()));
+
+drop policy if exists "messages write" on messages;
 create policy "messages write" on messages for insert with check (exists (select 1 from conversation_participants cp where cp.conversation_id = messages.conversation_id and cp.user_id = auth.uid()));
 
 -- Storage Policies
+drop policy if exists "doctor verification read" on storage.objects;
 create policy "doctor verification read" on storage.objects for select using (bucket_id = 'doctor-verifications' and (public.is_admin() or public.is_owner(split_part(name, '/', 1)::uuid)));
+
+drop policy if exists "doctor verification write" on storage.objects;
 create policy "doctor verification write" on storage.objects for insert with check (bucket_id = 'doctor-verifications' and public.is_owner(split_part(name, '/', 1)::uuid));
 
+drop policy if exists "facility records read" on storage.objects;
 create policy "facility records read" on storage.objects for select using (bucket_id = 'facility-records' and (public.is_admin() or public.is_owner(split_part(name, '/', 1)::uuid)));
+
+drop policy if exists "facility records write" on storage.objects;
 create policy "facility records write" on storage.objects for insert with check (bucket_id = 'facility-records' and public.is_owner(split_part(name, '/', 1)::uuid));
 
+drop policy if exists "medical records read" on storage.objects;
 create policy "medical records read" on storage.objects for select using (bucket_id = 'medical-records' and (public.is_owner(split_part(name, '/', 1)::uuid) or public.assigned_doctor(split_part(name, '/', 1)::uuid) or public.linked_companion(split_part(name, '/', 1)::uuid) or public.is_admin()));
+
+drop policy if exists "medical records write" on storage.objects;
 create policy "medical records write" on storage.objects for insert with check (bucket_id = 'medical-records' and public.is_owner(split_part(name, '/', 1)::uuid));
 
+drop policy if exists "xray results read" on storage.objects;
 create policy "xray results read" on storage.objects for select using (bucket_id = 'xray-results' and (public.is_owner(split_part(name, '/', 1)::uuid) or public.assigned_doctor(split_part(name, '/', 1)::uuid) or public.linked_companion(split_part(name, '/', 1)::uuid) or public.is_admin()));
+
+drop policy if exists "xray results write" on storage.objects;
 create policy "xray results write" on storage.objects for insert with check (bucket_id = 'xray-results' and (public.is_owner(split_part(name, '/', 1)::uuid) or auth.role() = 'service_role'));
 
+drop policy if exists "lab reports read" on storage.objects;
 create policy "lab reports read" on storage.objects for select using (bucket_id = 'lab-reports' and (public.is_owner(split_part(name, '/', 1)::uuid) or public.is_admin()));
+
+drop policy if exists "lab reports write" on storage.objects;
 create policy "lab reports write" on storage.objects for insert with check (bucket_id = 'lab-reports' and public.is_owner(split_part(name, '/', 1)::uuid));
 
+drop policy if exists "lab offers read" on storage.objects;
 create policy "lab offers read" on storage.objects for select using (bucket_id = 'lab-offers');
+
+drop policy if exists "lab offers write" on storage.objects;
 create policy "lab offers write" on storage.objects for insert with check (bucket_id = 'lab-offers' and public.is_owner(split_part(name, '/', 1)::uuid));
 -- ==========================================
 -- 4. Auth Triggers for Auto-Profile Creation

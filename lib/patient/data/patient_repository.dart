@@ -66,45 +66,67 @@ class PatientRepository {
   }
 
   Future<XRayResult> analyzeXRay(File imageFile) async {
+    final uid = _supabase.currentUidOrNull;
+    if (uid == null) {
+      throw StateError('You must be logged in to performing a scan.');
+    }
+
     final result = await XrayInferenceService.instance.analyze(imageFile);
 
     if (!result.isValid) {
-      await _client.from('patient_xray_results').insert({
-        'patient_id': _uid,
-        'is_valid': false,
-        'prediction': result.prediction,
-        'confidence': result.confidence,
-        'report_text': result.reportText,
-        'image_path': null,
-      });
-
+      try {
+        await _client.from('patient_xray_results').insert({
+          'patient_id': uid,
+          'is_valid': false,
+          'prediction': result.prediction,
+          'confidence': result.confidence,
+          'report_text': result.reportText,
+          'image_path': null,
+        });
+      } catch (_) {}
       return result;
     }
 
-    final uploadResponse = await _client.functions.invoke(
-      'upload_xray_result',
-      body: {
-        'patient_id': _uid,
-        'filename': _basename(imageFile.path),
-        'content_type': _contentTypeForFile(imageFile.path),
-        'data': base64Encode(await imageFile.readAsBytes()),
-        'report_text': result.reportText,
-        'prediction': result.prediction,
-        'confidence': result.confidence,
-      },
-    );
+    try {
+      final uploadResponse = await _client.functions.invoke(
+        'upload_xray_result',
+        headers: {
+          'Authorization': 'Bearer ${_client.auth.currentSession?.accessToken}',
+        },
+        body: {
+          'patient_id': uid,
+          'filename': _basename(imageFile.path),
+          'content_type': _contentTypeForFile(imageFile.path),
+          'data': base64Encode(await imageFile.readAsBytes()),
+          'report_text': result.reportText,
+          'prediction': result.prediction,
+          'confidence': result.confidence,
+        },
+      );
 
-    final data = uploadResponse.data;
-    final imagePath =
-        (data is Map<String, dynamic>) ? data['image_path'] as String? : null;
+      if (uploadResponse.status != 200 && uploadResponse.status != 201) {
+        final errorMsg =
+            (uploadResponse.data is Map) ? uploadResponse.data['error'] : null;
+        throw StateError(errorMsg ?? 'Server returned an error: ${uploadResponse.status}');
+      }
 
-    return XRayResult(
-      isValid: result.isValid,
-      prediction: result.prediction,
-      confidence: result.confidence,
-      reportText: result.reportText,
-      imagePath: imagePath,
-    );
+      final data = uploadResponse.data;
+      final imagePath = (data is Map<String, dynamic>) ? data['image_path'] as String? : null;
+
+      return XRayResult(
+        isValid: result.isValid,
+        prediction: result.prediction,
+        confidence: result.confidence,
+        reportText: result.reportText,
+        imagePath: imagePath,
+      );
+    } catch (e) {
+      // If it's a FunctionException, rethrow with more context if needed
+      if (e is FunctionException) {
+        rethrow;
+      }
+      throw StateError('Failed to upload results: ${e.toString()}');
+    }
   }
 
   Future<void> uploadMedicalDocument(File documentFile) async {
