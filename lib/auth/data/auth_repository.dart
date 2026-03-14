@@ -16,7 +16,7 @@ class AuthRepository {
     await _client.auth.signInWithPassword(email: email, password: password);
   }
 
-  Future<void> registerPatient({
+  Future<AuthResponse> registerPatient({
     required String fullName,
     required String email,
     required String password,
@@ -25,7 +25,7 @@ class AuthRepository {
     String? age,
   }) async {
     final companionCode = await _resolveCompanionCode();
-    await _client.auth.signUp(
+    return await _client.auth.signUp(
       email: email,
       password: password,
       data: {
@@ -39,7 +39,7 @@ class AuthRepository {
     );
   }
 
-  Future<void> registerDoctor({
+  Future<AuthResponse> registerDoctor({
     required String fullName,
     required String email,
     required String password,
@@ -84,9 +84,10 @@ class AuthRepository {
         },
       );
     }
+    return response;
   }
 
-  Future<void> registerCompanion({
+  Future<AuthResponse> registerCompanion({
     required String name,
     required String email,
     required String password,
@@ -105,7 +106,7 @@ class AuthRepository {
       throw StateError('Invalid companion code.');
     }
 
-    await _client.auth.signUp(
+    return await _client.auth.signUp(
       email: email,
       password: password,
       data: {
@@ -116,7 +117,7 @@ class AuthRepository {
     );
   }
 
-  Future<void> registerFacility({
+  Future<AuthResponse> registerFacility({
     required String name,
     required String email,
     required String password,
@@ -162,6 +163,7 @@ class AuthRepository {
         'record_path': path,
       }).eq('id', user.id);
     }
+    return response;
   }
 
   Future<Map<String, dynamic>> getMe() async {

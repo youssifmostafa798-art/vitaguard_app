@@ -39,7 +39,7 @@ class AuthProvider with ChangeNotifier {
   }) async {
     _setLoading(true);
     try {
-      await _repository.registerPatient(
+      final response = await _repository.registerPatient(
         fullName: fullName,
         email: email,
         password: password,
@@ -47,7 +47,9 @@ class AuthProvider with ChangeNotifier {
         gender: gender,
         age: age,
       );
-      _currentUser = await _repository.getMe();
+      if (response.session != null) {
+        _currentUser = await _repository.getMe();
+      }
       _setLoading(false);
       return true;
     } catch (e) {
@@ -70,7 +72,7 @@ class AuthProvider with ChangeNotifier {
   }) async {
     _setLoading(true);
     try {
-      await _repository.registerDoctor(
+      final response = await _repository.registerDoctor(
         fullName: fullName,
         email: email,
         password: password,
@@ -80,7 +82,9 @@ class AuthProvider with ChangeNotifier {
         gender: gender,
         age: age,
       );
-      _currentUser = await _repository.getMe();
+      if (response.session != null) {
+        _currentUser = await _repository.getMe();
+      }
       _setLoading(false);
       return true;
     } catch (e) {
@@ -99,13 +103,15 @@ class AuthProvider with ChangeNotifier {
   }) async {
     _setLoading(true);
     try {
-      await _repository.registerCompanion(
+      final response = await _repository.registerCompanion(
         name: name,
         email: email,
         password: password,
         companionCode: companionCode,
       );
-      _currentUser = await _repository.getMe();
+      if (response.session != null) {
+        _currentUser = await _repository.getMe();
+      }
       _setLoading(false);
       return true;
     } catch (e) {
@@ -127,7 +133,7 @@ class AuthProvider with ChangeNotifier {
   }) async {
     _setLoading(true);
     try {
-      await _repository.registerFacility(
+      final response = await _repository.registerFacility(
         name: name,
         email: email,
         password: password,
@@ -136,7 +142,9 @@ class AuthProvider with ChangeNotifier {
         facilityType: facilityType,
         recordImage: recordImage,
       );
-      _currentUser = await _repository.getMe();
+      if (response.session != null) {
+        _currentUser = await _repository.getMe();
+      }
       _setLoading(false);
       return true;
     } catch (e) {
@@ -145,6 +153,10 @@ class AuthProvider with ChangeNotifier {
       _setLoading(false);
       return false;
     }
+  }
+
+  Future<bool> isAuthenticated() async {
+    return await _repository.isAuthenticated();
   }
 
   Future<String?> getUserRole() async {

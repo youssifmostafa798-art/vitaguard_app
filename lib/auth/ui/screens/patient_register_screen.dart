@@ -48,7 +48,7 @@ class _PatientRegisterScreenState extends ConsumerState<PatientRegisterScreen> {
     );
 
     if (success) {
-      if (_draftHistory != null) {
+      if (_draftHistory != null && await auth.isAuthenticated()) {
         try {
           await PatientRepository().updateMedicalHistory(_draftHistory!);
         } catch (_) {

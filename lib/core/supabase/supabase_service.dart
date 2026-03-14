@@ -9,6 +9,8 @@ class SupabaseService {
 
   User? get currentUser => client.auth.currentUser;
 
+  String? get currentUidOrNull => currentUser?.id;
+
   String get currentUid {
     final user = currentUser;
     if (user == null) {
