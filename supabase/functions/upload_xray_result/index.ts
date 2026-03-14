@@ -1,10 +1,15 @@
 import { supabase } from "../_shared/supabase_client.ts";
 import { uploadBase64File, inferExtension } from "../_shared/upload.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   try {
     const payload = await req.json();
     const patientId = payload?.patient_id as string | undefined;
@@ -19,6 +24,7 @@ Deno.serve(async (req) => {
     if (!patientId || !filename || !contentType || !data) {
       return new Response(JSON.stringify({ error: "Missing required fields." }), {
         status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -48,12 +54,12 @@ Deno.serve(async (req) => {
     if (error) throw error;
 
     return new Response(JSON.stringify({ image_path: path, result_id: xrayId }), {
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     return new Response(JSON.stringify({ error: String(error) }), {
       status: 400,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

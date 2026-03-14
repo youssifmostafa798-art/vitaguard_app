@@ -311,7 +311,7 @@ create policy "medical records read" on storage.objects for select using (bucket
 create policy "medical records write" on storage.objects for insert with check (bucket_id = 'medical-records' and public.is_owner(split_part(name, '/', 1)::uuid));
 
 create policy "xray results read" on storage.objects for select using (bucket_id = 'xray-results' and (public.is_owner(split_part(name, '/', 1)::uuid) or public.assigned_doctor(split_part(name, '/', 1)::uuid) or public.linked_companion(split_part(name, '/', 1)::uuid) or public.is_admin()));
-create policy "xray results write" on storage.objects for insert with check (bucket_id = 'xray-results' and public.is_owner(split_part(name, '/', 1)::uuid));
+create policy "xray results write" on storage.objects for insert with check (bucket_id = 'xray-results' and (public.is_owner(split_part(name, '/', 1)::uuid) or auth.role() = 'service_role'));
 
 create policy "lab reports read" on storage.objects for select using (bucket_id = 'lab-reports' and (public.is_owner(split_part(name, '/', 1)::uuid) or public.is_admin()));
 create policy "lab reports write" on storage.objects for insert with check (bucket_id = 'lab-reports' and public.is_owner(split_part(name, '/', 1)::uuid));
