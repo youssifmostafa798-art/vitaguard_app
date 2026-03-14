@@ -27,9 +27,21 @@ class ErrorMapper {
     }
 
     if (error is FunctionException) {
+      if (error.reasonPhrase == 'Bad Request' || error.status == 400) {
+        return 'Server error: The request was invalid or data was missing.';
+      }
       return error.reasonPhrase ?? 'Function error (${error.status}).';
     }
 
-    return error.toString();
+    if (error is StateError) {
+      return error.message;
+    }
+
+    final errorStr = error.toString();
+    if (errorStr.contains('Bad Request')) {
+      return 'Bad Request: The server could not process the scan. Check your internet or try a different image.';
+    }
+
+    return errorStr;
   }
 }

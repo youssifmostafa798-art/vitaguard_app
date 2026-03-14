@@ -11,12 +11,15 @@ export type UploadOptions = {
 
 export async function uploadBase64File(options: UploadOptions) {
   const bytes = decodeBase64(options.base64Data);
+  console.log(`Decoded base64 size: ${bytes.length} bytes`);
 
   if (!options.allowedTypes.includes(options.contentType)) {
+    console.error(`Invalid content type: ${options.contentType}. Expected one of: ${options.allowedTypes.join(", ")}`);
     throw new Error("Unsupported file type.");
   }
 
   if (bytes.length > options.maxBytes) {
+    console.error(`File too large: ${bytes.length} > ${options.maxBytes}`);
     throw new Error("File too large.");
   }
 

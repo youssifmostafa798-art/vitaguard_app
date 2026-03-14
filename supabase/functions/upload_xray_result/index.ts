@@ -42,6 +42,8 @@ Deno.serve(async (req) => {
     const xrayId = resultId ?? crypto.randomUUID();
     const path = `${patientId}/${xrayId}${ext}`;
 
+    console.log(`Starting upload to path: ${path} (bucket: xray-results)`);
+
     await uploadBase64File({
       bucket: "xray-results",
       path,
@@ -50,6 +52,8 @@ Deno.serve(async (req) => {
       allowedTypes: ALLOWED_TYPES,
       base64Data: data,
     });
+
+    console.log(`Upload successful. Inserting into database with id: ${xrayId}`);
 
     const { error } = await supabase.from("patient_xray_results").insert({
       id: xrayId,
