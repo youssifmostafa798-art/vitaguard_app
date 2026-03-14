@@ -153,45 +153,40 @@ class XrayInferenceService {
 
   String _generateReport(String prediction, double confidence) {
     final now = DateTime.now();
-    final dateStr = "${now.day}/${now.month}/${now.year} ${now.hour}:${now.minute}";
+    final dateStr = "${now.day}/${now.month}/${now.year}";
     final bool isInfected = prediction == 'PNEUMONIA';
-    final confidencePct = (confidence * 100).toStringAsFixed(1);
-    final bool isAnomalous = confidence > 1.0;
+    final confidencePct = (confidence * 100).clamp(0, 100).toStringAsFixed(1);
     
     final qualitativeConfidence = isInfected 
-        ? (confidence > 0.9 ? "Very High" : confidence > 0.7 ? "High" : "Moderate")
+        ? (confidence > 0.9 ? "Very High" : "High")
         : (confidence > 0.9 ? "Very High" : "High");
 
     return """
 1. Report Header
-   - Title: Preliminary AI-Assisted Chest Imaging Screening Report
-   - Report Status: Automated Screening – Requires Physician Review
-   - Date & Time: $dateStr
+Preliminary AI-Assisted Screening Report
+Status: Automated - Requires Review
+Date: $dateStr
 
 2. Primary Diagnostic Impression
-   - Result: ${isInfected ? 'POSITIVE' : 'NEGATIVE'} for pneumonia / pulmonary infection.
-   ${isInfected ? '- Impression: Findings highly suggestive of pneumonia (infectious airspace disease – bacterial, viral, or atypical etiology cannot be reliably differentiated on imaging alone).' : '- Impression: No significant evidence of active infectious airspace disease or acute pulmonary opacities identified by the automated screening model.'}
+Result: ${isInfected ? 'POSITIVE' : 'NEGATIVE'} for pneumonia.
+${isInfected ? 'Findings highly suggestive of infectious airspace disease (bacterial/viral pneumonia).' : 'No significant evidence of active infectious airspace disease identified.'}
 
-3. Confidence & Model Metrics
-   - Pneumonia Detection Probability: $confidencePct%
-   - Qualitative Confidence: $qualitativeConfidence
-   ${isAnomalous ? '- Note: The reported model confidence ($confidencePct%) appears anomalous and likely represents a scaling error or internal score overflow. However, the underlying spatial activation maps were used for categorization.' : ''}
+3. Confidence & Metrics
+AI Detection Probability: $confidencePct%
+Qualitative Confidence: $qualitativeConfidence
 
-4. Detailed Radiographic Findings
-   ${isInfected ? 'The automated analysis has identified focal areas of increased opacification within the lung parenchyma. The pattern is characterized primarily by ill-defined consolidation and ground-glass opacities. Silhouetting of the diaphragmatic or cardiac borders may be present depending on location. No definitive evidence of cavitation or large pleural effusion is noted on the current screening. The distribution appears multifocal or lobar, warranting direct correlation with clinical symptomatology.' : 'The lung fields appear clear without evidence of focal consolidation, suspicious ground-glass opacities, or significant interstitial thickening. The cardiomediastinal silhouette is within normal limits for this projection. Pleural spaces are relatively clear, with no obvious signs of acute effusion or pneumothorax.'}
+4. Radiographic Findings
+${isInfected ? 'Identified focal areas of increased opacification (consolidation/ground-glass) within lung parenchyma. Silhouetting of borders may be present. No definitive cavitation or large effusion noted.' : 'Lung fields appear clear without focal consolidation or suspicious opacities. Cardiomediastinal silhouette and pleural spaces are within normal limits.'}
 
-5. Differential Diagnosis Considerations
-   - ${isInfected ? '1. Infectious Pneumonia (Bacterial, Viral, or Atypical)\n   - 2. Focal Atelectasis\n   - 3. Pulmonary Aspiration\n   - 4. Early-stage Organizing Pneumonia' : '1. Normal Chest Radiograph\n   - 2. Resolving minor inflammatory changes\n   - 3. Non-specific minor scarring'}
+5. Differential Diagnosis
+- ${isInfected ? '1. Infectious Pneumonia\n- 2. Focal Atelectasis\n- 3. Aspiration' : '1. Normal Radiograph\n- 2. Minor Scarring'}
 
-6. Clinical Correlation & Recommendations
-   - Strongly recommend immediate clinical correlation with patient symptoms (fever, cough, dyspnea) and laboratory markers (WBC, CRP, Procalcitonin). 
-   - Suggested next steps: Consider follow-up imaging in 48-72 hours if symptoms persist. Specialist consultation with a pulmonologist or infectious disease expert may be indicated for definitive management. If multilobar or clinically severe, urgent evaluation is advised.
+6. Clinical Recommendations
+- Immediate correlation with symptoms/lab markers (WBC, CRP).
+- Suggested: Follow-up imaging in 48-72h if symptoms persist. Urgent evaluation advised if clinically severe.
 
-7. Standard Legal & Safety Disclaimers
-   - This is a preliminary automated AI-generated screening report only.
-   - It does NOT constitute a final medical diagnosis.
-   - It MUST NOT replace professional radiologist or physician interpretation and clinical judgment.
-   - AI can produce both false-positive and false-negative results; human oversight is the current gold standard.
+7. Legal Disclaimer
+Preliminary AI-generated screening only; not a final diagnosis. Must not replace professional judgment.
 """;
   }
 }

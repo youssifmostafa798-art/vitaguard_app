@@ -42,61 +42,64 @@ class RadiologyResult extends StatelessWidget {
                 ),
                 const Gap(20),
 
-                /// Results Container
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(200),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: const Color(0xff003F6B),
-                      width: 1.2,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CustemText(
-                        text: result.isValid
-                            ? "Result: ${isInfected ? 'INFECTED' : 'NORMAL'}"
-                            : "Result: UNREADABLE",
-                        size: 18,
-                        weight: FontWeight.bold,
-                        color: result.isValid
-                            ? (isInfected ? Colors.red : Colors.green)
-                            : Colors.orange,
-                      ),
-                      const Gap(15),
-
-                      if (result.isValid) ...[
-                        CustemText(
-                          text: "Confidence: $confidenceText",
-                          size: 16,
-                          color: Colors.black87,
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha(200),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: const Color(0xff003F6B),
+                          width: 1.2,
                         ),
-                        const Gap(15),
-                      ],
-
-                      CustemText(
-                        text:
-                            result.reportText ??
-                            (result.isValid
-                                ? "The AI analysis suggests ${isInfected ? 'findings consistent with pneumonia' : 'normal lung patterns'}. Please consult a physician for a formal diagnosis."
-                                : "The uploaded image does not appear to be a valid chest X-ray. Please ensure you are uploading a clear frontal chest radiograph."),
-                        size: 15,
-                        color: Colors.black,
-                        height: 1.5,
                       ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CustemText(
+                            text: result.isValid
+                                ? "Result: ${isInfected ? 'INFECTED' : 'NORMAL'}"
+                                : "Result: UNREADABLE",
+                            size: 18,
+                            weight: FontWeight.bold,
+                            color: result.isValid
+                                ? (isInfected ? Colors.red : Colors.green)
+                                : Colors.orange,
+                          ),
+                          const Gap(15),
 
-                      const Gap(20),
-                      CustemText(
-                        text:
-                            "⚠ This is a preliminary automated report and does not replace a professional medical consultation.",
-                        size: 13,
-                        color: Colors.grey.shade700,
+                          if (result.isValid) ...[
+                            CustemText(
+                              text: "Confidence: $confidenceText",
+                              size: 16,
+                              color: Colors.black87,
+                            ),
+                            const Gap(15),
+                          ],
+
+                          CustemText(
+                            text:
+                                result.reportText ??
+                                (result.isValid
+                                    ? "The AI analysis suggests ${isInfected ? 'findings consistent with pneumonia' : 'normal lung patterns'}. Please consult a physician for a formal diagnosis."
+                                    : "The uploaded image does not appear to be a valid chest X-ray. Please ensure you are uploading a clear frontal chest radiograph."),
+                            size: 15,
+                            color: Colors.black,
+                            height: 1.5,
+                          ),
+
+                          const Gap(20),
+                          CustemText(
+                            text:
+                                "⚠ This is a preliminary automated report and does not replace a professional medical consultation.",
+                            size: 13,
+                            color: Colors.grey.shade700,
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
                 const Spacer(),
