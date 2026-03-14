@@ -71,6 +71,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
+    console.error("Function execution failed:", error);
     const errorDetails = error instanceof Error ? {
       message: error.message,
       stack: error.stack,

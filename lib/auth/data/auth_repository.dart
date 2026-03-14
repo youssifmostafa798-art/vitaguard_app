@@ -181,6 +181,21 @@ class AuthRepository {
           await _client.from('patients').select().eq('id', uid).limit(1);
       if (patientSnapshot.isNotEmpty) {
         profile.addAll(Map<String, dynamic>.from(patientSnapshot.first as Map));
+      } else {
+        // Mitigation: If patient record is missing, try to auto-repair if it's a legacy user
+        try {
+          await _client.from('patients').insert({
+            'id': uid,
+            'gender': 'male',
+            'age': 20,
+          });
+          final retrySnapshot = await _client.from('patients').select().eq('id', uid).limit(1);
+          if (retrySnapshot.isNotEmpty) {
+            profile.addAll(Map<String, dynamic>.from(retrySnapshot.first as Map));
+          }
+        } catch (e) {
+          print('Auto-repair failed for patient record: $e');
+        }
       }
     } else if (role == UserRole.doctor.value) {
       final doctorSnapshot =

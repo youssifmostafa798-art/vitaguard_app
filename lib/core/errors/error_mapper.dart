@@ -15,6 +15,9 @@ class ErrorMapper {
     }
 
     if (error is PostgrestException) {
+      if (error.code == '23503') {
+        return 'Profile Data Inconsistency: Your account profile is missing required internal records. Please contact support or try re-registering.';
+      }
       return error.message.isNotEmpty
           ? error.message
           : 'Database error (${error.code}).';
@@ -27,10 +30,12 @@ class ErrorMapper {
     }
 
     if (error is FunctionException) {
-      if (error.reasonPhrase == 'Bad Request' || error.status == 400) {
-        return 'Server error: The request was invalid or data was missing.';
+      final msg = error.reasonPhrase ?? 'Function error (${error.status}).';
+      // If we have a status 400, try to return a more helpful message
+      if (error.status == 400) {
+        return 'Server error: $msg';
       }
-      return error.reasonPhrase ?? 'Function error (${error.status}).';
+      return msg;
     }
 
     if (error is StateError) {
