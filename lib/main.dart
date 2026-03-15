@@ -9,11 +9,7 @@ Future<void> main() async {
     url: 'https://sumgvbdgucrjyiztmzyn.supabase.co',
     anonKey: 'sb_publishable_mn_LuYvFSEJBx4Kqt07Xpg_6mHktGkV',
   );
-  runApp(
-    const ProviderScope(
-      child: MyApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
