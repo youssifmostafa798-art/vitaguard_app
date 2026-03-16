@@ -19,7 +19,7 @@ class CompanionHome extends ConsumerWidget {
     return Scaffold(
       appBar: HomeHeader(
         name_: name,
-        profileImage: const AssetImage("assets/PNG/youth_14.png"),
+
         onExit: () {
           ref.read(authProvider).logout();
           Navigator.pushAndRemoveUntil(

@@ -7,15 +7,9 @@ import 'package:vitaguard_app/core/providers.dart';
 
 class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
   final String name_;
-  final ImageProvider profileImage;
   final VoidCallback? onExit;
 
-  const HomeHeader({
-    super.key,
-    required this.name_,
-    required this.profileImage,
-    this.onExit,
-  });
+  const HomeHeader({super.key, required this.name_, this.onExit});
 
   @override
   Size get preferredSize => const Size.fromHeight(80);
@@ -35,7 +29,12 @@ class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
               children: [
                 Stack(
                   children: [
-                    CircleAvatar(radius: 24, backgroundImage: profileImage),
+                    // Fixed default avatar using Icons.person
+                    const CircleAvatar(
+                      radius: 24,
+                      backgroundColor: Colors.grey, // Neutral background
+                      child: Icon(Icons.person, size: 42, color: Colors.white),
+                    ),
                     Positioned(
                       right: 0,
                       bottom: 0,
@@ -51,13 +50,13 @@ class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
                     ),
                   ],
                 ),
-                Gap(12),
+                const Gap(12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      CustemText(
+                      const CustemText(
                         text: "Hello,",
                         color: Color(0xff003F6B),
                         size: 18,
@@ -67,16 +66,18 @@ class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
                           CustemText(
                             text: name_,
                             weight: FontWeight.bold,
-                            color: Color(0xff003F6B),
+                            color: const Color(0xff003F6B),
                             size: 20,
                           ),
-                          Gap(8),
+                          const Gap(8),
                           Tooltip(
                             message: health.aiMessage,
                             child: Icon(
                               Icons.bolt,
                               size: 16,
-                              color: health.isAiOnline ? Colors.orange : Colors.grey,
+                              color: health.isAiOnline
+                                  ? Colors.orange
+                                  : Colors.grey,
                             ),
                           ),
                         ],
@@ -87,9 +88,8 @@ class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
                 IconButton(
                   onPressed: onExit,
                   tooltip: "Exit",
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.exit_to_app,
-                    weight: 8,
                     size: 38,
                     color: Color(0xff003F6B),
                   ),

@@ -33,7 +33,6 @@ class _DoctorHomesState extends ConsumerState<DoctorHomes> {
     return Scaffold(
       appBar: HomeHeader(
         name_: widget.name,
-        profileImage: const AssetImage("assets/PNG/doctor-patient 1.png"),
         onExit: () {
           ref.read(authProvider).logout();
           Navigator.pushAndRemoveUntil(

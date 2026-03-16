@@ -125,7 +125,6 @@ class ChatListFacility extends StatelessWidget {
     return Scaffold(
       appBar: HomeHeader(
         name_: name,
-        profileImage: const AssetImage("assets/PNG/youth_14.png"),
         onExit: () {
           Navigator.pop(context);
         },
