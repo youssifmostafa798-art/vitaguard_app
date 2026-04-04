@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:vitaguard_app/facility/home.chat/widget/message_facility_bubble.dart';
-import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/chat_header.dart';
 import 'package:vitaguard_app/components/message_input.dart';
 import 'package:vitaguard_app/models/message_model.dart';
@@ -128,61 +127,55 @@ class _ChatFacilityDetailState extends State<ChatFacilityDetail> {
       ),
 
       body: SafeArea(
-        child: AppBackground(
-          child: Column(
-            children: [
-              // Date header
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Text(
-                    'Monday',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
+        child: Column(
+          children: [
+            // Date header
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Text(
+                  'Monday',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ),
+            ),
 
-              // Messages
-              Expanded(
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ListView.builder(
-                        reverse: true,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) {
-                          final message =
-                              _messages[_messages.length - 1 - index];
-                          final isPreviousSameSender =
-                              index < _messages.length - 1 &&
-                              _messages[_messages.length - 2 - index].sender ==
-                                  message.sender;
+            // Messages
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                      reverse: true,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      itemCount: _messages.length,
+                      itemBuilder: (context, index) {
+                        final message = _messages[_messages.length - 1 - index];
+                        final isPreviousSameSender =
+                            index < _messages.length - 1 &&
+                            _messages[_messages.length - 2 - index].sender ==
+                                message.sender;
 
-                          return MessageFacilityBubble(
-                            message: message,
-                            isPreviousSameSender: isPreviousSameSender,
-                            drName: widget.chatName,
-                            patientName: widget.chatName,
-                          );
-                        },
-                      ),
-              ),
+                        return MessageFacilityBubble(
+                          message: message,
+                          isPreviousSameSender: isPreviousSameSender,
+                          drName: widget.chatName,
+                          patientName: widget.chatName,
+                        );
+                      },
+                    ),
+            ),
 
-              // Message input
-              MessageInput(
-                controller: _messageController,
-                onSend: _sendMessage,
-              ),
-            ],
-          ),
+            // Message input
+            MessageInput(controller: _messageController, onSend: _sendMessage),
+          ],
         ),
       ),
     );

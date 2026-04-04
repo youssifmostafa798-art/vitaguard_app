@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(
-    url: 'https://sumgvbdgucrjyiztmzyn.supabase.co',
+    url: 'https://sumgvbdgucrjyiztmzyn.supabase.com',
     anonKey: 'sb_publishable_mn_LuYvFSEJBx4Kqt07Xpg_6mHktGkV',
   );
   runApp(const ProviderScope(child: MyApp()));
