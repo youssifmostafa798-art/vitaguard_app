@@ -14,7 +14,7 @@ dependencies:
   gap: ^3.0.1
   flutter_svg: ^2.2.3
   url_launcher: ^6.1.10
-  intl: ^0.20.2   # ✅ تمت الإضافة
+  intl: ^0.20.2
   connectivity_plus: ^7.0.0
   logger: ^2.5.0
   image_picker: ^1.1.2
@@ -27,6 +27,14 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: "^0.14.4"  # ✅ انتقلت لهنا
+
+# ✅ بلوك مستقل في الـ root (مش جوه dev_dependencies)
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/Logo/لوجوو1.jpg 1.png"
+  min_sdk_android: 21
 
 flutter:
   uses-material-design: true
@@ -38,7 +46,7 @@ flutter:
     - assets/SVG/
     - assets/models/
 
-  fonts:   # ✅ لازم تكون جوه flutter
+  fonts:
     - family: WixMadeforDisplay
       fonts:
         - asset: assets/fonts/WixMadeforDisplay/WixMadeforDisplay-Regular.ttf
