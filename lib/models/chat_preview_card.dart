@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
-import 'package:vitaguard_app/core/avatar_color.dart';
+import 'package:vitaguard_app/core/utils/avatar_color.dart';
 import 'package:vitaguard_app/models/message_model.dart';
 
 //const

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:vitaguard_app/core/utils/simple_header.dart';
 
 import 'package:vitaguard_app/facility/offer/add_offer.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_field.dart';
-import 'package:vitaguard_app/core/simple_header.dart';
 
 class CurrentOffers extends StatefulWidget {
   const CurrentOffers({super.key});
@@ -78,6 +78,3 @@ class _CurrentOffersState extends State<CurrentOffers> {
     );
   }
 }
-
-
-

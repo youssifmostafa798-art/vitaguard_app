@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_field.dart';
-import 'package:vitaguard_app/core/simple_header.dart';
+import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/facility/data/facility_repository.dart';
 
 class Reports extends StatefulWidget {
@@ -42,7 +42,9 @@ class _ReportsState extends State<Reports> {
   Future<void> _uploadReport() async {
     if (_phoneController.text.trim().isEmpty || _selectedFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter mobile number and select a file")),
+        const SnackBar(
+          content: Text("Please enter mobile number and select a file"),
+        ),
       );
       return;
     }
@@ -64,9 +66,9 @@ class _ReportsState extends State<Reports> {
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Upload failed: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Upload failed: $e")));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -139,9 +141,18 @@ class _ReportsState extends State<Reports> {
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.image_outlined, size: 50, color: Color(0xff0D3B66)),
+                                      Icon(
+                                        Icons.image_outlined,
+                                        size: 50,
+                                        color: Color(0xff0D3B66),
+                                      ),
                                       Gap(8),
-                                      Text("Tap to select image/PDF", style: TextStyle(color: Color(0xff0D3B66))),
+                                      Text(
+                                        "Tap to select image/PDF",
+                                        style: TextStyle(
+                                          color: Color(0xff0D3B66),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -166,6 +177,3 @@ class _ReportsState extends State<Reports> {
     );
   }
 }
-
-
-

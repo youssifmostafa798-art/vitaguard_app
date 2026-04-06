@@ -15,7 +15,7 @@ class SimpleHeader extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(80);
+  Size get preferredSize => Size.fromHeight(80); // height responsive
 
   @override
   Widget build(BuildContext context) {
@@ -29,9 +29,8 @@ class SimpleHeader extends StatelessWidget implements PreferredSizeWidget {
             ? IconButton(
                 icon: const Icon(Icons.arrow_back, color: Color(0xff0D3B66)),
                 onPressed: onBackPressed ?? () => Navigator.pop(context),
-                // إذا تم تمرير onBackPressed استخدمه، وإلا استخدم الـ pop الافتراضي
               )
-            : null, // إذا automaticallyImplyLeading = false، لا تظهر زر الرجاء
+            : null,
         title: CustemText(
           text: title,
           color: const Color(0xff0D3B66),
@@ -42,6 +41,3 @@ class SimpleHeader extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 }
-
-
-

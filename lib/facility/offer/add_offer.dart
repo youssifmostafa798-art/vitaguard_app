@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_field.dart';
-import 'package:vitaguard_app/core/simple_header.dart';
+import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/facility/data/facility_repository.dart';
 
 class AddOffer extends StatefulWidget {
@@ -20,7 +20,7 @@ class _AddOfferState extends State<AddOffer> {
   final TextEditingController detailsController = TextEditingController();
   final TextEditingController discountController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
-  
+
   final _repository = FacilityRepository();
   File? _selectedImage;
   bool _isLoading = false;
@@ -45,7 +45,8 @@ class _AddOfferState extends State<AddOffer> {
   }
 
   Future<void> _saveOffer() async {
-    if (nameController.text.trim().isEmpty || detailsController.text.trim().isEmpty) {
+    if (nameController.text.trim().isEmpty ||
+        detailsController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill name and details")),
       );
@@ -55,10 +56,11 @@ class _AddOfferState extends State<AddOffer> {
     setState(() => _isLoading = true);
 
     try {
-      // Notes: Discount and Price are handled as part of details/description for now 
+      // Notes: Discount and Price are handled as part of details/description for now
       // as the backend FacilityOffer only has title and description.
-      final fullDescription = "${detailsController.text}\nPrice: ${priceController.text}\nDiscount: ${discountController.text}%";
-      
+      final fullDescription =
+          "${detailsController.text}\nPrice: ${priceController.text}\nDiscount: ${discountController.text}%";
+
       await _repository.createOffer(
         title: nameController.text.trim(),
         description: fullDescription,
@@ -72,9 +74,9 @@ class _AddOfferState extends State<AddOffer> {
       Navigator.pop(context, nameController.text);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to create offer: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Failed to create offer: $e")));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -162,9 +164,16 @@ class _AddOfferState extends State<AddOffer> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.image_outlined, size: 50, color: Color(0xff0D3B66)),
+                                  Icon(
+                                    Icons.image_outlined,
+                                    size: 50,
+                                    color: Color(0xff0D3B66),
+                                  ),
                                   Gap(8),
-                                  Text("Select Offer Image", style: TextStyle(color: Color(0xff0D3B66))),
+                                  Text(
+                                    "Select Offer Image",
+                                    style: TextStyle(color: Color(0xff0D3B66)),
+                                  ),
                                 ],
                               ),
                             ),
@@ -187,6 +196,3 @@ class _AddOfferState extends State<AddOffer> {
     );
   }
 }
-
-
-

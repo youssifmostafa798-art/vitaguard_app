@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
-import 'package:vitaguard_app/core/simple_buttom.dart';
-import 'package:vitaguard_app/core/simple_header.dart';
+import 'package:vitaguard_app/core/utils/simple_buttom.dart';
+import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/core/providers.dart';
 
 class CompanionCode extends ConsumerStatefulWidget {
@@ -28,16 +28,18 @@ class _CompanionCodeState extends ConsumerState<CompanionCode> {
     final success = await ref.read(patientProvider).regenerateCompanionCode();
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Companion code regenerated successfully")),
+        const SnackBar(
+          content: Text("Companion code regenerated successfully"),
+        ),
       );
     }
   }
 
   void _copyToClipboard(String code) {
     Clipboard.setData(ClipboardData(text: code));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Code copied to clipboard")),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("Code copied to clipboard")));
   }
 
   @override
@@ -96,7 +98,11 @@ class _CompanionCodeState extends ConsumerState<CompanionCode> {
                           )
                         else
                           IconButton(
-                            icon: const Icon(Icons.copy, size: 20, color: Color(0xff0E3C63)),
+                            icon: const Icon(
+                              Icons.copy,
+                              size: 20,
+                              color: Color(0xff0E3C63),
+                            ),
                             onPressed: () => _copyToClipboard(displayCode),
                           ),
                       ],

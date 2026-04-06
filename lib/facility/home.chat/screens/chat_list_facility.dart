@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/core/utils/home_header.dart';
 import 'package:vitaguard_app/facility/home.chat/screens/chat_facility_detail.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
-import 'package:vitaguard_app/core/home_header.dart';
 import 'package:vitaguard_app/models/chat_preview_card.dart';
 import 'package:vitaguard_app/patient/home/widget/home_search.dart';
 import 'package:vitaguard_app/models/message_model.dart';
@@ -129,64 +130,66 @@ class ChatListFacility extends StatelessWidget {
         },
       ),
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: Column(
-                children: [
-                  Gap(20),
-                  HomeSearch(),
-                  // Active chats section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: Color(0xFF00A3FF),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        Gap(8),
-                        CustemText(
-                          text: "Active",
-                          size: 18,
-                          weight: FontWeight.w600,
-                          color: Color(0xff003F6B),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Chat list
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: chats.length,
-                    separatorBuilder: (context, index) => Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final chat = chats[index];
-                      return ChatPreviewCard(
-                        chat: chat,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChatFacilityDetail(
-                                chatName: chat.name,
-                                chatId: chat.id,
-                              ),
+        child: AppBackground(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Gap(20),
+                    HomeSearch(),
+                    // Active chats section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: Color(0xFF00A3FF),
+                              shape: BoxShape.circle,
                             ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ],
-              ),
-            );
-          },
+                          ),
+                          Gap(8),
+                          CustemText(
+                            text: "Active",
+                            size: 18,
+                            weight: FontWeight.w600,
+                            color: Color(0xff003F6B),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Chat list
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: chats.length,
+                      separatorBuilder: (context, index) => Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final chat = chats[index];
+                        return ChatPreviewCard(
+                          chat: chat,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ChatFacilityDetail(
+                                  chatName: chat.name,
+                                  chatId: chat.id,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

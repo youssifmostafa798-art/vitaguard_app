@@ -23,11 +23,18 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
 
+  // @override
+  //  void dispose() {
+  //   emailCtrl.dispose();
+  //    passCtrl.dispose();
+  //   super.dispose();
+  //}
+  //delete after end the app
   @override
-  void dispose() {
-    emailCtrl.dispose();
-    passCtrl.dispose();
-    super.dispose();
+  void initState() {
+    emailCtrl.text = 'youssifkenk@gmail.com';
+    passCtrl.text = '1234567890';
+    super.initState();
   }
 
   void _handleSignIn() async {
@@ -72,9 +79,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       );
     } else {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(auth.error ?? 'Login failed')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(auth.error ?? 'Login failed')));
     }
   }
 
@@ -96,10 +103,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     children: [
                       const VitaGuardLogo(),
                       const SizedBox(height: 20),
-                      AuthTextField(
-                        hint: "Email",
-                        controller: emailCtrl,
-                      ),
+                      AuthTextField(hint: "Email", controller: emailCtrl),
                       const SizedBox(height: 20),
                       AuthTextField(
                         hint: "Password",

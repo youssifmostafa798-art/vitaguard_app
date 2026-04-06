@@ -69,7 +69,7 @@ class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
                             color: const Color(0xff003F6B),
                             size: 20,
                           ),
-                          const Gap(8),
+                          const Gap(2),
                           Tooltip(
                             message: health.aiMessage,
                             child: Icon(

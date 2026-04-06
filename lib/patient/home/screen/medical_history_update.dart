@@ -4,7 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:vitaguard_app/companion/home/widget/archive_medical_history.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
-import 'package:vitaguard_app/core/simple_header.dart';
+import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/components/custem_field.dart';
 import 'package:vitaguard_app/patient/home/widget/name_card.dart';
 import 'package:vitaguard_app/patient/data/patient_models.dart';
@@ -16,7 +16,8 @@ class MedicalHistoryUpdate extends ConsumerStatefulWidget {
   const MedicalHistoryUpdate({super.key, required this.firstNamee});
 
   @override
-  ConsumerState<MedicalHistoryUpdate> createState() => _MedicalHistoryUpdateState();
+  ConsumerState<MedicalHistoryUpdate> createState() =>
+      _MedicalHistoryUpdateState();
 }
 
 class _MedicalHistoryUpdateState extends ConsumerState<MedicalHistoryUpdate> {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
-import 'package:vitaguard_app/core/simple_header.dart';
+import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/patient/data/home_guidance_video.dart';
 import 'package:vitaguard_app/patient/home/widget/guidance_video_card.dart';
 
@@ -25,6 +25,3 @@ class GuidanceVideos extends StatelessWidget {
     );
   }
 }
-
-
-

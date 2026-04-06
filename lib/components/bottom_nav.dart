@@ -147,6 +147,3 @@ class _HomeBottomNavState extends State<HomeBottomNav>
     );
   }
 }
-
-
-

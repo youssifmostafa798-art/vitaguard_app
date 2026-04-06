@@ -51,12 +51,8 @@ final List<OnboardingModel> onboardingList = [
     image: 'assets/PNG/medical_5.png',
     title: 'For Healthcare\nFacilities',
     description:
-        // غيره الوصف
-        'As a companion, you can follow the patient’s symptoms, receive alerts, and help them stay on track.',
+        'Built for healthcare facilities to enhance workflow and patient care.',
 
     isLast: true,
   ),
 ];
-
-
-

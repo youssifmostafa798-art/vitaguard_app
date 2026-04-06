@@ -3,7 +3,7 @@ import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
-import 'package:vitaguard_app/core/simple_header.dart';
+import 'package:vitaguard_app/core/utils/simple_header.dart';
 
 class DailyReports extends StatelessWidget {
   const DailyReports({super.key});
@@ -102,6 +102,3 @@ class DailyReports extends StatelessWidget {
     );
   }
 }
-
-
-

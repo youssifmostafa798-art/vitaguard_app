@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:vitaguard_app/core/utils/chat_header.dart';
 import 'package:vitaguard_app/doctor/chat/widget/message_dr_bubble.dart';
 import 'package:vitaguard_app/core/chat/chat_repository.dart';
-import 'package:vitaguard_app/core/chat_header.dart';
 import 'package:vitaguard_app/components/message_input.dart';
 import 'package:vitaguard_app/models/message_model.dart';
 

@@ -6,7 +6,7 @@ import 'package:vitaguard_app/models/chat_preview_card.dart';
 import 'package:vitaguard_app/models/message_model.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
-import 'package:vitaguard_app/core/home_header.dart';
+import 'package:vitaguard_app/core/utils/home_header.dart';
 import 'package:vitaguard_app/patient/home/widget/home_search.dart';
 import 'package:vitaguard_app/auth/ui/screens/role_screen.dart';
 import 'package:vitaguard_app/core/providers.dart';

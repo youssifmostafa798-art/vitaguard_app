@@ -4,7 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_field.dart';
-import 'package:vitaguard_app/core/simple_header.dart';
+import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/patient/data/patient_models.dart';
 import 'package:vitaguard_app/core/providers.dart';
 

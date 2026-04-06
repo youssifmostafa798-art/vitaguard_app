@@ -3,7 +3,7 @@ import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
-import 'package:vitaguard_app/core/simple_header.dart';
+import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/patient/data/patient_models.dart';
 
 class RadiologyResult extends StatelessWidget {
@@ -90,12 +90,6 @@ class RadiologyResult extends StatelessWidget {
                       ),
 
                       const Gap(20),
-                      CustemText(
-                        text:
-                            "⚠ This is a preliminary automated report and does not replace a professional medical consultation.",
-                        size: 13,
-                        color: Colors.grey.shade700,
-                      ),
                     ],
                   ),
                 ),
@@ -115,5 +109,3 @@ class RadiologyResult extends StatelessWidget {
     );
   }
 }
-
-

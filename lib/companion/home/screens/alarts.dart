@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
-import 'package:vitaguard_app/core/simple_header.dart';
+import 'package:vitaguard_app/core/utils/simple_header.dart';
 
 class Alarts extends StatelessWidget {
   const Alarts({super.key});
@@ -84,6 +84,3 @@ class Alarts extends StatelessWidget {
     );
   }
 }
-
-
-

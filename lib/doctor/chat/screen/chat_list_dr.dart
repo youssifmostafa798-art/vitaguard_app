@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/doctor/chat/screen/chat_dr_detail.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/core/chat/chat_repository.dart';
-import 'package:vitaguard_app/core/simple_header.dart';
 import 'package:vitaguard_app/models/chat_preview_card.dart';
 import 'package:vitaguard_app/models/message_model.dart';
 
