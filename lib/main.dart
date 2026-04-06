@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vitaguard_app/onbording/ui/onbording_screen/onboarding_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:vitaguard_app/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +20,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'WixMadeforDisplay'),
-      home: const OnboardingScreen(),
+      home: const SplashScreen(),
+      //const OnboardingScreen(),
     );
   }
 }

@@ -22,6 +22,7 @@ dependencies:
   image: any
   tflite_flutter: any
   supabase_flutter: ^2.5.6
+  flutter_animate: ^4.5.2
 
 dev_dependencies:
   flutter_test:
@@ -42,6 +43,7 @@ flutter:
   assets:
     - assets/cover/
     - assets/Logo/
+    - assets/Logo/Vita Guard 2.png
     - assets/PNG/
     - assets/SVG/
     - assets/models/
