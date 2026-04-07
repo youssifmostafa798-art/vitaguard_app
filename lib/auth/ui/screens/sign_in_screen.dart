@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vitaguard_app/auth/ui/widgets/auth_textfield.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
@@ -97,14 +98,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             builder: (context, constraints) {
               return SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const VitaGuardLogo(),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20.h),
                       AuthTextField(hint: "Email", controller: emailCtrl),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20.h),
                       AuthTextField(
                         hint: "Password",
                         controller: passCtrl,
@@ -118,7 +119,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           child: const Text("Forget password?"),
                         ),
                       ),
-                      const SizedBox(height: 200),
+                      SizedBox(height: 200.h),
                       if (isLoading)
                         const CircularProgressIndicator()
                       else

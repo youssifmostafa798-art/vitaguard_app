@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/core/utils/home_header.dart';
 import 'package:vitaguard_app/doctor/home/widget/category_grid_dr.dart';
@@ -45,18 +46,18 @@ class _DoctorHomesState extends ConsumerState<DoctorHomes> {
       body: SafeArea(
         child: AppBackground(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: ListView(
               children: [
                 if (doctor.verificationStatus != 'approved')
                   Container(
-                    margin: const EdgeInsets.only(top: 10),
-                    padding: const EdgeInsets.all(12),
+                    margin: EdgeInsets.only(top: 10.h),
+                    padding: EdgeInsets.all(12.r),
                     decoration: BoxDecoration(
                       color: doctor.verificationStatus == 'pending'
                           ? Colors.orange.withValues(alpha: 0.1)
                           : Colors.red.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(
                         color: doctor.verificationStatus == 'pending'
                             ? Colors.orange
@@ -69,11 +70,12 @@ class _DoctorHomesState extends ConsumerState<DoctorHomes> {
                           doctor.verificationStatus == 'pending'
                               ? Icons.hourglass_empty
                               : Icons.error_outline,
+                          size: 24.r,
                           color: doctor.verificationStatus == 'pending'
                               ? Colors.orange
                               : Colors.red,
                         ),
-                        const Gap(12),
+                        Gap(12.w),
                         Expanded(
                           child: Text(
                             doctor.verificationStatus == 'pending'
@@ -83,7 +85,7 @@ class _DoctorHomesState extends ConsumerState<DoctorHomes> {
                               color: doctor.verificationStatus == 'pending'
                                   ? Colors.orange[900]
                                   : Colors.red[900],
-                              fontSize: 13,
+                              fontSize: 13.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -91,12 +93,12 @@ class _DoctorHomesState extends ConsumerState<DoctorHomes> {
                       ],
                     ),
                   ),
-                const Gap(20),
+                Gap(20.h),
                 const HomeSearch(),
-                const Gap(25),
-                const Gap(30),
+                Gap(25.h),
+                Gap(30.h),
                 CategoryGridDr(drName: widget.name),
-                const Gap(10),
+                Gap(10.h),
               ],
             ),
           ),

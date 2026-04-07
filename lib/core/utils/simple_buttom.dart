@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 
 class SimpleButtom extends StatelessWidget {
@@ -11,13 +12,13 @@ class SimpleButtom extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: InkWell(
-        borderRadius: BorderRadius.circular(25),
+        borderRadius: BorderRadius.circular(25.r),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+          padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 12.h),
           decoration: BoxDecoration(
             color: const Color(0xff003F6B),
-            borderRadius: BorderRadius.circular(25),
+            borderRadius: BorderRadius.circular(25.r),
           ),
           child: CustemText(
             text: text,
@@ -30,6 +31,3 @@ class SimpleButtom extends StatelessWidget {
     );
   }
 }
-
-
-

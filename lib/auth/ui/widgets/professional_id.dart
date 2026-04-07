@@ -73,7 +73,11 @@ class _ProfessionalIdState extends State<ProfessionalId> {
                             ),
                           )
                         : const Center(
-                            child: Icon(Icons.image_outlined, size: 50, color: Colors.grey),
+                            child: Icon(
+                              Icons.image_outlined,
+                              size: 50,
+                              color: Colors.grey,
+                            ),
                           ),
                   ),
                 ),
@@ -94,7 +98,3 @@ class _ProfessionalIdState extends State<ProfessionalId> {
     );
   }
 }
-
-
-
-

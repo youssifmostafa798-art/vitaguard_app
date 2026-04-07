@@ -105,13 +105,18 @@ class PatientRepository {
       );
 
       if (uploadResponse.status != 200 && uploadResponse.status != 201) {
-        final errorMsg =
-            (uploadResponse.data is Map) ? uploadResponse.data['error'] : null;
-        throw StateError(errorMsg ?? 'Server returned an error: ${uploadResponse.status}');
+        final errorMsg = (uploadResponse.data is Map)
+            ? uploadResponse.data['error']
+            : null;
+        throw StateError(
+          errorMsg ?? 'Server returned an error: ${uploadResponse.status}',
+        );
       }
 
       final data = uploadResponse.data;
-      final imagePath = (data is Map<String, dynamic>) ? data['image_path'] as String? : null;
+      final imagePath = (data is Map<String, dynamic>)
+          ? data['image_path'] as String?
+          : null;
 
       return XRayResult(
         isValid: result.isValid,
@@ -152,8 +157,11 @@ class PatientRepository {
   }
 
   Future<String> getCompanionCode() async {
-    final data =
-        await _client.from('patients').select('companion_code').eq('id', _uid).limit(1);
+    final data = await _client
+        .from('patients')
+        .select('companion_code')
+        .eq('id', _uid)
+        .limit(1);
     if (data.isNotEmpty) {
       final code = data.first['companion_code'];
       if (code is String && code.isNotEmpty) {
@@ -162,23 +170,27 @@ class PatientRepository {
     }
 
     final newCode = await _generateUniqueCompanionCode();
-    await _client.from('patients').update({
-      'companion_code': newCode,
-    }).eq('id', _uid);
+    await _client
+        .from('patients')
+        .update({'companion_code': newCode})
+        .eq('id', _uid);
     return newCode;
   }
 
   Future<String> regenerateCompanionCode() async {
     final newCode = await _generateUniqueCompanionCode();
-    await _client.from('patients').update({
-      'companion_code': newCode,
-    }).eq('id', _uid);
+    await _client
+        .from('patients')
+        .update({'companion_code': newCode})
+        .eq('id', _uid);
     return newCode;
   }
 
   Future<String> _generateUniqueCompanionCode() async {
     try {
-      final response = await _client.functions.invoke('generate_companion_code');
+      final response = await _client.functions.invoke(
+        'generate_companion_code',
+      );
       final data = response.data;
       if (data is Map && data['code'] is String) {
         return data['code'] as String;
@@ -194,8 +206,10 @@ class PatientRepository {
     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
     for (var attempt = 0; attempt < 10; attempt++) {
-      final code = List.generate(6, (_) => alphabet[Random.secure().nextInt(alphabet.length)])
-          .join();
+      final code = List.generate(
+        6,
+        (_) => alphabet[Random.secure().nextInt(alphabet.length)],
+      ).join();
       final existing = await _client
           .from('patients')
           .select('id')
@@ -206,8 +220,10 @@ class PatientRepository {
       }
     }
 
-    return List.generate(6, (_) => alphabet[Random.secure().nextInt(alphabet.length)])
-        .join();
+    return List.generate(
+      6,
+      (_) => alphabet[Random.secure().nextInt(alphabet.length)],
+    ).join();
   }
 
   String _basename(String path) {

@@ -15,6 +15,3 @@ Color getAvatarColor(MessageSender sender) {
       return const Color(0xFF00A3FF);
   }
 }
-
-
-

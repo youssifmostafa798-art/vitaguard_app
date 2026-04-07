@@ -32,7 +32,9 @@ class AuthRepository {
         'role': UserRole.patient.value,
         'name': fullName,
         'phone': phone,
-        'gender': (gender == null || gender.trim().isEmpty) ? 'male' : gender.trim().toLowerCase(),
+        'gender': (gender == null || gender.trim().isEmpty)
+            ? 'male'
+            : gender.trim().toLowerCase(),
         'age': age ?? '20',
         'companion_code': companionCode,
       },
@@ -56,7 +58,9 @@ class AuthRepository {
         'role': UserRole.doctor.value,
         'name': fullName,
         'phone': phone,
-        'gender': (gender == null || gender.trim().isEmpty) ? 'male' : gender.trim().toLowerCase(),
+        'gender': (gender == null || gender.trim().isEmpty)
+            ? 'male'
+            : gender.trim().toLowerCase(),
         'age': age ?? '30',
         'professional_id': professionalId,
       },
@@ -71,7 +75,9 @@ class AuthRepository {
       final ext = _fileExtension(idCardImage);
       final contentType = _contentTypeForExtension(ext);
       if (contentType == null) {
-        throw StateError('Invalid file type. Please upload a JPEG, PNG, or PDF.');
+        throw StateError(
+          'Invalid file type. Please upload a JPEG, PNG, or PDF.',
+        );
       }
 
       await _client.functions.invoke(
@@ -147,29 +153,34 @@ class AuthRepository {
       final ext = _fileExtension(recordImage);
       final contentType = _contentTypeForExtension(ext);
       if (contentType == null) {
-        throw StateError('Invalid file type. Please upload a JPEG, PNG, or PDF.');
+        throw StateError(
+          'Invalid file type. Please upload a JPEG, PNG, or PDF.',
+        );
       }
       final path = '${user.id}/record$ext';
-      await _client.storage.from('facility-records').upload(
+      await _client.storage
+          .from('facility-records')
+          .upload(
             path,
             recordImage,
-            fileOptions: FileOptions(
-              upsert: true,
-              contentType: contentType,
-            ),
+            fileOptions: FileOptions(upsert: true, contentType: contentType),
           );
-      
-      await _client.from('facilities').update({
-        'record_path': path,
-      }).eq('id', user.id);
+
+      await _client
+          .from('facilities')
+          .update({'record_path': path})
+          .eq('id', user.id);
     }
     return response;
   }
 
   Future<Map<String, dynamic>> getMe() async {
     final uid = _supabase.currentUid;
-    final profileSnapshot =
-        await _client.from('profiles').select().eq('id', uid).limit(1);
+    final profileSnapshot = await _client
+        .from('profiles')
+        .select()
+        .eq('id', uid)
+        .limit(1);
     final profile = profileSnapshot.isNotEmpty
         ? Map<String, dynamic>.from(profileSnapshot.first as Map)
         : <String, dynamic>{};
@@ -177,8 +188,11 @@ class AuthRepository {
 
     final role = profile['role'];
     if (role == UserRole.patient.value) {
-      final patientSnapshot =
-          await _client.from('patients').select().eq('id', uid).limit(1);
+      final patientSnapshot = await _client
+          .from('patients')
+          .select()
+          .eq('id', uid)
+          .limit(1);
       if (patientSnapshot.isNotEmpty) {
         profile.addAll(Map<String, dynamic>.from(patientSnapshot.first as Map));
       } else {
@@ -189,31 +203,50 @@ class AuthRepository {
             'gender': 'male',
             'age': 20,
           });
-          final retrySnapshot = await _client.from('patients').select().eq('id', uid).limit(1);
+          final retrySnapshot = await _client
+              .from('patients')
+              .select()
+              .eq('id', uid)
+              .limit(1);
           if (retrySnapshot.isNotEmpty) {
-            profile.addAll(Map<String, dynamic>.from(retrySnapshot.first as Map));
+            profile.addAll(
+              Map<String, dynamic>.from(retrySnapshot.first as Map),
+            );
           }
         } catch (e) {
           print('Auto-repair failed for patient record: $e');
         }
       }
     } else if (role == UserRole.doctor.value) {
-      final doctorSnapshot =
-          await _client.from('doctors').select().eq('id', uid).limit(1);
+      final doctorSnapshot = await _client
+          .from('doctors')
+          .select()
+          .eq('id', uid)
+          .limit(1);
       if (doctorSnapshot.isNotEmpty) {
         profile.addAll(Map<String, dynamic>.from(doctorSnapshot.first as Map));
       }
     } else if (role == UserRole.companion.value) {
-      final companionSnapshot =
-          await _client.from('companions').select().eq('id', uid).limit(1);
+      final companionSnapshot = await _client
+          .from('companions')
+          .select()
+          .eq('id', uid)
+          .limit(1);
       if (companionSnapshot.isNotEmpty) {
-        profile.addAll(Map<String, dynamic>.from(companionSnapshot.first as Map));
+        profile.addAll(
+          Map<String, dynamic>.from(companionSnapshot.first as Map),
+        );
       }
     } else if (role == UserRole.facility.value) {
-      final facilitySnapshot =
-          await _client.from('facilities').select().eq('id', uid).limit(1);
+      final facilitySnapshot = await _client
+          .from('facilities')
+          .select()
+          .eq('id', uid)
+          .limit(1);
       if (facilitySnapshot.isNotEmpty) {
-        profile.addAll(Map<String, dynamic>.from(facilitySnapshot.first as Map));
+        profile.addAll(
+          Map<String, dynamic>.from(facilitySnapshot.first as Map),
+        );
       }
     }
 
@@ -230,7 +263,9 @@ class AuthRepository {
 
   Future<String> _resolveCompanionCode() async {
     try {
-      final response = await _client.functions.invoke('generate_companion_code');
+      final response = await _client.functions.invoke(
+        'generate_companion_code',
+      );
       final data = response.data;
       if (data is Map && data['code'] is String) {
         return data['code'] as String;
@@ -247,8 +282,10 @@ class AuthRepository {
     final random = Random.secure();
 
     for (var attempt = 0; attempt < 8; attempt++) {
-      final code = List.generate(6, (_) => alphabet[random.nextInt(alphabet.length)])
-          .join();
+      final code = List.generate(
+        6,
+        (_) => alphabet[random.nextInt(alphabet.length)],
+      ).join();
       try {
         final existing = await _client
             .from('patients')
@@ -263,8 +300,10 @@ class AuthRepository {
       }
     }
 
-    return List.generate(6, (_) => alphabet[random.nextInt(alphabet.length)])
-        .join();
+    return List.generate(
+      6,
+      (_) => alphabet[random.nextInt(alphabet.length)],
+    ).join();
   }
 
   String _fileExtension(File file) {

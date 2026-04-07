@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class HomeBottomNav extends StatefulWidget {
   final int currentIndex;
@@ -47,26 +48,21 @@ class _HomeBottomNavState extends State<HomeBottomNav>
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      margin: EdgeInsets.all(20.r),
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(45),
+        borderRadius: BorderRadius.circular(45.r),
         border: Border.all(color: const Color(0xff003F6B), width: 3),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
         ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          // Home with animation
           _buildAnimatedIconButton(index: 0, icon: Icons.home, label: 'Home'),
-
-          // Chat with animation
           _buildAnimatedIconButton(index: 1, icon: Icons.chat, label: 'Chat'),
-
-          // Model with animation
           _buildAnimatedIconButton(
             index: 2,
             icon: Icons.health_and_safety,
@@ -91,26 +87,22 @@ class _HomeBottomNavState extends State<HomeBottomNav>
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOut,
           padding: EdgeInsets.symmetric(
-            vertical: 8,
-            horizontal: isSelected ? 16 : 8,
+            vertical: 8.h,
+            horizontal: isSelected ? 16.w : 8.w,
           ),
           decoration: BoxDecoration(
             color: isSelected
-                ? const Color(0xff003F6B).withValues(
-                    alpha: 0.1,
-                  ) // تم التعديل هنا
+                ? const Color(0xff003F6B).withValues(alpha: 0.1)
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(30.r),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Animated Icon
               AnimatedBuilder(
                 animation: _animationController,
                 builder: (context, child) {
-                  double scale =
-                      (isSelected && _animationController.isAnimating)
+                  final scale = (isSelected && _animationController.isAnimating)
                       ? _scaleAnimation.value
                       : 1.0;
 
@@ -118,25 +110,23 @@ class _HomeBottomNavState extends State<HomeBottomNav>
                     scale: scale,
                     child: Icon(
                       icon,
-                      size: 28,
+                      size: 28.r,
                       color: isSelected ? const Color(0xff003F6B) : Colors.grey,
                     ),
                   );
                 },
               ),
-
-              // Animated Label
               if (isSelected)
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeInOut,
-                  margin: const EdgeInsets.only(left: 5),
+                  margin: EdgeInsets.only(left: 5.w),
                   child: Text(
                     label,
                     style: TextStyle(
                       color: const Color(0xff003F6B),
                       fontWeight: FontWeight.bold,
-                      fontSize: 10,
+                      fontSize: 10.sp,
                     ),
                   ),
                 ),

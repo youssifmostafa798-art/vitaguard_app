@@ -52,6 +52,3 @@ class CategoryGridCompanion extends StatelessWidget {
     );
   }
 }
-
-
-

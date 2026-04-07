@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/patient/data/home_guidance_video.dart';
@@ -14,7 +15,7 @@ class GuidanceVideos extends StatelessWidget {
       body: SafeArea(
         child: AppBackground(
           child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
             itemCount: guidanceVideos.length,
             itemBuilder: (context, index) {
               return GuidanceVideoCard(video: guidanceVideos[index]);

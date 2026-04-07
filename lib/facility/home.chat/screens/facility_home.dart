@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/facility/home.chat/screens/chat_facility_detail.dart';
 import 'package:vitaguard_app/models/chat_preview_card.dart';
@@ -139,30 +140,30 @@ class FacilityHome extends ConsumerWidget {
       body: SafeArea(
         child: AppBackground(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: ListView(
               children: [
-                Gap(20),
-                HomeSearch(),
-                Gap(10),
+                Gap(20.h),
+                const HomeSearch(),
+                Gap(10.h),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: Row(
                     children: [
                       Container(
-                        width: 8,
-                        height: 8,
+                        width: 8.r,
+                        height: 8.r,
                         decoration: BoxDecoration(
-                          color: Color(0xFF00A3FF),
+                          color: const Color(0xFF00A3FF),
                           shape: BoxShape.circle,
                         ),
                       ),
-                      Gap(8),
+                      Gap(8.w),
                       CustemText(
                         text: "Active",
                         size: 18,
                         weight: FontWeight.w600,
-                        color: Color(0xff003F6B),
+                        color: const Color(0xff003F6B),
                       ),
                     ],
                   ),

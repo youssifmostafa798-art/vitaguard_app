@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 
@@ -9,14 +10,14 @@ class ChatHeader extends StatelessWidget implements PreferredSizeWidget {
   const ChatHeader({super.key, required this.namee, this.onBackPressed});
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 16);
+  Size get preferredSize => Size.fromHeight(kToolbarHeight + 16.h);
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       bottom: false,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
         decoration: const BoxDecoration(
           color: Color(0xff5CEAD2),
           border: Border(
@@ -28,24 +29,24 @@ class ChatHeader extends StatelessWidget implements PreferredSizeWidget {
             // Back button
             IconButton(
               onPressed: onBackPressed ?? () => Navigator.pop(context),
-              icon: const Icon(
+              icon: Icon(
                 Icons.arrow_back,
-                color: Color(0xFF333333),
-                size: 20,
+                color: const Color(0xFF333333),
+                size: 20.r,
               ),
               padding: EdgeInsets.zero,
               constraints: BoxConstraints(),
             ),
 
-            const SizedBox(width: 12),
+            SizedBox(width: 12.w),
 
             // Doctor avatar
             Container(
-              width: 48,
-              height: 48,
+              width: 48.r,
+              height: 48.r,
               decoration: BoxDecoration(
                 color: const Color(0xFF00A3FF),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16.r),
               ),
               child: Center(
                 child: CustemText(
@@ -57,7 +58,7 @@ class ChatHeader extends StatelessWidget implements PreferredSizeWidget {
               ),
             ),
 
-            SizedBox(width: 12),
+            SizedBox(width: 12.w),
 
             // Doctor info
             Expanded(
@@ -65,7 +66,7 @@ class ChatHeader extends StatelessWidget implements PreferredSizeWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 //mainAxisSize: MainAxisSize.min,
                 children: [
-                  Gap(6),
+                  Gap(6.h),
                   CustemText(
                     text: namee,
                     size: 16,
@@ -73,18 +74,18 @@ class ChatHeader extends StatelessWidget implements PreferredSizeWidget {
                     color: Color(0xFF333333),
                   ),
 
-                  SizedBox(height: 4),
+                  SizedBox(height: 4.h),
                   Row(
                     children: [
                       Container(
-                        width: 8,
-                        height: 8,
+                        width: 8.r,
+                        height: 8.r,
                         decoration: const BoxDecoration(
                           color: Color(0xFF4CAF50),
                           shape: BoxShape.circle,
                         ),
                       ),
-                      Gap(10),
+                      Gap(10.w),
                       CustemText(
                         text: "Online",
                         size: 12,
@@ -102,23 +103,23 @@ class ChatHeader extends StatelessWidget implements PreferredSizeWidget {
                   onPressed: () {
                     // voice call action
                   },
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.call,
-                    color: Color(0xFF00A3FF),
-                    size: 24,
+                    color: const Color(0xFF00A3FF),
+                    size: 24.r,
                   ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16.w),
                 IconButton(
                   onPressed: () {
                     // Video call action
                   },
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.videocam_rounded,
-                    color: Color(0xFF00A3FF),
-                    size: 24,
+                    color: const Color(0xFF00A3FF),
+                    size: 24.r,
                   ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),

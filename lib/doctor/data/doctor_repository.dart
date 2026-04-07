@@ -44,8 +44,7 @@ class DoctorRepository {
   }
 
   Future<Map<String, dynamic>> getVerificationStatus() async {
-    final data =
-        await _client.from('doctors').select().eq('id', _uid).limit(1);
+    final data = await _client.from('doctors').select().eq('id', _uid).limit(1);
     if (data.isNotEmpty) {
       final row = Map<String, dynamic>.from(data.first as Map);
       return {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/utils/home_header.dart';
@@ -136,27 +137,27 @@ class ChatListFacility extends StatelessWidget {
               return SingleChildScrollView(
                 child: Column(
                   children: [
-                    Gap(20),
-                    HomeSearch(),
+                    Gap(20.h),
+                    const HomeSearch(),
                     // Active chats section
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
                       child: Row(
                         children: [
                           Container(
-                            width: 8,
-                            height: 8,
+                            width: 8.r,
+                            height: 8.r,
                             decoration: BoxDecoration(
-                              color: Color(0xFF00A3FF),
+                              color: const Color(0xFF00A3FF),
                               shape: BoxShape.circle,
                             ),
                           ),
-                          Gap(8),
+                          Gap(8.w),
                           CustemText(
                             text: "Active",
                             size: 18,
                             weight: FontWeight.w600,
-                            color: Color(0xff003F6B),
+                            color: const Color(0xff003F6B),
                           ),
                         ],
                       ),

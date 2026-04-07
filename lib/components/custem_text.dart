@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CustemText extends StatelessWidget {
   const CustemText({
@@ -26,7 +27,7 @@ class CustemText extends StatelessWidget {
       style: TextStyle(
         fontFamily: font,
         letterSpacing: spacing,
-        fontSize: size,
+        fontSize: size.sp,
         color: color,
         fontWeight: weight,
 
@@ -35,6 +36,3 @@ class CustemText extends StatelessWidget {
     );
   }
 }
-
-
-

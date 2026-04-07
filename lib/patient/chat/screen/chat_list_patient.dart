@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
@@ -35,18 +36,18 @@ class _ChatListPatientState extends State<ChatListPatient> {
                     child: Column(
                       children: [
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          padding: EdgeInsets.symmetric(horizontal: 16.w),
                           child: Row(
                             children: [
                               Container(
-                                width: 8,
-                                height: 8,
+                                width: 8.r,
+                                height: 8.r,
                                 decoration: const BoxDecoration(
                                   color: Color(0xFF00A3FF),
                                   shape: BoxShape.circle,
                                 ),
                               ),
-                              const Gap(8),
+                              Gap(8.w),
                               CustemText(
                                 text: "Active",
                                 size: 18,
@@ -57,11 +58,14 @@ class _ChatListPatientState extends State<ChatListPatient> {
                           ),
                         ),
                         if (chats.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.all(24),
+                          Padding(
+                            padding: EdgeInsets.all(24.r),
                             child: Text(
                               'No conversations yet.',
-                              style: TextStyle(color: Colors.grey),
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14.sp,
+                              ),
                             ),
                           )
                         else

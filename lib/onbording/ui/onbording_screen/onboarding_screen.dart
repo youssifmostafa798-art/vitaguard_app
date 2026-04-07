@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/onbording/model/onboarding_data.dart';
 import 'package:vitaguard_app/onbording/ui/onbording_widget/onboarding_page.dart';
@@ -48,7 +49,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 controller: _controller,
                 isLast: onboardingList[currentIndex].isLast,
               ),
-              const SizedBox(height: 50),
+              SizedBox(height: 50.h),
             ],
           ),
         ),
@@ -56,6 +57,3 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 }
-
-
-

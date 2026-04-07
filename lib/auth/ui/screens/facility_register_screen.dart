@@ -10,10 +10,12 @@ class FacilityRegisterScreen extends ConsumerStatefulWidget {
   const FacilityRegisterScreen({super.key});
 
   @override
-  ConsumerState<FacilityRegisterScreen> createState() => _FacilityRegisterScreenState();
+  ConsumerState<FacilityRegisterScreen> createState() =>
+      _FacilityRegisterScreenState();
 }
 
-class _FacilityRegisterScreenState extends ConsumerState<FacilityRegisterScreen> {
+class _FacilityRegisterScreenState
+    extends ConsumerState<FacilityRegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -72,13 +74,18 @@ class _FacilityRegisterScreenState extends ConsumerState<FacilityRegisterScreen>
           'type': FieldType.normal,
         },
         {
-          'hint': _selectedRecordImage != null ? 'Image Selected' : 'Attach image of the record',
+          'hint': _selectedRecordImage != null
+              ? 'Image Selected'
+              : 'Attach image of the record',
           'controller': _attachimageController,
           'type': FieldType.navigation,
           'onTap': () async {
             final result = await Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => ImageOfTheRecord(initialImage: _selectedRecordImage)),
+              MaterialPageRoute(
+                builder: (_) =>
+                    ImageOfTheRecord(initialImage: _selectedRecordImage),
+              ),
             );
             if (result != null && result is File) {
               setState(() {

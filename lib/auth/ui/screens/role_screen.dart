@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/auth/ui/screens/companion_register_screen.dart';
 import 'package:vitaguard_app/auth/ui/screens/doctor_register_screen.dart';
@@ -24,21 +25,21 @@ class RoleScreen extends StatelessWidget {
             builder: (context, constraints) {
               return SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  padding: EdgeInsets.symmetric(horizontal: 14.w),
                   child: Column(
                     children: [
-                      const Gap(10),
+                      Gap(10.h),
                       const VitaGuardLogo(size: 80),
-                      const Gap(20),
+                      Gap(20.h),
                       const CustemText(
                         text: "Choose Your Role",
                         color: Color(0xff003F6B),
                         size: 25,
                         weight: FontWeight.w900,
                       ),
-                      const Gap(20),
+                      Gap(20.h),
                       Padding(
-                        padding: const EdgeInsets.all(20),
+                        padding: EdgeInsets.all(20.r),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -54,7 +55,7 @@ class RoleScreen extends StatelessWidget {
                                 );
                               },
                             ),
-                            const Gap(20),
+                            Gap(20.h),
                             Button(
                               title: "Doctor",
                               onTap: () {
@@ -67,7 +68,7 @@ class RoleScreen extends StatelessWidget {
                                 );
                               },
                             ),
-                            const Gap(20),
+                            Gap(20.h),
                             Button(
                               title: "Companion",
                               onTap: () {
@@ -80,7 +81,7 @@ class RoleScreen extends StatelessWidget {
                                 );
                               },
                             ),
-                            const Gap(20),
+                            Gap(20.h),
                             Button(
                               title: "Facility",
                               onTap: () {
@@ -93,7 +94,7 @@ class RoleScreen extends StatelessWidget {
                                 );
                               },
                             ),
-                            const Gap(30),
+                            Gap(30.h),
                             TextButton(
                               onPressed: () {
                                 Navigator.push(

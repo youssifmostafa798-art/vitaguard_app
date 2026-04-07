@@ -49,7 +49,8 @@ List<CategoryModel> homeCategoriesPatient(
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const CompanionCode(key: ValueKey('companionCodeScreen')),
+            builder: (_) =>
+                const CompanionCode(key: ValueKey('companionCodeScreen')),
           ),
         );
       },

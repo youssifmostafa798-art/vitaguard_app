@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 
@@ -15,7 +16,7 @@ class SimpleHeader extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => Size.fromHeight(80); // height responsive
+  Size get preferredSize => Size.fromHeight(80.h);
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +28,11 @@ class SimpleHeader extends StatelessWidget implements PreferredSizeWidget {
         automaticallyImplyLeading: automaticallyImplyLeading,
         leading: automaticallyImplyLeading
             ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Color(0xff0D3B66)),
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: const Color(0xff0D3B66),
+                  size: 24.r,
+                ),
                 onPressed: onBackPressed ?? () => Navigator.pop(context),
               )
             : null,

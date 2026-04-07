@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 
@@ -17,26 +18,26 @@ class CategoryItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.r),
       child: GestureDetector(
         onTap: onTap,
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: Color(0xff003F6B)),
+            borderRadius: BorderRadius.circular(25.r),
+            border: Border.all(color: const Color(0xff003F6B)),
             color: Colors.white,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(icon, size: 45, color: const Color(0xff003F6B)),
-              Gap(10),
+              Icon(icon, size: 45.r, color: const Color(0xff003F6B)),
+              Gap(10.h),
               CustemText(
                 text: title,
                 weight: FontWeight.bold,
                 size: 12,
-                color: Color(0xff003F6B),
+                color: const Color(0xff003F6B),
               ),
             ],
           ),
@@ -45,6 +46,3 @@ class CategoryItem extends StatelessWidget {
     );
   }
 }
-
-
-

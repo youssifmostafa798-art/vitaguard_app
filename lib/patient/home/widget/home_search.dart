@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class HomeSearch extends StatelessWidget {
   final ValueChanged<String>? onChanged;
@@ -8,16 +9,16 @@ class HomeSearch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15),
+      padding: EdgeInsets.symmetric(horizontal: 15.w),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(30.r),
         border: Border.all(color: const Color(0xff003F6B)),
         color: Colors.white,
       ),
       child: TextField(
         onChanged: onChanged,
-        decoration: const InputDecoration(
-          icon: Icon(Icons.search),
+        decoration: InputDecoration(
+          icon: Icon(Icons.search, size: 22.r),
           hintText: "Search",
           border: InputBorder.none,
         ),
@@ -25,6 +26,3 @@ class HomeSearch extends StatelessWidget {
     );
   }
 }
-
-
-

@@ -42,10 +42,13 @@ class ChatRepository {
       'is_read': false,
     });
 
-    await _client.from('conversations').update({
-      'last_message': content,
-      'last_message_at': DateTime.now().toIso8601String(),
-    }).eq('id', conversationId);
+    await _client
+        .from('conversations')
+        .update({
+          'last_message': content,
+          'last_message_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', conversationId);
   }
 
   Stream<List<ChatPreview>> streamConversations() async* {
@@ -93,24 +96,28 @@ class ChatRepository {
     final previews = <ChatPreview>[];
     for (final row in participants) {
       final data = Map<String, dynamic>.from(row as Map);
-        final convId = data['conversation_id'] as String;
-        final profile = data['profiles'] as Map?;
-        final name = profile?['name']?.toString() ?? 'Unknown';
-        final role = profile?['role']?.toString();
-        final sender = _senderFromRole(role);
-        final conv = convMap[convId];
-        final lastMessage = conv?['last_message']?.toString() ?? '';
-        final lastAt = _parseDate(conv?['last_message_at']);
+      final convId = data['conversation_id'] as String;
+      final profile = data['profiles'] as Map?;
+      final name = profile?['name']?.toString() ?? 'Unknown';
+      final role = profile?['role']?.toString();
+      final sender = _senderFromRole(role);
+      final conv = convMap[convId];
+      final lastMessage = conv?['last_message']?.toString() ?? '';
+      final lastAt = _parseDate(conv?['last_message_at']);
 
-        previews.add(ChatPreview(
+      previews.add(
+        ChatPreview(
           id: convId,
           name: name,
           avatarInitials: name.isNotEmpty ? name[0].toUpperCase() : 'U',
           lastMessage: lastMessage,
-          time: lastMessage.isNotEmpty ? DateFormat('HH:mm').format(lastAt) : '',
+          time: lastMessage.isNotEmpty
+              ? DateFormat('HH:mm').format(lastAt)
+              : '',
           sender: sender,
           status: MessageStatus.active,
-        ));
+        ),
+      );
     }
 
     return previews;

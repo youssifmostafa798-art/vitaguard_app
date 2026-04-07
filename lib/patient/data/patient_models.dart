@@ -25,7 +25,8 @@ class MedicalHistory {
     return MedicalHistory(
       allergies: json['allergies'] ?? "",
       medications: json['medications'] ?? "",
-      chronicDiseases: json['chronicDiseases'] ?? json['chronic_diseases'] ?? "",
+      chronicDiseases:
+          json['chronicDiseases'] ?? json['chronic_diseases'] ?? "",
       surgeries: json['surgeries'] ?? "",
       notes: json['notes'] ?? "",
     );

@@ -11,7 +11,8 @@ class PatientRegisterScreen extends ConsumerStatefulWidget {
   const PatientRegisterScreen({super.key});
 
   @override
-  ConsumerState<PatientRegisterScreen> createState() => _PatientRegisterScreenState();
+  ConsumerState<PatientRegisterScreen> createState() =>
+      _PatientRegisterScreenState();
 }
 
 class _PatientRegisterScreenState extends ConsumerState<PatientRegisterScreen> {

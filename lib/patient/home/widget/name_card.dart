@@ -25,6 +25,3 @@ class NameCard extends StatelessWidget {
     );
   }
 }
-
-
-

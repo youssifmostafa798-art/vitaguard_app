@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/core/utils/avatar_color.dart';
@@ -16,13 +17,13 @@ class ChatPreviewCard extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Avatar
             CircleAvatar(
-              radius: 24,
+              radius: 24.r,
               backgroundColor: getAvatarColor(chat.sender),
               child: CustemText(
                 text: chat.avatarInitials,
@@ -30,7 +31,7 @@ class ChatPreviewCard extends StatelessWidget {
                 size: 16,
               ),
             ),
-            Gap(12),
+            Gap(12.w),
 
             // Content
             Expanded(
@@ -65,7 +66,7 @@ class ChatPreviewCard extends StatelessWidget {
                             Text(
                               chat.lastMessage,
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 14.sp,
                                 color: chat.unreadCount > 0
                                     ? Colors.black
                                     : Colors.grey[600],
@@ -79,16 +80,16 @@ class ChatPreviewCard extends StatelessWidget {
                       ),
                       if (chat.unreadCount > 0)
                         Container(
-                          padding: const EdgeInsets.all(4),
+                          padding: EdgeInsets.all(4.r),
                           decoration: const BoxDecoration(
                             color: Color(0xFF00A3FF),
                             shape: BoxShape.circle,
                           ),
                           child: Text(
                             chat.unreadCount.toString(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 10,
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.bold,
                             ),
                           ),

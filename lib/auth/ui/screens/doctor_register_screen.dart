@@ -10,7 +10,8 @@ class DoctorRegisterScreen extends ConsumerStatefulWidget {
   const DoctorRegisterScreen({super.key});
 
   @override
-  ConsumerState<DoctorRegisterScreen> createState() => _DoctorRegisterScreenState();
+  ConsumerState<DoctorRegisterScreen> createState() =>
+      _DoctorRegisterScreenState();
 }
 
 class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
@@ -72,13 +73,18 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
           'type': FieldType.gender,
         },
         {
-          'hint': _selectedIdCardImage != null ? 'ID Card Selected' : 'Professional Association ID',
+          'hint': _selectedIdCardImage != null
+              ? 'ID Card Selected'
+              : 'Professional Association ID',
           'controller': _professionalIdController,
           'type': FieldType.navigation,
           'onTap': () async {
             final result = await Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => ProfessionalId(initialImage: _selectedIdCardImage)),
+              MaterialPageRoute(
+                builder: (_) =>
+                    ProfessionalId(initialImage: _selectedIdCardImage),
+              ),
             );
             if (result != null && result is File) {
               setState(() {

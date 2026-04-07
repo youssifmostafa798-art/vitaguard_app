@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class VitaGuardLogo extends StatelessWidget {
   final double size;
@@ -8,10 +9,7 @@ class VitaGuardLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: [Image.asset('assets/Logo/Vita Guard 2.png', width: 300)],
+      children: [Image.asset('assets/Logo/Vita Guard 2.png', width: size.w)],
     );
   }
 }
-
-
-

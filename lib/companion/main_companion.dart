@@ -44,6 +44,3 @@ class _MainCompanionState extends State<MainCompanion> {
     );
   }
 }
-
-
-

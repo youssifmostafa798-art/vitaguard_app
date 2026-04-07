@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
@@ -12,7 +13,7 @@ class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
   const HomeHeader({super.key, required this.name_, this.onExit});
 
   @override
-  Size get preferredSize => const Size.fromHeight(80);
+  Size get preferredSize => Size.fromHeight(80.h);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,23 +25,27 @@ class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
       flexibleSpace: AppBackground(
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: Row(
               children: [
                 Stack(
                   children: [
                     // Fixed default avatar using Icons.person
-                    const CircleAvatar(
-                      radius: 24,
+                    CircleAvatar(
+                      radius: 24.r,
                       backgroundColor: Colors.grey, // Neutral background
-                      child: Icon(Icons.person, size: 42, color: Colors.white),
+                      child: Icon(
+                        Icons.person,
+                        size: 42.r,
+                        color: Colors.white,
+                      ),
                     ),
                     Positioned(
                       right: 0,
                       bottom: 0,
                       child: Container(
-                        width: 14,
-                        height: 14,
+                        width: 14.r,
+                        height: 14.r,
                         decoration: BoxDecoration(
                           color: health.isAiOnline ? Colors.green : Colors.red,
                           shape: BoxShape.circle,
@@ -50,7 +55,7 @@ class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
                     ),
                   ],
                 ),
-                const Gap(12),
+                Gap(12.w),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,12 +74,12 @@ class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
                             color: const Color(0xff003F6B),
                             size: 20,
                           ),
-                          const Gap(2),
+                          Gap(2.w),
                           Tooltip(
                             message: health.aiMessage,
                             child: Icon(
                               Icons.bolt,
-                              size: 16,
+                              size: 16.r,
                               color: health.isAiOnline
                                   ? Colors.orange
                                   : Colors.grey,
@@ -88,10 +93,10 @@ class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
                 IconButton(
                   onPressed: onExit,
                   tooltip: "Exit",
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.exit_to_app,
-                    size: 38,
-                    color: Color(0xff003F6B),
+                    size: 38.r,
+                    color: const Color(0xff003F6B),
                   ),
                 ),
               ],

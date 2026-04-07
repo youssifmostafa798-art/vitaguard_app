@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vitaguard_app/onbording/ui/onbording_screen/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -103,7 +104,7 @@ class _SplashScreenState extends State<SplashScreen>
               _buildLogoWithGlow(),
               const Expanded(child: SizedBox.shrink()),
               Padding(
-                padding: const EdgeInsets.only(bottom: 48.0),
+                padding: EdgeInsets.only(bottom: 48.h),
                 child: AnimatedBuilder(
                   animation: Listenable.merge([_ctrl, _dotsCtrl]),
                   builder: (context, _) =>
@@ -118,7 +119,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Widget _buildLogoWithGlow() {
-    const double logoSize = 200.0;
+    final logoSize = 200.r;
 
     return Center(
       child: Stack(
@@ -133,13 +134,13 @@ class _SplashScreenState extends State<SplashScreen>
               boxShadow: [
                 BoxShadow(
                   color: Colors.cyanAccent.withValues(alpha: 0.6),
-                  blurRadius: 50.0,
-                  spreadRadius: 15.0,
+                  blurRadius: 50.r,
+                  spreadRadius: 15.r,
                 ),
                 BoxShadow(
                   color: Colors.tealAccent.withValues(alpha: 0.5),
-                  blurRadius: 30.0,
-                  spreadRadius: 5.0,
+                  blurRadius: 30.r,
+                  spreadRadius: 5.r,
                 ),
               ],
             ),
@@ -177,9 +178,9 @@ class _SplashScreenState extends State<SplashScreen>
           return Transform.translate(
             offset: Offset(0, _dotBounce[i].value),
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 5),
-              width: 7,
-              height: 7,
+              margin: EdgeInsets.symmetric(horizontal: 5.w),
+              width: 7.r,
+              height: 7.r,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: i == 1
@@ -188,8 +189,8 @@ class _SplashScreenState extends State<SplashScreen>
                 boxShadow: [
                   BoxShadow(
                     color: const Color(0xFF00C8FF).withOpacity(0.6),
-                    blurRadius: 6,
-                    spreadRadius: 1,
+                    blurRadius: 6.r,
+                    spreadRadius: 1.r,
                   ),
                 ],
               ),

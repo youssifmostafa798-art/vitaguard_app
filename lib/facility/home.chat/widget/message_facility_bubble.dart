@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/models/message_model.dart';
@@ -45,9 +46,9 @@ class MessageFacilityBubble extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.only(
-        left: isUser ? 50 : 16,
-        right: isUser ? 16 : 50,
-        top: isPreviousSameSender ? 4 : 16,
+        left: isUser ? 50.w : 16.w,
+        right: isUser ? 16.w : 50.w,
+        top: isPreviousSameSender ? 4.h : 16.h,
       ),
       child: Row(
         mainAxisAlignment: isUser
@@ -58,7 +59,7 @@ class MessageFacilityBubble extends StatelessWidget {
           // Avatar for non-user messages (doctor or lab)
           if (!isUser && !isPreviousSameSender)
             CircleAvatar(
-              radius: 16,
+              radius: 16.r,
               backgroundColor: senderColor,
               child: CustemText(
                 text: senderInitial,
@@ -67,19 +68,19 @@ class MessageFacilityBubble extends StatelessWidget {
                 weight: FontWeight.w600,
               ),
             ),
-          if (!isUser && !isPreviousSameSender) const Gap(8),
+          if (!isUser && !isPreviousSameSender) Gap(8.w),
 
           // Message bubble
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
               decoration: BoxDecoration(
                 color: isUser ? const Color(0xFF00A3FF) : Colors.grey[200],
                 borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(20),
-                  topRight: const Radius.circular(20),
-                  bottomLeft: Radius.circular(isUser ? 20 : 4),
-                  bottomRight: Radius.circular(isUser ? 4 : 20),
+                  topLeft: Radius.circular(20.r),
+                  topRight: Radius.circular(20.r),
+                  bottomLeft: Radius.circular(isUser ? 20.r : 4.r),
+                  bottomRight: Radius.circular(isUser ? 4.r : 20.r),
                 ),
               ),
               child: Column(
@@ -88,7 +89,7 @@ class MessageFacilityBubble extends StatelessWidget {
                   // Show sender name for first message from doctor/lab
                   if (!isUser && !isPreviousSameSender)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
+                      padding: EdgeInsets.only(bottom: 4.h),
                       child: CustemText(
                         text: senderName,
                         size: 12,
@@ -104,7 +105,7 @@ class MessageFacilityBubble extends StatelessWidget {
                     size: 15,
                   ),
 
-                  const Gap(4),
+                  Gap(4.h),
 
                   // Time and read status
                   Row(
@@ -116,10 +117,10 @@ class MessageFacilityBubble extends StatelessWidget {
                         color: isUser ? Colors.white70 : Colors.grey.shade600,
                       ),
                       if (isUser) ...[
-                        const Gap(4),
+                        Gap(4.w),
                         Icon(
                           message.isRead ? Icons.done_all : Icons.done,
-                          size: 14,
+                          size: 14.r,
                           color: message.isRead ? Colors.white : Colors.white70,
                         ),
                       ],

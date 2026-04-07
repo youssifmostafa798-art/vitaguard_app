@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/auth/ui/screens/sign_in_screen.dart';
 import 'package:vitaguard_app/auth/ui/widgets/auth_error_banner.dart';
@@ -32,22 +33,22 @@ class CreateAccountScreen extends StatelessWidget {
       body: SafeArea(
         child: AppBackground(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 25),
+            padding: EdgeInsets.symmetric(horizontal: 25.w),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 VitaGuardLogo(size: 20),
-                Gap(10),
+                Gap(10.h),
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 22,
+                  style: TextStyle(
+                    fontSize: 22.sp,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xff003F6B),
+                    color: const Color(0xff003F6B),
                   ),
                 ),
 
-                Gap(20),
+                Gap(20.h),
 
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 280),
@@ -71,7 +72,7 @@ class CreateAccountScreen extends StatelessWidget {
                       : const SizedBox.shrink(),
                 ),
 
-                if (hasError) const Gap(12),
+                if (hasError) Gap(12.h),
 
                 /// Fields
                 ...fields.map((field) {
@@ -84,12 +85,12 @@ class CreateAccountScreen extends StatelessWidget {
                   return _buildTextField(field, type);
                 }),
 
-                const Gap(18),
+                Gap(18.h),
 
                 /// Submit Button
                 Button(title: buttonText, onTap: onSubmit),
 
-                const Gap(10),
+                Gap(10.h),
 
                 TextButton(
                   onPressed: () => Navigator.push(
@@ -111,7 +112,7 @@ class CreateAccountScreen extends StatelessWidget {
     final VoidCallback? onTap = field['onTap'];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: EdgeInsets.symmetric(vertical: 6.h),
       child: GestureDetector(
         onTap: type == FieldType.navigation ? onTap : null,
         child: AbsorbPointer(
@@ -126,7 +127,7 @@ class CreateAccountScreen extends StatelessWidget {
               hintText: field['hint'],
               suffixIcon: _buildSuffixIcon(type),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(25),
+                borderRadius: BorderRadius.circular(25.r),
               ),
             ),
           ),
@@ -140,12 +141,12 @@ class CreateAccountScreen extends StatelessWidget {
     final controller = field['controller'] as TextEditingController;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: EdgeInsets.symmetric(vertical: 6.h),
       child: DropdownButtonFormField<String>(
         initialValue: controller.text.isEmpty ? null : controller.text,
         decoration: InputDecoration(
           hintText: field['hint'],
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(25)),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(25.r)),
         ),
         items: const [
           DropdownMenuItem(value: 'male', child: Text('Male')),
@@ -164,7 +165,7 @@ class CreateAccountScreen extends StatelessWidget {
       case FieldType.password:
         return const Icon(Icons.visibility_off);
       case FieldType.navigation:
-        return const Icon(Icons.arrow_forward_ios, size: 16);
+        return Icon(Icons.arrow_forward_ios, size: 16.r);
       default:
         return null;
     }

@@ -94,9 +94,9 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -106,9 +106,7 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -121,7 +119,10 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
                 children: [
                   const VitaGuardLogo(size: 20),
                   const Gap(20),
-                  _box(hint: "Chronic diseases", controller: _chronicController),
+                  _box(
+                    hint: "Chronic diseases",
+                    controller: _chronicController,
+                  ),
                   const Gap(16),
                   _box(hint: "Medications", controller: _medicationsController),
                   const Gap(16),
@@ -129,7 +130,10 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
                   GestureDetector(
                     onTap: _pickImage,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 20,
+                      ),
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey),
                         borderRadius: BorderRadius.circular(25),
@@ -142,13 +146,19 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
                                   ? _selectedImage!.path.split('/').last
                                   : "X-ray or lab tests (optional)",
                               style: TextStyle(
-                                color: _selectedImage != null ? Colors.black : Colors.grey[600],
+                                color: _selectedImage != null
+                                    ? Colors.black
+                                    : Colors.grey[600],
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const Icon(Icons.image_outlined, size: 30, color: Colors.grey),
+                          const Icon(
+                            Icons.image_outlined,
+                            size: 30,
+                            color: Colors.grey,
+                          ),
                         ],
                       ),
                     ),
@@ -158,10 +168,7 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
 
                   _isSaving
                       ? const CircularProgressIndicator()
-                      : Button(
-                          title: "Confirm",
-                          onTap: _saveData,
-                        ),
+                      : Button(title: "Confirm", onTap: _saveData),
                 ],
               ),
             ),
@@ -171,7 +178,10 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
     );
   }
 
-  Widget _box({required String hint, required TextEditingController controller}) {
+  Widget _box({
+    required String hint,
+    required TextEditingController controller,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: TextField(

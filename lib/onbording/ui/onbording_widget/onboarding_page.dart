@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 
 import 'package:vitaguard_app/onbording/model/onboarding_data.dart';
@@ -16,7 +17,7 @@ class OnboardingPage extends StatelessWidget {
 
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(14.0),
+          padding: EdgeInsets.all(14.r),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -24,20 +25,20 @@ class OnboardingPage extends StatelessWidget {
                 model.title,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 24.sp,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xff003F6B),
+                  color: const Color(0xff003F6B),
                 ),
               ),
-              Gap(20),
+              Gap(20.h),
               Image.asset(model.image),
-              Gap(20),
+              Gap(20.h),
               Text(
                 model.description,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Color(0xff003F6B),
-                  fontSize: 20,
+                  color: const Color(0xff003F6B),
+                  fontSize: 20.sp,
                   fontWeight: FontWeight.bold,
                 ),
               ),

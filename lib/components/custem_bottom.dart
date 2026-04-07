@@ -1,5 +1,6 @@
 //buttom
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 
 import 'package:vitaguard_app/components/custem_text.dart';
@@ -19,20 +20,20 @@ class Button extends StatelessWidget {
           debugPrint('Button Tapped: $title');
           if (onTap != null) onTap!();
         },
-        borderRadius: BorderRadius.circular(40),
+        borderRadius: BorderRadius.circular(40.r),
         child: Ink(
           width: double.infinity,
-          height: 65,
-          padding: const EdgeInsets.all(12),
+          height: 65.h,
+          padding: EdgeInsets.all(12.r),
           decoration: BoxDecoration(
             color: const Color(0xff003F6B),
-            borderRadius: BorderRadius.circular(40),
+            borderRadius: BorderRadius.circular(40.r),
           ),
           child: Center(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Gap(10),
+                Gap(10.w),
                 CustemText(
                   text: title.toUpperCase(),
                   size: 25,

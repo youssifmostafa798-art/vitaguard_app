@@ -37,7 +37,9 @@ class _UploadXRayState extends ConsumerState<UploadXRay> {
       return;
     }
 
-    final success = await ref.read(patientProvider).analyzeXRay(_selectedImage!);
+    final success = await ref
+        .read(patientProvider)
+        .analyzeXRay(_selectedImage!);
 
     if (success) {
       if (!mounted) return;
@@ -45,9 +47,7 @@ class _UploadXRayState extends ConsumerState<UploadXRay> {
       if (result == null) return;
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => RadiologyResult(result: result),
-        ),
+        MaterialPageRoute(builder: (_) => RadiologyResult(result: result)),
       );
     } else {
       if (!mounted) return;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/auth/ui/screens/role_screen.dart';
 import 'package:vitaguard_app/companion/home/widget/category_grid_companion.dart';
@@ -32,12 +33,12 @@ class CompanionHome extends ConsumerWidget {
       body: SafeArea(
         child: AppBackground(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: ListView(
               children: [
-                Gap(20),
-                HomeSearch(),
-                Gap(25),
+                Gap(20.h),
+                const HomeSearch(),
+                Gap(25.h),
                 InfoSlider(
                   images: [
                     'assets/PNG/2437635 1.png',
@@ -46,9 +47,9 @@ class CompanionHome extends ConsumerWidget {
                     'assets/PNG/توعيه 3.png',
                   ],
                 ),
-                Gap(30),
+                Gap(30.h),
                 CategoryGridCompanion(companionName: name),
-                Gap(10),
+                Gap(10.h),
               ],
             ),
           ),

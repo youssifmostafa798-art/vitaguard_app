@@ -21,7 +21,9 @@ class FacilityRepository {
   }) async {
     String? resolvedPatientId = patientId;
 
-    if (resolvedPatientId == null && patientPhone != null && patientPhone.isNotEmpty) {
+    if (resolvedPatientId == null &&
+        patientPhone != null &&
+        patientPhone.isNotEmpty) {
       final userSnapshot = await _client
           .from('profiles')
           .select('id')
@@ -70,7 +72,9 @@ class FacilityRepository {
       }
       final contentType = _contentTypeForFile(image.path);
       if (contentType == 'application/octet-stream') {
-        throw StateError('Invalid file type. Please upload a JPEG, PNG, or PDF.');
+        throw StateError(
+          'Invalid file type. Please upload a JPEG, PNG, or PDF.',
+        );
       }
 
       await _client.functions.invoke(

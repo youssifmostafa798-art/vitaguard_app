@@ -15,7 +15,9 @@ class CompanionRepository {
         .eq('companion_code', code)
         .limit(1);
 
-    final patientId = snapshot.isNotEmpty ? snapshot.first['id'] as String? : null;
+    final patientId = snapshot.isNotEmpty
+        ? snapshot.first['id'] as String?
+        : null;
     if (patientId == null) {
       throw StateError('Invalid companion code.');
     }
@@ -27,8 +29,11 @@ class CompanionRepository {
   }
 
   Future<dynamic> getPatientStatus() async {
-    final companionData =
-        await _client.from('companions').select().eq('id', _uid).limit(1);
+    final companionData = await _client
+        .from('companions')
+        .select()
+        .eq('id', _uid)
+        .limit(1);
     if (companionData.isEmpty) {
       throw StateError('No linked patient found.');
     }

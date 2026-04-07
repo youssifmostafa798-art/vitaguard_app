@@ -52,6 +52,3 @@ class CategoryGridPatient extends StatelessWidget {
     );
   }
 }
-
-
-

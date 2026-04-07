@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 
@@ -27,22 +28,22 @@ class CustemField extends StatelessWidget {
           weight: FontWeight.w600,
           color: const Color(0xff0D3B66),
         ),
-        const Gap(8),
+        Gap(8.h),
         TextField(
           controller: controller,
           readOnly: readOnly,
           decoration: InputDecoration(
             hintText: hint,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16.w,
+              vertical: 14.h,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(30.r),
               borderSide: const BorderSide(color: Color(0xff0D3B66)),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(30.r),
               borderSide: const BorderSide(color: Color(0xff0D3B66), width: 3),
             ),
           ),
@@ -51,6 +52,3 @@ class CustemField extends StatelessWidget {
     );
   }
 }
-
-
-

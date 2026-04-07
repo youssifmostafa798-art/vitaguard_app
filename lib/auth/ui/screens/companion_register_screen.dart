@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vitaguard_app/auth/ui/widgets/auth_error_banner.dart';
 import 'package:vitaguard_app/auth/ui/widgets/auth_textfield.dart';
 import 'package:vitaguard_app/auth/ui/widgets/signup_success_dialog.dart';
@@ -17,7 +18,8 @@ class CompanionRegisterScreen extends ConsumerStatefulWidget {
       _CompanionRegisterScreenState();
 }
 
-class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScreen> {
+class _CompanionRegisterScreenState
+    extends ConsumerState<CompanionRegisterScreen> {
   final codeCtrl = TextEditingController();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -49,18 +51,15 @@ class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScree
           child: LayoutBuilder(
             builder: (context, constraints) {
               return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 40),
-
+                      SizedBox(height: 40.h),
                       VitaGuardLogo(),
-
-                      const SizedBox(height: 40),
-
+                      SizedBox(height: 40.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -71,7 +70,11 @@ class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScree
                             weight: FontWeight.bold,
                           ),
                           IconButton(
-                            icon: const Icon(Icons.info_outline, color: Color(0xff003F6B)),
+                            icon: Icon(
+                              Icons.info_outline,
+                              color: const Color(0xff003F6B),
+                              size: 24.r,
+                            ),
                             onPressed: () {
                               showDialog(
                                 context: context,
@@ -92,8 +95,7 @@ class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScree
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
-
+                      SizedBox(height: 20.h),
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 280),
                         switchInCurve: Curves.easeOut,
@@ -105,7 +107,10 @@ class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScree
                           ).animate(animation);
                           return FadeTransition(
                             opacity: animation,
-                            child: SlideTransition(position: slide, child: child),
+                            child: SlideTransition(
+                              position: slide,
+                              child: child,
+                            ),
                           );
                         },
                         child: hasError
@@ -115,48 +120,36 @@ class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScree
                               )
                             : const SizedBox.shrink(),
                       ),
-
-                      if (hasError) const SizedBox(height: 20),
-
+                      if (hasError) SizedBox(height: 20.h),
                       AuthTextField(
                         hint: "User Name",
                         controller: _nameController,
                       ),
-
-                      const SizedBox(height: 20),
-
+                      SizedBox(height: 20.h),
                       AuthTextField(
                         hint: "Email",
                         controller: _emailController,
                       ),
-
-                      const SizedBox(height: 20),
-
+                      SizedBox(height: 20.h),
                       AuthTextField(
                         hint: "Password",
                         controller: _passwordController,
                         obscure: true,
-                        suffixIcon: const Icon(Icons.visibility),
+                        suffixIcon: Icon(Icons.visibility),
                       ),
-
-                      const SizedBox(height: 20),
-
+                      SizedBox(height: 20.h),
                       AuthTextField(
                         hint: "Confirm Password",
                         controller: _confirmPasswordController,
                         obscure: true,
-                        suffixIcon: const Icon(Icons.visibility),
+                        suffixIcon: Icon(Icons.visibility),
                       ),
-
-                      const SizedBox(height: 20),
-
+                      SizedBox(height: 20.h),
                       AuthTextField(
                         hint: "Enter 6-digit Patient Code",
                         controller: codeCtrl,
                       ),
-
-                      const SizedBox(height: 50),
-
+                      SizedBox(height: 50.h),
                       Button(
                         title: isLoading ? "Processing..." : "Sign Up",
                         onTap: isLoading
@@ -171,7 +164,8 @@ class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScree
                                     _confirmPasswordController.text.isEmpty ||
                                     codeCtrl.text.isEmpty) {
                                   setState(
-                                    () => _localError = 'Please fill all fields',
+                                    () =>
+                                        _localError = 'Please fill all fields',
                                   );
                                   return;
                                 }
@@ -179,7 +173,8 @@ class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScree
                                 if (_passwordController.text !=
                                     _confirmPasswordController.text) {
                                   setState(
-                                    () => _localError = 'Passwords do not match',
+                                    () =>
+                                        _localError = 'Passwords do not match',
                                   );
                                   return;
                                 }
@@ -203,8 +198,7 @@ class _CompanionRegisterScreenState extends ConsumerState<CompanionRegisterScree
                                 }
                               },
                       ),
-
-                      const SizedBox(height: 30),
+                      SizedBox(height: 30.h),
                     ],
                   ),
                 ),

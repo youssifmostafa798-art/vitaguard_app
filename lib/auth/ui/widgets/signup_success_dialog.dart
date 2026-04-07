@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vitaguard_app/auth/ui/screens/sign_in_screen.dart';
 
 Future<void> showSignupSuccessDialog(
@@ -28,11 +29,11 @@ Future<void> showSignupSuccessDialog(
               );
             },
             child: Container(
-              width: 260,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              width: 260.w,
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 18.h),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16.r),
                 boxShadow: const [
                   BoxShadow(
                     color: Colors.black26,
@@ -44,19 +45,19 @@ Future<void> showSignupSuccessDialog(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.check_circle,
-                    color: Color(0xFF2E7D32),
-                    size: 56,
+                    color: const Color(0xFF2E7D32),
+                    size: 56.r,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12.h),
                   Text(
                     message,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: TextStyle(
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF003F6B),
+                      color: const Color(0xFF003F6B),
                     ),
                   ),
                 ],

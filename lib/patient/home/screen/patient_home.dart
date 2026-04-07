@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/auth/ui/screens/role_screen.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
@@ -31,16 +32,16 @@ class PatientHome extends ConsumerWidget {
       body: SafeArea(
         child: AppBackground(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: ListView(
               children: [
-                Gap(20),
+                Gap(20.h),
                 HomeSearch(),
-                Gap(25),
+                Gap(25.h),
 
-                Gap(30),
+                Gap(30.h),
                 CategoryGridPatient(patientName: name),
-                Gap(10),
+                Gap(10.h),
               ],
             ),
           ),

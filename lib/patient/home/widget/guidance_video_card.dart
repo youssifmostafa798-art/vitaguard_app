@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/patient/models/guidance_video_model.dart';
@@ -20,8 +21,10 @@ class GuidanceVideoCard extends StatelessWidget {
     return GestureDetector(
       onTap: _openUrl,
       child: Card(
-        margin: const EdgeInsets.only(bottom: 20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        margin: EdgeInsets.only(bottom: 20.h),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
         clipBehavior: Clip.antiAlias,
         elevation: 3,
         child: Column(
@@ -50,14 +53,14 @@ class GuidanceVideoCard extends StatelessWidget {
                   /// Play Button
                   Center(
                     child: Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(16.r),
                       decoration: BoxDecoration(
                         color: Colors.red.withValues(alpha: 0.9),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.play_arrow,
-                        size: 42,
+                        size: 42.r,
                         color: Colors.white,
                       ),
                     ),
@@ -69,7 +72,7 @@ class GuidanceVideoCard extends StatelessWidget {
             /// Title (لو موجود)
             if (video.title.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(12.r),
                 child: CustemText(
                   text: video.title,
                   size: 18,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 
 class MessageInput extends StatelessWidget {
@@ -16,7 +17,7 @@ class MessageInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.all(8.r),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -36,26 +37,26 @@ class MessageInput extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: enabled ? "type a message..." : "Chat ended",
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(24.r),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
                 fillColor: Colors.grey[100],
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16.w,
+                  vertical: 12.h,
                 ),
               ),
               maxLines: null,
             ),
           ),
-          Gap(8),
+          Gap(8.w),
 
           CircleAvatar(
-            radius: 24,
+            radius: 24.r,
             backgroundColor: enabled ? const Color(0xFF00A3FF) : Colors.grey,
             child: IconButton(
-              icon: const Icon(Icons.send, color: Colors.white),
+              icon: Icon(Icons.send, color: Colors.white, size: 22.r),
               onPressed: enabled ? onSend : null,
             ),
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
@@ -27,11 +28,11 @@ class RadiologyResult extends StatelessWidget {
       body: SafeArea(
         child: AppBackground(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Gap(30),
+                Gap(30.h),
 
                 /// Status Header
                 CustemText(
@@ -40,15 +41,15 @@ class RadiologyResult extends StatelessWidget {
                   weight: FontWeight.bold,
                   color: const Color(0xff003F6B),
                 ),
-                const Gap(20),
+                Gap(20.h),
 
                 /// Results Container
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20.r),
                   decoration: BoxDecoration(
                     color: Colors.white.withAlpha(200),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(20.r),
                     border: Border.all(
                       color: const Color(0xff003F6B),
                       width: 1.2,
@@ -67,7 +68,7 @@ class RadiologyResult extends StatelessWidget {
                             ? (isInfected ? Colors.red : Colors.green)
                             : Colors.orange,
                       ),
-                      const Gap(15),
+                      Gap(15.h),
 
                       if (result.isValid) ...[
                         CustemText(
@@ -75,7 +76,7 @@ class RadiologyResult extends StatelessWidget {
                           size: 16,
                           color: Colors.black87,
                         ),
-                        const Gap(15),
+                        Gap(15.h),
                       ],
 
                       CustemText(
@@ -89,7 +90,7 @@ class RadiologyResult extends StatelessWidget {
                         height: 1.5,
                       ),
 
-                      const Gap(20),
+                      Gap(20.h),
                     ],
                   ),
                 ),
@@ -100,7 +101,7 @@ class RadiologyResult extends StatelessWidget {
                     Navigator.pop(context);
                   },
                 ),
-                const Gap(40),
+                Gap(40.h),
               ],
             ),
           ),

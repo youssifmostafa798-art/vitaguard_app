@@ -1,5 +1,6 @@
 //actions
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/auth/ui/screens/role_screen.dart';
@@ -17,7 +18,7 @@ class OnboardingActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(24.r),
       child: Button(
         onTap: () {
           if (isLast) {
@@ -40,6 +41,3 @@ class OnboardingActions extends StatelessWidget {
     );
   }
 }
-
-
-

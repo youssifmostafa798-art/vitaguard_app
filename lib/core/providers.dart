@@ -18,7 +18,9 @@ final doctorProvider = legacy.ChangeNotifierProvider<DoctorProvider>((ref) {
   return DoctorProvider();
 });
 
-final companionProvider = legacy.ChangeNotifierProvider<CompanionProvider>((ref) {
+final companionProvider = legacy.ChangeNotifierProvider<CompanionProvider>((
+  ref,
+) {
   return CompanionProvider();
 });
 

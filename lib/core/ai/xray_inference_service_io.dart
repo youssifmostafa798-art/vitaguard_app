@@ -132,7 +132,10 @@ class XrayInferenceService {
     if (shape.length == 1) {
       return List<double>.filled(shape[0], 0.0);
     }
-    return List.generate(shape[0], (_) => _createOutputBuffer(shape.sublist(1)));
+    return List.generate(
+      shape[0],
+      (_) => _createOutputBuffer(shape.sublist(1)),
+    );
   }
 
   List<double> _flattenOutput(dynamic output) {
@@ -172,7 +175,9 @@ class XrayInferenceService {
 
 Future<String?> _validateImageIsolate(String path) async {
   final ext = path.toLowerCase();
-  if (!(ext.endsWith('.jpg') || ext.endsWith('.jpeg') || ext.endsWith('.png'))) {
+  if (!(ext.endsWith('.jpg') ||
+      ext.endsWith('.jpeg') ||
+      ext.endsWith('.png'))) {
     return 'Invalid file type. Please upload a JPEG or PNG image.';
   }
 
