@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vitaguard_app/Hardware/screen/hardware_screen.dart';
 import 'package:vitaguard_app/companion/home/screens/companion_home.dart';
 import 'package:vitaguard_app/components/bottom_nav.dart';
 import 'package:vitaguard_app/patient/chat/screen/chat_list_patient.dart';
@@ -23,9 +24,9 @@ class _MainCompanionState extends State<MainCompanion> {
     super.initState();
     screens = [
       CompanionHome(name: widget.name),
-
       ChatListPatient(),
       UploadXRay(),
+      HardwareScreen(),
     ];
   }
 

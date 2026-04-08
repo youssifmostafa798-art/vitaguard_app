@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vitaguard_app/Hardware/screen/hardware_screen.dart';
 import 'package:vitaguard_app/patient/chat/screen/chat_list_patient.dart';
 import 'package:vitaguard_app/patient/home/screen/patient_home.dart';
 import 'package:vitaguard_app/patient/x_ray_model/screen/upload_x_ray.dart';
@@ -21,7 +22,14 @@ class _MainPatientState extends State<MainPatient> {
   @override
   void initState() {
     super.initState();
-    screens = [PatientHome(name: widget.name), ChatListPatient(), UploadXRay()];
+    // FIX: Keep `screens` length aligned with bottom-nav tabs to prevent index overflow
+    // when users open the Device tab (index 3).
+    screens = [
+      PatientHome(name: widget.name),
+      ChatListPatient(),
+      UploadXRay(),
+      HardwareScreen(),
+    ];
   }
 
   @override

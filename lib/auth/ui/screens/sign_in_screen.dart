@@ -30,14 +30,17 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   //    passCtrl.dispose();
   //   super.dispose();
   //}
+  //--------------------------------
   //delete after end the app
+  //patient email (eng210091)
   @override
   void initState() {
-    emailCtrl.text = 'youssifkenk@gmail.com';
-    passCtrl.text = '1234567890';
+    emailCtrl.text = 'eng210091@nilehi.edu.eg';
+    passCtrl.text = '123456789';
     super.initState();
   }
 
+  //-------------------------------
   void _handleSignIn() async {
     final auth = ref.read(authProvider);
     final email = emailCtrl.text.trim();

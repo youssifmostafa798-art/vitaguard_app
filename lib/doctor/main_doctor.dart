@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vitaguard_app/Hardware/screen/hardware_screen.dart';
 import 'package:vitaguard_app/doctor/chat/screen/chat_list_dr.dart';
 import 'package:vitaguard_app/doctor/home/screen/doctor_home.dart';
 import 'package:vitaguard_app/components/bottom_nav.dart';
@@ -21,7 +22,12 @@ class _MainDoctorState extends State<MainDoctor> {
   @override
   void initState() {
     super.initState();
-    screens = [DoctorHomes(name: widget.name), ChatListDr(), UploadXRay()];
+    screens = [
+      DoctorHomes(name: widget.name),
+      ChatListDr(),
+      UploadXRay(),
+      HardwareScreen(),
+    ];
   }
 
   @override

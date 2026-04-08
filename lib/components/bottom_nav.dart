@@ -19,12 +19,13 @@ class _HomeBottomNavState extends State<HomeBottomNav>
   @override
   void initState() {
     super.initState();
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
 
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.elasticInOut),
     );
   }
@@ -48,12 +49,18 @@ class _HomeBottomNavState extends State<HomeBottomNav>
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.all(20.r),
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
+      // 🔽 (تصغير حجم البار من الخارج)
+      margin: EdgeInsets.all(14.r), // كان 20.r
+      // 🔽 (تصغير ارتفاع البار من الداخل)
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h), // كان 10
+
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(45.r),
-        border: Border.all(color: const Color(0xff003F6B), width: 3),
+
+        borderRadius: BorderRadius.circular(40.r),
+
+        border: Border.all(color: const Color(0xff003F6B), width: 2),
+
         boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
         ],
@@ -67,6 +74,11 @@ class _HomeBottomNavState extends State<HomeBottomNav>
             index: 2,
             icon: Icons.health_and_safety,
             label: "Model",
+          ),
+          _buildAnimatedIconButton(
+            index: 3,
+            icon: Icons.monitor_heart,
+            label: "Device",
           ),
         ],
       ),
@@ -86,16 +98,22 @@ class _HomeBottomNavState extends State<HomeBottomNav>
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOut,
+
+          // 🔽 (تصغير مساحة الزر)
           padding: EdgeInsets.symmetric(
-            vertical: 8.h,
-            horizontal: isSelected ? 16.w : 8.w,
+            vertical: 6.h, // كان 8.h
+            horizontal: isSelected ? 14.w : 7.w, // كان 16 / 8
           ),
+
           decoration: BoxDecoration(
             color: isSelected
                 ? const Color(0xff003F6B).withValues(alpha: 0.1)
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(30.r),
+
+            // 🔽 (تصغير Radius الزر)
+            borderRadius: BorderRadius.circular(25.r), // كان 30
           ),
+
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -110,23 +128,32 @@ class _HomeBottomNavState extends State<HomeBottomNav>
                     scale: scale,
                     child: Icon(
                       icon,
-                      size: 28.r,
+
+                      // 🔽 (تصغير حجم الأيقونة)
+                      size: 22.r, // كان 28.r
+
                       color: isSelected ? const Color(0xff003F6B) : Colors.grey,
                     ),
                   );
                 },
               ),
+
               if (isSelected)
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeInOut,
-                  margin: EdgeInsets.only(left: 5.w),
+
+                  // 🔽 (تصغير المسافة بين الأيقونة والنص)
+                  margin: EdgeInsets.only(left: 4.w), // كان 5.w
+
                   child: Text(
                     label,
                     style: TextStyle(
                       color: const Color(0xff003F6B),
                       fontWeight: FontWeight.bold,
-                      fontSize: 10.sp,
+
+                      // 🔽 (تصغير حجم الخط)
+                      fontSize: 8.sp, // كان 10.sp
                     ),
                   ),
                 ),
