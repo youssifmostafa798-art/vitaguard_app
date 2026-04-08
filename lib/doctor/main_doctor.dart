@@ -3,7 +3,7 @@ import 'package:vitaguard_app/Hardware/screen/hardware_screen.dart';
 import 'package:vitaguard_app/doctor/chat/screen/chat_list_dr.dart';
 import 'package:vitaguard_app/doctor/home/screen/doctor_home.dart';
 import 'package:vitaguard_app/components/bottom_nav.dart';
-import 'package:vitaguard_app/patient/x_ray_model/screen/upload_x_ray.dart';
+import 'package:vitaguard_app/patient/x_ray_model/screen/doctor_x_ray_review_entry_screen.dart';
 
 class MainDoctor extends StatefulWidget {
   final String name;
@@ -25,7 +25,7 @@ class _MainDoctorState extends State<MainDoctor> {
     screens = [
       DoctorHomes(name: widget.name),
       ChatListDr(),
-      UploadXRay(),
+      const DoctorXRayReviewEntryScreen(),
       HardwareScreen(),
     ];
   }

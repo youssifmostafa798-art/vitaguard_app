@@ -36,7 +36,7 @@ class CategoryItem extends StatelessWidget {
               CustemText(
                 text: title,
                 weight: FontWeight.bold,
-                size: 12,
+                size: 10,
                 color: const Color(0xff003F6B),
               ),
             ],

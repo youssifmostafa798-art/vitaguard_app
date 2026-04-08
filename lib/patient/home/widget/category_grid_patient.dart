@@ -19,7 +19,7 @@ class CategoryGridPatient extends StatelessWidget {
         /// Title
         CustemText(
           text: "Categories",
-          size: 25,
+          size: 22,
           spacing: 3,
           color: Color(0xff003F6B),
           weight: FontWeight.bold,

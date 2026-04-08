@@ -25,8 +25,6 @@ class MetricCard extends StatelessWidget {
 
     return Expanded(
       child: Container(
-        // IMPROVEMENT: Use ScreenUtil-based spacing/radius so the card preserves
-        // visual proportions across different phone sizes.
         padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 16.h),
         decoration: BoxDecoration(
           // REASON: Blend app token colors with M3 outline tones to keep the
@@ -53,16 +51,17 @@ class MetricCard extends StatelessWidget {
             Text(
               value,
               style: textTheme.headlineSmall?.copyWith(
-                fontSize: 36.sp,
+                fontSize: 32.sp,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               ),
             ),
             SizedBox(height: 4.h),
+
             Text(
               label,
               style: textTheme.bodyMedium?.copyWith(
-                fontSize: 16.sp,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.3,
                 color: AppColors.textSecondary,

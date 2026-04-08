@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
-import 'package:vitaguard_app/patient/home/widget/radiology_result.dart';
+import 'package:vitaguard_app/patient/x_ray_model/screen/ai_xray_result_screen.dart';
 import 'package:vitaguard_app/core/providers.dart';
 
 class UploadXRay extends ConsumerStatefulWidget {
@@ -47,7 +47,12 @@ class _UploadXRayState extends ConsumerState<UploadXRay> {
       if (result == null) return;
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => RadiologyResult(result: result)),
+        MaterialPageRoute(
+          builder: (_) => AiXRayResultScreen(
+            imageFile: _selectedImage!,
+            result: result,
+          ),
+        ),
       );
     } else {
       if (!mounted) return;

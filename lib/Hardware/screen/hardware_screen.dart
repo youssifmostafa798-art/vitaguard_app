@@ -52,7 +52,7 @@ class HardwareScreen extends StatelessWidget {
                         Text(
                           'VitaGuard Core',
                           style: textTheme.titleLarge?.copyWith(
-                            fontSize: 38.sp,
+                            fontSize: 32.sp,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary,
                           ),
@@ -242,7 +242,7 @@ class _StatusInfoItem extends StatelessWidget {
         Text(
           title,
           style: textTheme.bodyMedium?.copyWith(
-            fontSize: 18.sp,
+            fontSize: 14.sp,
             color: AppColors.textSecondary,
           ),
         ),
@@ -250,7 +250,7 @@ class _StatusInfoItem extends StatelessWidget {
         Text(
           value,
           style: textTheme.titleMedium?.copyWith(
-            fontSize: 24.sp,
+            fontSize: 20.sp,
             color: valueColor ?? AppColors.textPrimary,
             fontWeight: FontWeight.w700,
           ),

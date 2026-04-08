@@ -102,7 +102,7 @@ class _HomeBottomNavState extends State<HomeBottomNav>
           // 🔽 (تصغير مساحة الزر)
           padding: EdgeInsets.symmetric(
             vertical: 6.h, // كان 8.h
-            horizontal: isSelected ? 14.w : 7.w, // كان 16 / 8
+            horizontal: isSelected ? 12.w : 7.w, // كان 16 / 8
           ),
 
           decoration: BoxDecoration(
