@@ -80,15 +80,19 @@ class AuthRepository {
         );
       }
 
-      await _client.functions.invoke(
-        'upload_doctor_verification',
-        body: {
-          'doctor_id': user.id,
-          'filename': _basename(idCardImage.path),
-          'content_type': contentType,
-          'data': base64Encode(await idCardImage.readAsBytes()),
-        },
-      );
+      final path = '${user.id}/verification$ext';
+      await _client.storage
+          .from('doctor-verifications')
+          .upload(
+            path,
+            idCardImage,
+            fileOptions: FileOptions(upsert: true, contentType: contentType),
+          );
+
+      await _client
+          .from('doctors')
+          .update({'id_card_path': path})
+          .eq('id', user.id);
     }
     return response;
   }

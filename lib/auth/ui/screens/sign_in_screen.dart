@@ -126,21 +126,47 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Checkbox(
-                                value: _rememberMe,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _rememberMe = value ?? false;
-                                  });
-                                },
+                              SizedBox(
+                                height: 24.h,
+                                width: 24.w,
+                                child: Checkbox(
+                                  value: _rememberMe,
+                                  activeColor: const Color(0xff0D3B66),
+                                  side: const BorderSide(color: Color(0xff0D3B66), width: 2),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _rememberMe = value ?? false;
+                                    });
+                                  },
+                                ),
                               ),
-                              const Text("Remember me"),
+                              SizedBox(width: 8.w),
+                              Text(
+                                "Remember me",
+                                style: TextStyle(
+                                  color: const Color(0xff0D3B66),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13.sp,
+                                ),
+                              ),
                             ],
                           ),
                           TextButton(
                             onPressed: () {},
-                            child: const Text("Forget password?"),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              "Forget password?",
+                              style: TextStyle(
+                                color: const Color(0xff0D3B66),
+                                fontSize: 13.sp,
+                              ),
+                            ),
                           ),
                         ],
                       ),
