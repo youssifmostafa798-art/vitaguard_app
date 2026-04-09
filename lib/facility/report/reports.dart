@@ -88,7 +88,7 @@ class _ReportsState extends State<Reports> {
       resizeToAvoidBottomInset: true,
       appBar: SimpleHeader(
         title: "Add Report",
-        automaticallyImplyLeading: true,
+        automaticallyImplyLeading: false,
       ),
       body: SafeArea(
         child: AppBackground(

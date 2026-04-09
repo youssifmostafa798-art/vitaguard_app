@@ -5,7 +5,6 @@ import 'package:vitaguard_app/auth/ui/screens/sign_in_screen.dart';
 import 'package:vitaguard_app/auth/ui/widgets/auth_error_banner.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
-import 'package:vitaguard_app/components/custom_logo.dart';
 
 enum FieldType { normal, password, navigation, gender }
 
@@ -37,8 +36,7 @@ class CreateAccountScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                VitaGuardLogo(size: 20),
-                Gap(10.h),
+                Gap(20.h),
                 Text(
                   title,
                   style: TextStyle(
