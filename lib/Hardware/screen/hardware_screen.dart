@@ -88,10 +88,12 @@ class _HardwareScreenState extends State<HardwareScreen> {
                       stream: _vitalsStream,
                       builder: (context, snapshot) {
                         String bpm = '--';
-                        String spo2 = '--%';
-                        String temp = '--°C';
-                        String status = 'Optimal';
-                        Color statusColor = AppColors.success;
+                        String spo2 = '--';
+                        String temp = '--';
+                        String status = 'Offline';
+                        String battery = '--';
+                        String signal = '--';
+                        Color statusColor = Colors.grey;
                         
                         if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                           final data = snapshot.data!.first;
@@ -99,8 +101,13 @@ class _HardwareScreenState extends State<HardwareScreen> {
                           spo2 = '${data['spo2'] ?? '--'}%';
                           temp = '${data['temperature'] ?? '--'}°C';
                           
+                          status = 'Online';
+                          statusColor = AppColors.success;
+                          battery = '100%';
+                          signal = 'Strong';
+
                           if (data['device_status'] == 'Waiting for Finger') {
-                            status = 'Waiting';
+                            status = 'Awaiting Patient';
                             statusColor = Colors.orange;
                             bpm = '0';
                           }
@@ -134,16 +141,16 @@ class _HardwareScreenState extends State<HardwareScreen> {
                                       valueColor: statusColor,
                                     ),
                                   ),
-                                  const Expanded(
+                                  Expanded(
                                     child: _StatusInfoItem(
                                       title: 'Battery',
-                                      value: '88%',
+                                      value: battery,
                                     ),
                                   ),
-                                  const Expanded(
+                                  Expanded(
                                     child: _StatusInfoItem(
                                       title: 'Signal',
-                                      value: 'Strong',
+                                      value: signal,
                                     ),
                                   ),
                                 ],
@@ -190,7 +197,7 @@ class _HardwareScreenState extends State<HardwareScreen> {
                                   iconColor: const Color(0xFF0F766E),
                                   iconBackgroundColor: const Color(0xFFD7F3EF),
                                   value: spo2,
-                                  label: 'SPO2 (PPM)',
+                                  label: 'SPO2 (%)',
                                 ),
                                 SizedBox(width: 14.w),
                                 MetricCard(

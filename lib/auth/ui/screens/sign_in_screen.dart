@@ -128,18 +128,18 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              SizedBox(
-                                height: 24.h,
-                                width: 24.w,
-                                child: Checkbox(
-                                  value: _rememberMe,
-                                  activeColor: const Color(0xff0D3B66),
-                                  side: const BorderSide(color: Color(0xff0D3B66), width: 2),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _rememberMe = value ?? false;
-                                    });
-                                  },
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _rememberMe = !_rememberMe;
+                                  });
+                                },
+                                child: Icon(
+                                  _rememberMe 
+                                      ? Icons.check_box 
+                                      : Icons.check_box_outline_blank,
+                                  color: const Color(0xff0D3B66),
+                                  size: 24.r, // using screenutils radius scaling
                                 ),
                               ),
                               SizedBox(width: 8.w),
