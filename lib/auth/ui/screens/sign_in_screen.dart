@@ -32,12 +32,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   //}
   //--------------------------------
   //delete after end the app
-  // patient email (eng210091) - email (youssifmostafa798) - pass (123456789)
+  // patient email (eng210091) -  pass (123456789)
   // facility email (youssifkenk) - pass (1234567890)
-  // Dr email (re.aloula2018) pass (123456789)
+  // Dr email (youssifmostafa798) pass (123456789)
   @override
   void initState() {
-    emailCtrl.text = 'youssifmostafa798@gmail.com';
+    emailCtrl.text = 'eng210091@nilehi.edu.eg';
     passCtrl.text = '123456789';
     super.initState();
   }
