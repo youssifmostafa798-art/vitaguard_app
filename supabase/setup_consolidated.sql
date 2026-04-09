@@ -151,11 +151,33 @@ create table if not exists messages (
   created_at timestamptz default now()
 );
 
+create table if not exists patient_live_vitals (
+  id uuid primary key default gen_random_uuid(),
+  patient_id uuid references patients(id) on delete cascade,
+  device_id text not null,
+  bpm numeric,
+  temperature numeric,
+  spo2 numeric,
+  device_status text,
+  recorded_at timestamptz default now()
+);
+
+create table if not exists medical_alerts (
+  id uuid primary key default gen_random_uuid(),
+  patient_id uuid references patients(id) on delete cascade,
+  alert_type text,
+  alert_data jsonb,
+  is_resolved boolean default false,
+  created_at timestamptz default now()
+);
+
 create index if not exists idx_patients_assigned_doctor on patients (assigned_doctor_id);
 create unique index if not exists idx_patients_companion_code on patients (companion_code);
 create index if not exists idx_messages_conversation on messages (conversation_id, created_at);
 create index if not exists idx_conversation_participants_user on conversation_participants (user_id);
 create index if not exists idx_facility_offers_facility on facility_offers (facility_id, created_at);
+create index if not exists idx_patient_live_vitals_patient on patient_live_vitals (patient_id, recorded_at desc);
+create index if not exists idx_medical_alerts_patient on medical_alerts (patient_id, created_at desc);
 
 -- ==========================================
 -- 2. Storage Buckets Setup
@@ -189,6 +211,8 @@ alter table facility_appointments enable row level security;
 alter table conversations enable row level security;
 alter table conversation_participants enable row level security;
 alter table messages enable row level security;
+alter table patient_live_vitals enable row level security;
+alter table medical_alerts enable row level security;
 
 -- NOTE: RLS on storage.objects is usually managed by Supabase. 
 -- If the line below fails, it can be skipped as Supabase often enables it by default.
@@ -401,6 +425,19 @@ create policy "lab offers read" on storage.objects for select using (bucket_id =
 
 drop policy if exists "lab offers write" on storage.objects;
 create policy "lab offers write" on storage.objects for insert with check (bucket_id = 'lab-offers' and public.is_owner(split_part(name, '/', 1)::uuid));
+
+drop policy if exists "patient live vitals read" on patient_live_vitals;
+create policy "patient live vitals read" on patient_live_vitals for select using (public.is_owner(patient_id) or public.assigned_doctor(patient_id) or public.linked_companion(patient_id) or public.is_admin());
+
+drop policy if exists "patient live vitals write" on patient_live_vitals;
+create policy "patient live vitals write" on patient_live_vitals for insert with check (auth.role() = 'service_role' or public.is_owner(patient_id));
+
+drop policy if exists "medical alerts read" on medical_alerts;
+create policy "medical alerts read" on medical_alerts for select using (public.is_owner(patient_id) or public.assigned_doctor(patient_id) or public.linked_companion(patient_id) or public.is_admin());
+
+drop policy if exists "medical alerts write" on medical_alerts;
+create policy "medical alerts write" on medical_alerts for insert with check (auth.role() = 'service_role');
+
 -- ==========================================
 -- 4. Auth Triggers for Auto-Profile Creation
 -- ==========================================

@@ -4,10 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/utils/chat_header.dart';
 import 'package:vitaguard_app/facility/home.chat/widget/message_facility_bubble.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/components/message_input.dart';
 import 'package:vitaguard_app/models/message_model.dart';
-
-// change
 class ChatFacilityDetail extends StatefulWidget {
   final String chatName;
   final String chatId;
@@ -24,100 +23,56 @@ class ChatFacilityDetail extends StatefulWidget {
 
 class _ChatFacilityDetailState extends State<ChatFacilityDetail> {
   final TextEditingController _messageController = TextEditingController();
-  final List<ChatMessage> _messages = [];
-  bool _isLoading = false;
+  late final Stream<List<ChatMessage>> _messageStream;
+  final _supabase = Supabase.instance.client;
 
   @override
   void initState() {
     super.initState();
-    _loadMessages();
+    _messageStream = _supabase
+        .from('messages')
+        .stream(primaryKey: ['id'])
+        .eq('conversation_id', widget.chatId)
+        .order('created_at', ascending: false)
+        .map((data) => data.map((json) {
+              return ChatMessage(
+                id: json['id'],
+                content: json['content'] ?? '',
+                time: json['created_at'] != null 
+                    ? DateFormat('HH:mm').format(DateTime.parse(json['created_at']).toLocal())
+                    : 'Now',
+                sender: json['sender_id'] == _supabase.auth.currentUser?.id
+                    ? MessageSender.user
+                    : MessageSender.doctor,
+                isRead: json['is_read'] ?? false,
+              );
+            }).toList());
   }
 
-  Future<void> _loadMessages() async {
-    setState(() => _isLoading = true);
+  Future<void> _sendMessage() async {
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
+    
+    _messageController.clear();
+    
+    final uid = _supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    
+    try {
+      await _supabase.from('messages').insert({
+        'conversation_id': widget.chatId,
+        'sender_id': uid,
+        'content': text,
+      });
 
-    // Simulate loading messages
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    setState(() {
-      _messages.addAll(_getMockMessages());
-      _isLoading = false;
-    });
-  }
-
-  List<ChatMessage> _getMockMessages() {
-    return [
-      ChatMessage(
-        id: '1',
-        content:
-            "Hello, this is VitaLab. We are contacting you regarding the recent test samples.",
-        time: '10:41',
-        sender: MessageSender.user,
-        isRead: true,
-      ),
-      ChatMessage(
-        id: '2',
-        content: "Hello. Yes, I’m following up on the patient’s lab results.",
-        time: '10:44',
-        sender: MessageSender.doctor,
-        isRead: true,
-      ),
-      ChatMessage(
-        id: '3',
-        content:
-            "The blood test analysis has been completed successfully. Most values are within the normal range",
-        time: '10:47',
-        sender: MessageSender.user,
-        isRead: true,
-      ),
-      ChatMessage(
-        id: '4',
-        content:
-            "Thank you for the update. Have the full reports been uploaded to the system?",
-        time: '11:03',
-        sender: MessageSender.doctor,
-        isRead: true,
-      ),
-      ChatMessage(
-        id: '5',
-        content:
-            "Yes, doctor. The complete lab report has been uploaded and is now available for review.",
-        time: '12:13',
-        sender: MessageSender.user,
-        isRead: true,
-      ),
-    ];
-  }
-
-  void _sendMessage() {
-    if (_messageController.text.trim().isEmpty) return;
-
-    final newMessage = ChatMessage(
-      id: DateTime.now().toString(),
-      content: _messageController.text,
-      time: DateFormat('HH:mm').format(DateTime.now()),
-      sender: MessageSender.user,
-      isRead: false,
-    );
-
-    setState(() {
-      _messages.add(newMessage);
-      _messageController.clear();
-    });
-
-    // Simulate reply after 2 seconds
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        final reply = ChatMessage(
-          id: DateTime.now().toString(),
-          content: "Thank you for your message. I'll get back to you soon.",
-          time: DateFormat('HH:mm').format(DateTime.now()),
-          sender: MessageSender.doctor,
-          isRead: false,
-        );
-        setState(() => _messages.add(reply));
-      }
-    });
+      // Also quickly update the conversation last read / last message
+      await _supabase.from('conversations').update({
+        'last_message': text,
+        'last_message_at': DateTime.now().toIso8601String(),
+      }).eq('id', widget.chatId);
+    } catch (e) {
+      debugPrint('Error sending message: $e');
+    }
   }
 
   @override
@@ -153,28 +108,35 @@ class _ChatFacilityDetailState extends State<ChatFacilityDetail> {
 
               // Messages
               Expanded(
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ListView.builder(
-                        reverse: true,
-                        padding: EdgeInsets.symmetric(horizontal: 8.w),
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) {
-                          final message =
-                              _messages[_messages.length - 1 - index];
-                          final isPreviousSameSender =
-                              index < _messages.length - 1 &&
-                              _messages[_messages.length - 2 - index].sender ==
-                                  message.sender;
+                child: StreamBuilder<List<ChatMessage>>(
+                  stream: _messageStream,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                          return MessageFacilityBubble(
-                            message: message,
-                            isPreviousSameSender: isPreviousSameSender,
-                            drName: widget.chatName,
-                            patientName: widget.chatName,
-                          );
-                        },
-                      ),
+                    final messages = snapshot.data ?? [];
+                    
+                    return ListView.builder(
+                      reverse: true,
+                      padding: EdgeInsets.symmetric(horizontal: 8.w),
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final message = messages[index];
+                        final isPreviousSameSender =
+                            index < messages.length - 1 &&
+                            messages[index + 1].sender == message.sender;
+
+                        return MessageFacilityBubble(
+                          message: message,
+                          isPreviousSameSender: isPreviousSameSender,
+                          drName: widget.chatName,
+                          patientName: 'Facility Admin',
+                        );
+                      },
+                    );
+                  }
+                ),
               ),
 
               // Message input

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vitaguard_app/auth/ui/widgets/auth_textfield.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
@@ -23,6 +24,7 @@ class SignInScreen extends ConsumerStatefulWidget {
 class _SignInScreenState extends ConsumerState<SignInScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
+  bool _rememberMe = false;
 
   // @override
   //  void dispose() {
@@ -58,6 +60,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     final success = await auth.login(email, password);
 
     if (success) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('remember_me', _rememberMe);
+
       final role = await auth.getUserRole();
       if (!mounted) return;
 
@@ -117,12 +122,27 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         obscure: true,
                         suffixIcon: const Icon(Icons.visibility),
                       ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {},
-                          child: const Text("Forget password?"),
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _rememberMe,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _rememberMe = value ?? false;
+                                  });
+                                },
+                              ),
+                              const Text("Remember me"),
+                            ],
+                          ),
+                          TextButton(
+                            onPressed: () {},
+                            child: const Text("Forget password?"),
+                          ),
+                        ],
                       ),
                       SizedBox(height: 200.h),
                       if (isLoading)

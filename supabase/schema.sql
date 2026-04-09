@@ -148,8 +148,30 @@ create table if not exists messages (
   created_at timestamptz default now()
 );
 
+create table if not exists patient_live_vitals (
+  id uuid primary key default gen_random_uuid(),
+  patient_id uuid references patients(id) on delete cascade,
+  device_id text not null,
+  bpm numeric,
+  temperature numeric,
+  spo2 numeric,
+  device_status text,
+  recorded_at timestamptz default now()
+);
+
+create table if not exists medical_alerts (
+  id uuid primary key default gen_random_uuid(),
+  patient_id uuid references patients(id) on delete cascade,
+  alert_type text,
+  alert_data jsonb,
+  is_resolved boolean default false,
+  created_at timestamptz default now()
+);
+
 create index if not exists idx_patients_assigned_doctor on patients (assigned_doctor_id);
 create unique index if not exists idx_patients_companion_code on patients (companion_code);
 create index if not exists idx_messages_conversation on messages (conversation_id, created_at);
 create index if not exists idx_conversation_participants_user on conversation_participants (user_id);
 create index if not exists idx_facility_offers_facility on facility_offers (facility_id, created_at);
+create index if not exists idx_patient_live_vitals_patient on patient_live_vitals (patient_id, recorded_at desc);
+create index if not exists idx_medical_alerts_patient on medical_alerts (patient_id, created_at desc);
