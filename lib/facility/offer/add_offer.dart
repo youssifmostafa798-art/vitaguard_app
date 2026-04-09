@@ -34,13 +34,21 @@ class _AddOfferState extends State<AddOffer> {
     super.dispose();
   }
 
+  bool _isPicking = false;
+
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _selectedImage = File(pickedFile.path);
-      });
+    if (_isPicking) return;
+    try {
+      _isPicking = true;
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+        });
+      }
+    } finally {
+      _isPicking = false;
     }
   }
 

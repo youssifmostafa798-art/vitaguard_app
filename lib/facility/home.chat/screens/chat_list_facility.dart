@@ -31,21 +31,49 @@ class _ChatListFacilityState extends State<ChatListFacility> {
           .from('conversation_participants')
           .stream(primaryKey: ['conversation_id', 'user_id'])
           .eq('user_id', uid)
-          .map((participants) {
-            // Mapping these basically allows us to establish the UI structure
-            // In a production app, we would join this with the 'profiles' and 'conversations' tables
-            // via a Supabase postgres view or RPC.
-            return participants.map((p) {
-              return ChatPreview(
-                id: p['conversation_id'],
-                name: 'Ongoing Chat', 
-                avatarInitials: 'C',
-                lastMessage: 'Tap to view messages...',
+          .asyncMap((participants) async {
+            List<ChatPreview> previews = [];
+            for (final p in participants) {
+              final convId = p['conversation_id'];
+              
+              final otherPart = await Supabase.instance.client
+                  .from('conversation_participants')
+                  .select('user_id')
+                  .eq('conversation_id', convId)
+                  .neq('user_id', uid)
+                  .maybeSingle();
+
+              String otherName = 'Patient';
+              String initials = 'P';
+              if (otherPart != null) {
+                final profile = await Supabase.instance.client
+                    .from('profiles')
+                    .select('full_name, role')
+                    .eq('id', otherPart['user_id'])
+                    .maybeSingle();
+                if (profile != null && profile['full_name'] != null) {
+                  otherName = profile['full_name'];
+                  initials = otherName.isNotEmpty ? otherName[0].toUpperCase() : 'P';
+                }
+              }
+
+              final convDetail = await Supabase.instance.client
+                  .from('conversations')
+                  .select('last_message, last_message_at')
+                  .eq('id', convId)
+                  .maybeSingle();
+
+              previews.add(ChatPreview(
+                id: convId,
+                name: otherName,
+                avatarInitials: initials,
+                lastMessage: convDetail?['last_message'] ?? 'Tap to view messages...',
                 time: 'Now',
                 sender: MessageSender.user,
                 status: MessageStatus.active,
-              );
-            }).toList();
+              ));
+            }
+            return previews;
           });
     } else {
       _chatStream = Stream.value([]);
