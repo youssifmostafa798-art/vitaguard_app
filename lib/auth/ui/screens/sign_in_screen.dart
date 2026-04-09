@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vitaguard_app/auth/ui/widgets/auth_textfield.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
@@ -23,6 +24,7 @@ class SignInScreen extends ConsumerStatefulWidget {
 class _SignInScreenState extends ConsumerState<SignInScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
+  bool _rememberMe = false;
 
   // @override
   //  void dispose() {
@@ -58,6 +60,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     final success = await auth.login(email, password);
 
     if (success) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('remember_me', _rememberMe);
+
       final role = await auth.getUserRole();
       if (!mounted) return;
 
@@ -117,14 +122,55 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         obscure: true,
                         suffixIcon: const Icon(Icons.visibility),
                       ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {},
-                          child: const Text("Forget password?"),
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _rememberMe = !_rememberMe;
+                                  });
+                                },
+                                child: Icon(
+                                  _rememberMe 
+                                      ? Icons.check_box 
+                                      : Icons.check_box_outline_blank,
+                                  color: const Color(0xff0D3B66),
+                                  size: 24.r, // using screenutils radius scaling
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              Text(
+                                "Remember me",
+                                style: TextStyle(
+                                  color: const Color(0xff0D3B66),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13.sp,
+                                ),
+                              ),
+                            ],
+                          ),
+                          TextButton(
+                            onPressed: () {},
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              "Forget password?",
+                              style: TextStyle(
+                                color: const Color(0xff0D3B66),
+                                fontSize: 13.sp,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 200.h),
+                      SizedBox(height: 12.h),
                       if (isLoading)
                         const CircularProgressIndicator()
                       else

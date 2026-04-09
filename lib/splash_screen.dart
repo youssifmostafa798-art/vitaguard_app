@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:vitaguard_app/core/providers.dart';
+import 'package:vitaguard_app/patient/main_patient.dart';
+import 'package:vitaguard_app/doctor/main_doctor.dart';
+import 'package:vitaguard_app/companion/main_companion.dart';
+import 'package:vitaguard_app/facility/main_facility.dart';
 import 'package:vitaguard_app/onbording/ui/onbording_screen/onboarding_screen.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with TickerProviderStateMixin {
   bool _navigated = false;
 
@@ -71,8 +79,52 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
-  void _navigateToOnboarding() {
-    if (!_navigated && mounted) {
+  Future<void> _navigateToOnboarding() async {
+    if (_navigated || !mounted) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final rememberMe = prefs.getBool('remember_me') ?? false;
+
+    // Check if we have an active session
+    final session = Supabase.instance.client.auth.currentSession;
+
+    if (session != null) {
+      if (rememberMe) {
+        // Auto-login bypassing the login screen
+        final auth = ref.read(authProvider);
+        final role = await auth.getUserRole();
+        if (!mounted) return;
+
+        Widget nextScreen;
+        final name = auth.userName;
+
+        switch (role) {
+          case 'doctor':
+            nextScreen = MainDoctor(name: name);
+            break;
+          case 'companion':
+            nextScreen = MainCompanion(name: name);
+            break;
+          case 'facility':
+            nextScreen = MainFacility(name: name);
+            break;
+          default:
+            nextScreen = MainPatient(name: name);
+        }
+
+        _navigated = true;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => nextScreen),
+        );
+        return;
+      } else {
+        // If they did not want to be remembered, clear the session
+        await Supabase.instance.client.auth.signOut();
+      }
+    }
+
+    if (mounted) {
       _navigated = true;
       Navigator.pushReplacement(
         context,
