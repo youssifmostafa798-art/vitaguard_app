@@ -37,7 +37,7 @@ class PatientHome extends ConsumerWidget {
               children: [
                 Gap(20.h),
                 HomeSearch(),
-                Gap(25.h),
+
 
                 Gap(30.h),
                 CategoryGridPatient(patientName: name),

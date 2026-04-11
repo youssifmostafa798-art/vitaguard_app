@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 
 import 'package:vitaguard_app/facility/offer/add_offer.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_field.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CurrentOffers extends StatefulWidget {
   const CurrentOffers({super.key});
@@ -57,7 +59,7 @@ class _CurrentOffersState extends State<CurrentOffers> {
                 ),
               ),
 
-              const Spacer(),
+              Gap(300.h),
 
               Button(
                 title: "Create",

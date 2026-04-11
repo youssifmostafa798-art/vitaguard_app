@@ -93,9 +93,11 @@ class _DoctorHomesState extends ConsumerState<DoctorHomes> {
                       ],
                     ),
                   ),
-                Gap(10.h),
+                Gap(20.h),
                 const HomeSearch(),
-                Gap(5.h),
+
+
+                Gap(30.h),
                 CategoryGridDr(drName: widget.name),
                 Gap(10.h),
               ],
