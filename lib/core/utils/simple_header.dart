@@ -40,7 +40,7 @@ class SimpleHeader extends StatelessWidget implements PreferredSizeWidget {
           text: title,
           color: const Color(0xff0D3B66),
           weight: FontWeight.bold,
-          size: 18,
+          size: 18.sp,
         ),
       ),
     );

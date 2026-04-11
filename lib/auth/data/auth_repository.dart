@@ -315,10 +315,6 @@ class AuthRepository {
     return '.${parts.last.toLowerCase()}';
   }
 
-  String _basename(String path) {
-    return path.split(Platform.pathSeparator).last;
-  }
-
   String? _contentTypeForExtension(String ext) {
     switch (ext) {
       case '.jpg':
