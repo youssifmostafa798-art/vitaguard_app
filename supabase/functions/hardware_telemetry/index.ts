@@ -15,6 +15,18 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Security Check: To prevent unauthorized access when deployed with --no-verify-jwt
+    // You should set HARDWARE_API_KEY in your Supabase project secrets
+    const hardwareApiKey = Deno.env.get('HARDWARE_API_KEY');
+    const requestKey = req.headers.get('X-Hardware-Key');
+
+    if (hardwareApiKey && requestKey !== hardwareApiKey) {
+      return new Response(JSON.stringify({ error: 'Unauthorized: Invalid Hardware Key' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+
     const body = await req.json();
     const { device_id, patient_id, vitals, motion, device_status, timestamp } = body;
 
