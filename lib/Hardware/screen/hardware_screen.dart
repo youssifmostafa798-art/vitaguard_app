@@ -76,30 +76,32 @@ class _HardwareScreenState extends State<HardwareScreen> {
     final data = _latestVitals;
 
     // Display values — '--' until real hardware data arrives
-    final String bpm  = data?['bpm']?.toString() ?? '--';
+    final String bpm = data?['bpm']?.toString() ?? '--';
     final String spo2 = data != null ? '${data['spo2'] ?? '--'}%' : '--';
-    final String temp = data != null ? '${data['temperature'] ?? '--'}°C' : '--';
+    final String temp = data != null
+        ? '${data['temperature'] ?? '--'}°C'
+        : '--';
 
     final String status;
-    final Color  statusColor;
+    final Color statusColor;
     final String battery;
     final String signal;
 
     if (data == null) {
-      status      = 'Offline';
+      status = 'Offline';
       statusColor = Colors.grey;
-      battery     = '--';
-      signal      = '--';
+      battery = '--';
+      signal = '--';
     } else if (data['device_status'] == 'Waiting for Finger') {
-      status      = 'Awaiting Patient';
+      status = 'Awaiting Patient';
       statusColor = Colors.orange;
-      battery     = '100%';
-      signal      = 'Strong';
+      battery = '100%';
+      signal = 'Strong';
     } else {
-      status      = 'Online';
+      status = 'Online';
       statusColor = AppColors.success;
-      battery     = '100%';
-      signal      = 'Strong';
+      battery = '100%';
+      signal = 'Strong';
     }
 
     return Scaffold(
@@ -132,7 +134,9 @@ class _HardwareScreenState extends State<HardwareScreen> {
                           width: 11.w,
                           height: 11.w,
                           decoration: BoxDecoration(
-                            color: data != null ? AppColors.success : Colors.grey,
+                            color: data != null
+                                ? AppColors.success
+                                : Colors.grey,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -159,7 +163,9 @@ class _HardwareScreenState extends State<HardwareScreen> {
                         color: AppColors.cardBackground.withValues(alpha: 0.65),
                         borderRadius: BorderRadius.circular(20.r),
                         border: Border.all(
-                          color: colorScheme.outlineVariant.withValues(alpha: 0.26),
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.26,
+                          ),
                         ),
                       ),
                       child: Row(
