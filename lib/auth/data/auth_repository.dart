@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -314,10 +313,6 @@ class AuthRepository {
     final parts = file.path.split('.');
     if (parts.length < 2) return '';
     return '.${parts.last.toLowerCase()}';
-  }
-
-  String _basename(String path) {
-    return path.split(Platform.pathSeparator).last;
   }
 
   String? _contentTypeForExtension(String ext) {

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
-import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class MedicalReports extends StatelessWidget {
   const MedicalReports({super.key});
@@ -12,7 +12,10 @@ class MedicalReports extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      appBar: SimpleHeader(title: "", automaticallyImplyLeading: true),
+      appBar: SimpleHeader(
+        title: "Medical Reports",
+        automaticallyImplyLeading: true,
+      ),
       body: SafeArea(
         child: AppBackground(
           child: LayoutBuilder(
@@ -23,40 +26,30 @@ class MedicalReports extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Gap(20),
-
-                      ///  Title
-                      CustemText(
-                        text: "Medical Reports",
-                        size: 20,
-                        weight: FontWeight.w600,
-                        color: Color(0xff003F6B),
-                      ),
-
-                      Gap(30),
+                      Gap(20.h),
 
                       ///  Upload Container
                       Container(
                         width: double.infinity,
-                        height: 300,
+                        height: 300.h,
                         decoration: BoxDecoration(
                           color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(20.r),
                           border: Border.all(
                             color: const Color(0xff003F6B),
-                            width: 1.2,
+                            width: 1.2.w,
                           ),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Icon(
                             Icons.image_outlined,
-                            size: 60,
+                            size: 60.r,
                             color: Colors.grey,
                           ),
                         ),
                       ),
 
-                      Gap(200),
+                      Gap(50.h),
 
                       ///  Confirm Button
                       Button(
@@ -65,7 +58,7 @@ class MedicalReports extends StatelessWidget {
                           Navigator.pop(context);
                         },
                       ),
-                      const Gap(20),
+                      Gap(20.h),
                     ],
                   ),
                 ),

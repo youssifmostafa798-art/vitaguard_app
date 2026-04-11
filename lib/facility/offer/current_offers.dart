@@ -19,7 +19,10 @@ class _CurrentOffersState extends State<CurrentOffers> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: SimpleHeader(title: "Current Offers"),
+      appBar: SimpleHeader(
+        title: "Current Offers",
+        automaticallyImplyLeading: false,
+      ),
       body: AppBackground(
         child: Padding(
           padding: const EdgeInsets.all(20),

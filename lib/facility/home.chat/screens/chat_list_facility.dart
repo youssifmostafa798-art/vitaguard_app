@@ -35,7 +35,7 @@ class _ChatListFacilityState extends State<ChatListFacility> {
             List<ChatPreview> previews = [];
             for (final p in participants) {
               final convId = p['conversation_id'];
-              
+
               final otherPart = await Supabase.instance.client
                   .from('conversation_participants')
                   .select('user_id')
@@ -53,7 +53,9 @@ class _ChatListFacilityState extends State<ChatListFacility> {
                     .maybeSingle();
                 if (profile != null && profile['full_name'] != null) {
                   otherName = profile['full_name'];
-                  initials = otherName.isNotEmpty ? otherName[0].toUpperCase() : 'P';
+                  initials = otherName.isNotEmpty
+                      ? otherName[0].toUpperCase()
+                      : 'P';
                 }
               }
 
@@ -63,15 +65,18 @@ class _ChatListFacilityState extends State<ChatListFacility> {
                   .eq('id', convId)
                   .maybeSingle();
 
-              previews.add(ChatPreview(
-                id: convId,
-                name: otherName,
-                avatarInitials: initials,
-                lastMessage: convDetail?['last_message'] ?? 'Tap to view messages...',
-                time: 'Now',
-                sender: MessageSender.user,
-                status: MessageStatus.active,
-              ));
+              previews.add(
+                ChatPreview(
+                  id: convId,
+                  name: otherName,
+                  avatarInitials: initials,
+                  lastMessage:
+                      convDetail?['last_message'] ?? 'Tap to view messages...',
+                  time: 'Now',
+                  sender: MessageSender.user,
+                  status: MessageStatus.active,
+                ),
+              );
             }
             return previews;
           });
@@ -79,6 +84,7 @@ class _ChatListFacilityState extends State<ChatListFacility> {
       _chatStream = Stream.value([]);
     }
   }
+
   //delete
   final List<ChatPreview> chats = [
     ChatPreview(
@@ -232,12 +238,15 @@ class _ChatListFacilityState extends State<ChatListFacility> {
                     StreamBuilder<List<ChatPreview>>(
                       stream: _chatStream,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
                         }
 
                         final chatsList = snapshot.data ?? [];
-                        
+
                         if (chatsList.isEmpty) {
                           return Padding(
                             padding: EdgeInsets.symmetric(vertical: 40.h),
@@ -249,7 +258,8 @@ class _ChatListFacilityState extends State<ChatListFacility> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: chatsList.length,
-                          separatorBuilder: (context, index) => const Divider(height: 1),
+                          separatorBuilder: (context, index) =>
+                              const Divider(height: 1),
                           itemBuilder: (context, index) {
                             final chat = chatsList[index];
                             return ChatPreviewCard(
@@ -268,7 +278,7 @@ class _ChatListFacilityState extends State<ChatListFacility> {
                             );
                           },
                         );
-                      }
+                      },
                     ),
                   ],
                 ),

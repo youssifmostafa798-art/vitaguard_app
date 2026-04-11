@@ -25,7 +25,8 @@ class _MainDoctorState extends State<MainDoctor> {
     screens = [
       DoctorHomes(name: widget.name),
       ChatListDr(),
-      const DoctorXRayReviewEntryScreen(),
+      DoctorXRayReviewEntryScreen(),
+      //delete the device & change the nav in bottom
       HardwareScreen(),
     ];
   }

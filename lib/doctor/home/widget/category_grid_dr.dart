@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/doctor/data/home_categories_doctor.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
@@ -17,7 +18,7 @@ class CategoryGridDr extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Gap(50),
+        Gap(20.h),
 
         /// Title
         CustemText(
@@ -28,7 +29,7 @@ class CategoryGridDr extends StatelessWidget {
           weight: FontWeight.bold,
         ),
 
-        const Gap(15),
+        Gap(15.h),
 
         /// Grid
         GridView.builder(

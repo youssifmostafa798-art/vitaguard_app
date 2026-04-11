@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
@@ -23,7 +25,7 @@ class DailyReports extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Gap(30),
+                      Gap(30.h),
 
                       /// Result Container
                       Container(
@@ -31,10 +33,10 @@ class DailyReports extends StatelessWidget {
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(20.r),
                           border: Border.all(
                             color: const Color(0xff003F6B),
-                            width: 1.2,
+                            width: 1.2.w,
                           ),
                         ),
                         child: Column(
@@ -80,8 +82,8 @@ class DailyReports extends StatelessWidget {
                           ],
                         ),
                       ),
-
-                      const Gap(300),
+                      //delete the  Button
+                      Gap(20.h),
 
                       Button(
                         title: "Confirm",
@@ -90,7 +92,7 @@ class DailyReports extends StatelessWidget {
                         },
                       ),
 
-                      const Gap(20),
+                      Gap(20.h),
                     ],
                   ),
                 ),
