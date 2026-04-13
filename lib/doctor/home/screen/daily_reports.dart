@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:gap/gap.dart';
 
 import 'package:vitaguard_app/Hardware/screen/hardware_screen.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/core/providers.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
+
+// ---------------------------------------------------------------------------
+// Model & Status
+// ---------------------------------------------------------------------------
 
 enum DailyReportStatus { normal, warning, critical }
 
@@ -31,153 +37,58 @@ class DailyReportModel {
     required this.status,
     required this.notes,
   });
+
+  /// Builds a [DailyReportModel] from a Supabase row produced by
+  /// [DoctorRepository.getAllAssignedPatientsDailyReports].
+  factory DailyReportModel.fromMap(Map<String, dynamic> map) {
+    DailyReportStatus status;
+    switch ((map['status'] as String? ?? 'normal').toLowerCase()) {
+      case 'critical':
+        status = DailyReportStatus.critical;
+        break;
+      case 'warning':
+        status = DailyReportStatus.warning;
+        break;
+      default:
+        status = DailyReportStatus.normal;
+    }
+
+    return DailyReportModel(
+      id: map['id']?.toString() ?? '',
+      patientName: map['patientName']?.toString() ?? 'Unknown',
+      date: map['date']?.toString() ?? '—',
+      pulse: (map['pulse'] as num?)?.toInt() ?? 0,
+      ppm: (map['ppm'] as num?)?.toInt() ?? 0,
+      temperature: map['temperature']?.toString() ?? '—',
+      motionStatus: map['motionStatus']?.toString() ?? 'N/A',
+      status: status,
+      notes: map['notes']?.toString() ?? '',
+    );
+  }
 }
 
-final List<DailyReportModel> _mockDailyReports = [
-  const DailyReportModel(
-    id: 'p001',
-    patientName: 'Eleanor Vance',
-    date: 'OCT 24, 2023',
-    pulse: 104,
-    ppm: 22,
-    temperature: '101.4°F',
-    motionStatus: 'High',
-    status: DailyReportStatus.critical,
-    notes: 'Spiking fever; notify attending physician.',
-  ),
-  const DailyReportModel(
-    id: 'p002',
-    patientName: 'James Chen',
-    date: 'OCT 24, 2023',
-    pulse: 72,
-    ppm: 98,
-    temperature: '98.2°F',
-    motionStatus: 'Low',
-    status: DailyReportStatus.normal,
-    notes: 'Stable overnight; meds tolerated.',
-  ),
-  const DailyReportModel(
-    id: 'p003',
-    patientName: 'Maria Santos',
-    date: 'OCT 23, 2023',
-    pulse: 88,
-    ppm: 45,
-    temperature: '99.1°F',
-    motionStatus: 'Moderate',
-    status: DailyReportStatus.warning,
-    notes: 'Slight temp elevation; continue monitoring.',
-  ),
-  const DailyReportModel(
-    id: 'p004',
-    patientName: 'David Okonkwo',
-    date: 'OCT 23, 2023',
-    pulse: 95,
-    ppm: 30,
-    temperature: '100.2°F',
-    motionStatus: 'High',
-    status: DailyReportStatus.warning,
-    notes: 'Restless; reassess in 4 hours.',
-  ),
-  const DailyReportModel(
-    id: 'p005',
-    patientName: 'Sophie Müller',
-    date: 'OCT 22, 2023',
-    pulse: 68,
-    ppm: 99,
-    temperature: '97.9°F',
-    motionStatus: 'Low',
-    status: DailyReportStatus.normal,
-    notes: 'Discharge planning discussed with family.',
-  ),
-  const DailyReportModel(
-    id: 'p006',
-    patientName: 'Robert Kim',
-    date: 'OCT 22, 2023',
-    pulse: 112,
-    ppm: 18,
-    temperature: '102.0°F',
-    motionStatus: 'High',
-    status: DailyReportStatus.critical,
-    notes: 'Sepsis protocol initiated.',
-  ),
-  const DailyReportModel(
-    id: 'p007',
-    patientName: 'Aisha Rahman',
-    date: 'OCT 21, 2023',
-    pulse: 76,
-    ppm: 88,
-    temperature: '98.6°F',
-    motionStatus: 'Low',
-    status: DailyReportStatus.normal,
-    notes: 'Walking with assistance; no complaints.',
-  ),
-  const DailyReportModel(
-    id: 'p008',
-    patientName: 'Lucas Ferreira',
-    date: 'OCT 21, 2023',
-    pulse: 91,
-    ppm: 52,
-    temperature: '99.5°F',
-    motionStatus: 'Moderate',
-    status: DailyReportStatus.warning,
-    notes: 'O2 sat borderline on exertion.',
-  ),
-  const DailyReportModel(
-    id: 'p009',
-    patientName: 'Nina Petrov',
-    date: 'OCT 20, 2023',
-    pulse: 82,
-    ppm: 76,
-    temperature: '98.4°F',
-    motionStatus: 'Low',
-    status: DailyReportStatus.normal,
-    notes: 'Post-op day 2; wound clean.',
-  ),
-  const DailyReportModel(
-    id: 'p010',
-    patientName: 'Omar Hassan',
-    date: 'OCT 20, 2023',
-    pulse: 118,
-    ppm: 15,
-    temperature: '103.1°F',
-    motionStatus: 'High',
-    status: DailyReportStatus.critical,
-    notes: 'Cooling measures applied.',
-  ),
-  const DailyReportModel(
-    id: 'p011',
-    patientName: 'Emily Watson',
-    date: 'OCT 19, 2023',
-    pulse: 74,
-    ppm: 92,
-    temperature: '98.0°F',
-    motionStatus: 'Low',
-    status: DailyReportStatus.normal,
-    notes: 'Labs within expected range.',
-  ),
-  const DailyReportModel(
-    id: 'p012',
-    patientName: 'Carlos Vega',
-    date: 'OCT 19, 2023',
-    pulse: 86,
-    ppm: 61,
-    temperature: '99.0°F',
-    motionStatus: 'Moderate',
-    status: DailyReportStatus.warning,
-    notes: 'New cough reported this morning.',
-  ),
-];
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
 
-class DailyReports extends StatefulWidget {
+class DailyReports extends ConsumerStatefulWidget {
   const DailyReports({super.key});
 
   @override
-  State<DailyReports> createState() => _DailyReportsState();
+  ConsumerState<DailyReports> createState() => _DailyReportsState();
 }
 
-class _DailyReportsState extends State<DailyReports> {
+class _DailyReportsState extends ConsumerState<DailyReports> {
   final TextEditingController _searchController = TextEditingController();
   DailyReportStatus? _statusFilter;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(doctorProvider).fetchAllDailyReports();
+    });
+  }
 
   @override
   void dispose() {
@@ -185,9 +96,10 @@ class _DailyReportsState extends State<DailyReports> {
     super.dispose();
   }
 
-  List<DailyReportModel> get _filteredReports {
+  List<DailyReportModel> _filtered(List<Map<String, dynamic>> raw) {
     final q = _searchController.text.trim().toLowerCase();
-    Iterable<DailyReportModel> list = _mockDailyReports;
+    Iterable<DailyReportModel> list = raw.map(DailyReportModel.fromMap);
+
     if (q.isNotEmpty) {
       list = list.where(
         (e) =>
@@ -203,137 +115,164 @@ class _DailyReportsState extends State<DailyReports> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filteredReports;
+    final doctor = ref.watch(doctorProvider);
+    final filtered = _filtered(doctor.dailyReports);
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      appBar: const SimpleHeader(title: "Daily Reports"),
+      appBar: const SimpleHeader(title: 'Daily Reports'),
       body: SafeArea(
         child: AppBackground(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              return SingleChildScrollView(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Gap(30.h),
-                      TextField(
-                        controller: _searchController,
-                        onChanged: (_) => setState(() {}),
-                        style: textTheme.bodyMedium?.copyWith(
-                          fontSize: 15.sp,
-                          color: AppColors.textPrimary,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Search patient or ID...',
-                          hintStyle: textTheme.bodyMedium?.copyWith(
+              return RefreshIndicator(
+                onRefresh: () => ref.read(doctorProvider).fetchAllDailyReports(),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Gap(30.h),
+
+                        // ── Search field ────────────────────────────────────
+                        TextField(
+                          controller: _searchController,
+                          onChanged: (_) => setState(() {}),
+                          style: textTheme.bodyMedium?.copyWith(
                             fontSize: 15.sp,
-                            color: AppColors.textSecondary,
+                            color: AppColors.textPrimary,
                           ),
-                          prefixIcon: Icon(
-                            Icons.search,
-                            color: AppColors.textSecondary,
-                            size: 22.r,
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 16.w,
-                            vertical: 14.h,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16.r),
-                            borderSide: BorderSide(
-                              color: AppColors.border.withValues(alpha: 0.8),
+                          decoration: InputDecoration(
+                            hintText: 'Search patient or ID...',
+                            hintStyle: textTheme.bodyMedium?.copyWith(
+                              fontSize: 15.sp,
+                              color: AppColors.textSecondary,
                             ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16.r),
-                            borderSide: BorderSide(
-                              color: AppColors.border.withValues(alpha: 0.8),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              color: AppColors.textSecondary,
+                              size: 22.r,
                             ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16.r),
-                            borderSide: BorderSide(
-                              color: AppColors.primary,
-                              width: 1.2.w,
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                              vertical: 14.h,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16.r),
+                              borderSide: BorderSide(
+                                color: AppColors.border.withValues(alpha: 0.8),
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16.r),
+                              borderSide: BorderSide(
+                                color: AppColors.border.withValues(alpha: 0.8),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16.r),
+                              borderSide: BorderSide(
+                                color: AppColors.primary,
+                                width: 1.2.w,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      Gap(16.h),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            _buildFilterChip(
-                              label: 'All',
-                              selected: _statusFilter == null,
-                              onSelected: () => setState(() => _statusFilter = null),
-                            ),
-                            Gap(8.w),
-                            _buildFilterChip(
-                              label: 'Normal',
-                              selected: _statusFilter == DailyReportStatus.normal,
-                              onSelected: () => setState(
-                                () => _statusFilter = DailyReportStatus.normal,
+
+                        Gap(16.h),
+
+                        // ── Filter chips ────────────────────────────────────
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildFilterChip(
+                                label: 'All',
+                                selected: _statusFilter == null,
+                                onSelected: () =>
+                                    setState(() => _statusFilter = null),
                               ),
-                            ),
-                            Gap(8.w),
-                            _buildFilterChip(
-                              label: 'Warning',
-                              selected:
-                                  _statusFilter == DailyReportStatus.warning,
-                              onSelected: () => setState(
-                                () => _statusFilter = DailyReportStatus.warning,
+                              Gap(8.w),
+                              _buildFilterChip(
+                                label: 'Normal',
+                                selected:
+                                    _statusFilter == DailyReportStatus.normal,
+                                onSelected: () => setState(
+                                  () => _statusFilter = DailyReportStatus.normal,
+                                ),
                               ),
-                            ),
-                            Gap(8.w),
-                            _buildFilterChip(
-                              label: 'Critical',
-                              selected:
-                                  _statusFilter == DailyReportStatus.critical,
-                              onSelected: () => setState(
-                                () => _statusFilter = DailyReportStatus.critical,
+                              Gap(8.w),
+                              _buildFilterChip(
+                                label: 'Warning',
+                                selected:
+                                    _statusFilter == DailyReportStatus.warning,
+                                onSelected: () => setState(
+                                  () =>
+                                      _statusFilter = DailyReportStatus.warning,
+                                ),
                               ),
-                            ),
-                          ],
+                              Gap(8.w),
+                              _buildFilterChip(
+                                label: 'Critical',
+                                selected:
+                                    _statusFilter == DailyReportStatus.critical,
+                                onSelected: () => setState(
+                                  () => _statusFilter =
+                                      DailyReportStatus.critical,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      Gap(20.h),
-                      if (filtered.isEmpty)
-                        _buildEmptyState(textTheme)
-                      else
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: filtered.length,
-                          itemBuilder: (context, index) {
-                            final patient = filtered[index];
-                            return Padding(
-                              padding: EdgeInsets.only(bottom: 16.h),
-                              child: _DailyReportCard(
-                                model: patient,
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => HardwareScreen(
-                                        patientId: patient.id,
-                                        patientName: patient.patientName,
+
+                        Gap(20.h),
+
+                        // ── Content ─────────────────────────────────────────
+                        if (doctor.isLoading)
+                          Padding(
+                            padding: EdgeInsets.symmetric(vertical: 48.h),
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else if (doctor.error != null)
+                          _buildErrorState(doctor.error!, textTheme)
+                        else if (filtered.isEmpty)
+                          _buildEmptyState(textTheme)
+                        else
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: filtered.length,
+                            itemBuilder: (context, index) {
+                              final report = filtered[index];
+                              return Padding(
+                                padding: EdgeInsets.only(bottom: 16.h),
+                                child: _DailyReportCard(
+                                  model: report,
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => HardwareScreen(
+                                          patientId: report.id,
+                                          patientName: report.patientName,
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                      Gap(20.h),
-                    ],
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+
+                        Gap(20.h),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -343,6 +282,8 @@ class _DailyReportsState extends State<DailyReports> {
       ),
     );
   }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
 
   Widget _buildFilterChip({
     required String label,
@@ -406,7 +347,52 @@ class _DailyReportsState extends State<DailyReports> {
       ),
     );
   }
+
+  Widget _buildErrorState(String error, TextTheme textTheme) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 48.h),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              Icons.error_outline_rounded,
+              size: 56.r,
+              color: Colors.red.withValues(alpha: 0.7),
+            ),
+            Gap(16.h),
+            Text(
+              'Failed to load reports',
+              style: textTheme.titleMedium?.copyWith(
+                fontSize: 16.sp,
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Gap(8.h),
+            Text(
+              error,
+              style: textTheme.bodySmall?.copyWith(
+                fontSize: 13.sp,
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            Gap(20.h),
+            TextButton.icon(
+              onPressed: () => ref.read(doctorProvider).fetchAllDailyReports(),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
+
+// ---------------------------------------------------------------------------
+// Card widget
+// ---------------------------------------------------------------------------
 
 class _DailyReportCard extends StatelessWidget {
   const _DailyReportCard({
@@ -486,7 +472,7 @@ class _DailyReportCard extends StatelessWidget {
                     Expanded(
                       child: _MetricTile(
                         icon: Icons.favorite_rounded,
-                        label: 'PULSE',
+                        label: 'HEART RATE',
                         value: '${model.pulse}',
                         unit: 'bpm',
                         valueColor: AppColors.primary,
@@ -496,9 +482,9 @@ class _DailyReportCard extends StatelessWidget {
                     Expanded(
                       child: _MetricTile(
                         icon: Icons.blur_on_rounded,
-                        label: 'PPM',
+                        label: 'OXYGEN',
                         value: '${model.ppm}',
-                        unit: '',
+                        unit: '%',
                         valueColor: AppColors.textPrimary,
                       ),
                     ),
@@ -511,8 +497,8 @@ class _DailyReportCard extends StatelessWidget {
                       child: _MetricTile(
                         icon: Icons.device_thermostat_rounded,
                         label: 'TEMP',
-                        value: model.temperature.replaceAll('°F', ''),
-                        unit: '°F',
+                        value: model.temperature.replaceAll('°C', ''),
+                        unit: '°C',
                         valueColor: AppColors.textPrimary,
                       ),
                     ),
@@ -520,7 +506,7 @@ class _DailyReportCard extends StatelessWidget {
                     Expanded(
                       child: _MetricTile(
                         icon: Icons.directions_walk_rounded,
-                        label: 'MOTION',
+                        label: 'ACTIVITY',
                         value: model.motionStatus,
                         unit: '',
                         valueColor: _motionColor(model.motionStatus),
@@ -543,6 +529,10 @@ class _DailyReportCard extends StatelessWidget {
     return AppColors.textPrimary;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Sub-widgets (unchanged from original)
+// ---------------------------------------------------------------------------
 
 class _StatusBadge extends StatelessWidget {
   const _StatusBadge({required this.status});

@@ -8,10 +8,12 @@ class CompanionProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   dynamic _patientStatus;
+  String? _companionCode;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
   dynamic get patientStatus => _patientStatus;
+  String? get companionCode => _companionCode;
 
   Future<bool> linkPatient(String code) async {
     _isLoading = true;
@@ -47,7 +49,25 @@ class CompanionProvider with ChangeNotifier {
     }
   }
 
+  /// Fetches the companion code of the linked patient.
+  Future<void> fetchLinkedPatientCode() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _companionCode = await _repository.getLinkedPatientCode();
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _error = _handleError(e);
+      notifyListeners();
+    }
+  }
+
   String _handleError(dynamic e) {
     return ErrorMapper.map(e);
   }
 }
+

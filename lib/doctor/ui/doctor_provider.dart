@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/doctor/data/doctor_repository.dart';
@@ -8,12 +10,18 @@ class DoctorProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   List<dynamic> _assignedPatients = [];
+  String _verificationStatus = 'pending';
+  List<Map<String, dynamic>> _dailyReports = [];
 
   bool get isLoading => _isLoading;
   String? get error => _error;
   List<dynamic> get assignedPatients => _assignedPatients;
-  String _verificationStatus = 'pending';
   String get verificationStatus => _verificationStatus;
+  List<Map<String, dynamic>> get dailyReports => _dailyReports;
+
+  // ---------------------------------------------------------------------------
+  // Patients
+  // ---------------------------------------------------------------------------
 
   Future<void> fetchAssignedPatients() async {
     _isLoading = true;
@@ -30,6 +38,10 @@ class DoctorProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Feedback
+  // ---------------------------------------------------------------------------
 
   Future<bool> sendFeedback({
     required String patientId,
@@ -57,6 +69,10 @@ class DoctorProvider with ChangeNotifier {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Verification
+  // ---------------------------------------------------------------------------
+
   Future<void> fetchVerificationStatus() async {
     _isLoading = true;
     _error = null;
@@ -73,6 +89,64 @@ class DoctorProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Medical Reports  (Problem 2)
+  // ---------------------------------------------------------------------------
+
+  /// Uploads an optional image and saves a medical report to Supabase.
+  Future<bool> uploadMedicalReport({
+    required String patientPhone,
+    required String patientName,
+    required String description,
+    File? imageFile,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _repository.uploadMedicalReport(
+        patientPhone: patientPhone,
+        patientName: patientName,
+        description: description,
+        imageFile: imageFile,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _error = _handleError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Daily Reports  (Problem 4)
+  // ---------------------------------------------------------------------------
+
+  /// Fetches the most-recent daily report for each patient assigned to this doctor.
+  Future<void> fetchAllDailyReports() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _dailyReports = await _repository.getAllAssignedPatientsDailyReports();
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _error = _handleError(e);
+      notifyListeners();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
 
   String _handleError(dynamic e) {
     return ErrorMapper.map(e);

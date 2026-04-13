@@ -102,6 +102,18 @@ class AuthRepository {
     required String password,
     required String companionCode,
   }) async {
+    // Step 1: Sign up first so we have an authenticated session.
+    final response = await _client.auth.signUp(
+      email: email,
+      password: password,
+      data: {
+        'role': UserRole.companion.value,
+        'name': name,
+      },
+    );
+
+    // Step 2: Resolve the patient ID now that we have an auth token,
+    // allowing RLS policies on `patients` to pass for authenticated users.
     final patientSnapshot = await _client
         .from('patients')
         .select('id')
@@ -111,19 +123,26 @@ class AuthRepository {
     final patientId = patientSnapshot.isNotEmpty
         ? patientSnapshot.first['id'] as String?
         : null;
+
     if (patientId == null) {
+      // Clean up the orphaned account on code mismatch.
+      try {
+        await _client.auth.signOut();
+      } catch (_) {}
       throw StateError('Invalid companion code.');
     }
 
-    return await _client.auth.signUp(
-      email: email,
-      password: password,
-      data: {
-        'role': UserRole.companion.value,
-        'name': name,
+    // Step 3: Upsert the companion link (the DB trigger may already create
+    // the companions row; this ensures linked_patient_id is set correctly).
+    final uid = response.user?.id;
+    if (uid != null) {
+      await _client.from('companions').upsert({
+        'id': uid,
         'linked_patient_id': patientId,
-      },
-    );
+      });
+    }
+
+    return response;
   }
 
   Future<AuthResponse> registerFacility({
