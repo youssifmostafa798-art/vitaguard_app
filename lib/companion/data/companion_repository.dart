@@ -11,7 +11,7 @@ class CompanionRepository {
   Future<void> linkPatient(String code) async {
     final success = await _client.rpc(
       'link_companion_to_patient',
-      params: {'p_code': code},
+      params: {'p_code': code, 'p_user_id': _uid},
     );
 
     if (success != true) {

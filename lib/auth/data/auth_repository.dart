@@ -112,11 +112,16 @@ class AuthRepository {
       },
     );
 
+    final uid = response.user?.id;
+    if (uid == null) {
+      throw StateError('Failed to create account.');
+    }
+
     // Step 2: Use the secure RPC function to verify the code and link the patient.
     // This bypasses RLS read restrictions since the companion is not yet linked.
     final success = await _client.rpc(
       'link_companion_to_patient',
-      params: {'p_code': companionCode},
+      params: {'p_code': companionCode, 'p_user_id': uid},
     );
 
     if (success != true) {
