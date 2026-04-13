@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
@@ -44,16 +45,16 @@ class _ProfessionalIdState extends State<ProfessionalId> {
             padding: const EdgeInsets.all(25),
             child: Column(
               children: [
-                const VitaGuardLogo(size: 20),
-                const Gap(20),
-                const Gap(16),
-                const CustemText(
+                VitaGuardLogo(size: 100.h),
+                Gap(20.h),
+                Gap(16.h),
+                CustemText(
                   text: "Upload Professional Association ID card.",
                   color: Color(0xff003F6B),
                   size: 18,
                   weight: FontWeight.bold,
                 ),
-                const Gap(10),
+                Gap(10.h),
 
                 GestureDetector(
                   onTap: _pickImage,

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
@@ -117,15 +118,15 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  const VitaGuardLogo(size: 20),
-                  const Gap(20),
+                  VitaGuardLogo(size: 100),
+                  Gap(20.h),
                   _box(
                     hint: "Chronic diseases",
                     controller: _chronicController,
                   ),
-                  const Gap(16),
+                  Gap(16.h),
                   _box(hint: "Medications", controller: _medicationsController),
-                  const Gap(16),
+                  Gap(16.h),
 
                   GestureDetector(
                     onTap: _pickImage,
@@ -164,7 +165,7 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
                     ),
                   ),
 
-                  const Gap(40),
+                  Gap(40.h),
 
                   _isSaving
                       ? const CircularProgressIndicator()

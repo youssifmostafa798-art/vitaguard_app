@@ -27,14 +27,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool _rememberMe = false;
 
   // @override
-  //  void dispose() {
-  //   emailCtrl.dispose();
-  //    passCtrl.dispose();
-  //   super.dispose();
+  // void dispose() {
+  //  emailCtrl.dispose();
+  //  passCtrl.dispose();
+  //  super.dispose();
   //}
   //--------------------------------
   //delete after end the app
-  // patient email (eng210091@nilehi.edu.eg) -  pass (123456789)
+  // patient email (ahmedm16tafa) (eng210091@nilehi.edu.eg) -  pass (123456789)
   // facility email (youssifkenk) - pass (123456789)
   // Dr email (youssifmostafa798) pass (1234567890)
   @override
