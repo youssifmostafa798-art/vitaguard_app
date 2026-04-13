@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class SpecialBottomNav extends StatefulWidget {
   final int currentIndex;
@@ -61,15 +62,19 @@ class _SpecialBottomNavState extends State<SpecialBottomNav>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildAnimatedIconButton(index: 0, icon: Icons.home, label: 'Chats'),
+          _buildAnimatedIconButton(
+            index: 0,
+            icon: LucideIcons.home,
+            label: 'Chats',
+          ),
           _buildAnimatedIconButton(
             index: 1,
-            icon: Icons.fact_check,
+            icon: LucideIcons.fileText,
             label: 'Report',
           ),
           _buildAnimatedIconButton(
             index: 2,
-            icon: Icons.discount_outlined,
+            icon: LucideIcons.percent,
             label: "Offer",
           ),
         ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 /// Configuration for a navigation item
 class NavItemConfig {
@@ -49,10 +50,10 @@ class _FlexibleNavBarState extends State<FlexibleNavBar>
   /// All available navigation items
   /// Modify this list to add/remove/reorder items globally
   static const List<NavItemConfig> _allNavItems = [
-    NavItemConfig(index: 0, icon: Icons.home, label: 'Home'),
-    NavItemConfig(index: 1, icon: Icons.chat, label: 'Chat'),
-    NavItemConfig(index: 2, icon: Icons.health_and_safety, label: 'Model'),
-    NavItemConfig(index: 3, icon: Icons.monitor_heart, label: 'Device'),
+    NavItemConfig(index: 0, icon: LucideIcons.home, label: 'Home'),
+    NavItemConfig(index: 1, icon: LucideIcons.messageCircle, label: 'Chat'),
+    NavItemConfig(index: 2, icon: LucideIcons.scanLine, label: 'Model'),
+    NavItemConfig(index: 3, icon: LucideIcons.heartPulse, label: 'Device'),
   ];
 
   late AnimationController _animationController;

@@ -4,6 +4,7 @@ import 'package:vitaguard_app/patient/home/screen/companion_code.dart';
 import 'package:vitaguard_app/patient/home/screen/daily_report.dart';
 import 'package:vitaguard_app/patient/home/screen/guidance_videos.dart';
 import 'package:vitaguard_app/patient/home/screen/medical_history_update.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 List<CategoryModel> homeCategoriesPatient(
   BuildContext context,
@@ -11,7 +12,7 @@ List<CategoryModel> homeCategoriesPatient(
 ) {
   return [
     CategoryModel(
-      icon: Icons.medical_information,
+      icon: LucideIcons.fileClock,
       title: "Medical history",
       onTap: () {
         Navigator.push(
@@ -23,7 +24,7 @@ List<CategoryModel> homeCategoriesPatient(
       },
     ),
     CategoryModel(
-      icon: Icons.description,
+      icon: LucideIcons.clipboardCheck,
       title: "Daily Report",
       onTap: () {
         Navigator.push(
@@ -33,7 +34,7 @@ List<CategoryModel> homeCategoriesPatient(
       },
     ),
     CategoryModel(
-      icon: Icons.video_collection,
+      icon: LucideIcons.playCircle,
       title: "Guidance videos",
       onTap: () {
         Navigator.push(
@@ -43,7 +44,7 @@ List<CategoryModel> homeCategoriesPatient(
       },
     ),
     CategoryModel(
-      icon: Icons.qr_code,
+      icon: LucideIcons.qrCode,
       title: "Companion Code",
       onTap: () {
         Navigator.push(

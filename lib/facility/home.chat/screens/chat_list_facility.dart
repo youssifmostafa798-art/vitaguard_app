@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/utils/home_header.dart';
 import 'package:vitaguard_app/facility/home.chat/screens/chat_facility_detail.dart';
@@ -21,6 +22,7 @@ class ChatListFacility extends StatefulWidget {
 
 class _ChatListFacilityState extends State<ChatListFacility> {
   late final Stream<List<ChatPreview>> _chatStream;
+  void _onBotTap() {}
 
   @override
   void initState() {
@@ -203,88 +205,116 @@ class _ChatListFacilityState extends State<ChatListFacility> {
         },
       ),
       body: SafeArea(
-        child: AppBackground(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                child: Column(
-                  children: [
-                    Gap(20.h),
-                    const HomeSearch(),
-                    // Active chats section
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.w),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 8.r,
-                            height: 8.r,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF00A3FF),
-                              shape: BoxShape.circle,
-                            ),
+        child: Stack(
+          children: [
+            AppBackground(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        Gap(20.h),
+                        const HomeSearch(),
+                        // Active chats section
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 8.r,
+                                height: 8.r,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF00A3FF),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              Gap(8.w),
+                              CustemText(
+                                text: "Active",
+                                size: 18,
+                                weight: FontWeight.w600,
+                                color: const Color(0xff003F6B),
+                              ),
+                            ],
                           ),
-                          Gap(8.w),
-                          CustemText(
-                            text: "Active",
-                            size: 18,
-                            weight: FontWeight.w600,
-                            color: const Color(0xff003F6B),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Chat list
-                    StreamBuilder<List<ChatPreview>>(
-                      stream: _chatStream,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
+                        ),
+                        // Chat list
+                        StreamBuilder<List<ChatPreview>>(
+                          stream: _chatStream,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            }
 
-                        final chatsList = snapshot.data ?? [];
+                            final chatsList = snapshot.data ?? [];
 
-                        if (chatsList.isEmpty) {
-                          return Padding(
-                            padding: EdgeInsets.symmetric(vertical: 40.h),
-                            child: const Text("No active conversations found."),
-                          );
-                        }
+                            if (chatsList.isEmpty) {
+                              return Padding(
+                                padding: EdgeInsets.symmetric(vertical: 40.h),
+                                child: const Text(
+                                  "No active conversations found.",
+                                ),
+                              );
+                            }
 
-                        return ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: chatsList.length,
-                          separatorBuilder: (context, index) =>
-                              const Divider(height: 1),
-                          itemBuilder: (context, index) {
-                            final chat = chatsList[index];
-                            return ChatPreviewCard(
-                              chat: chat,
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ChatFacilityDetail(
-                                      chatName: chat.name,
-                                      chatId: chat.id,
-                                    ),
-                                  ),
+                            return ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: chatsList.length,
+                              separatorBuilder: (context, index) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (context, index) {
+                                final chat = chatsList[index];
+                                return ChatPreviewCard(
+                                  chat: chat,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ChatFacilityDetail(
+                                          chatName: chat.name,
+                                          chatId: chat.id,
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 );
                               },
                             );
                           },
-                        );
-                      },
+                        ),
+                        SizedBox(height: 92.h),
+                      ],
                     ),
-                  ],
+                  );
+                },
+              ),
+            ),
+            Positioned(
+              right: 20.w,
+              bottom: 20.h,
+              child: Material(
+                color: const Color(0xFF0F1828),
+                borderRadius: BorderRadius.circular(16.r),
+                child: InkWell(
+                  onTap: _onBotTap,
+                  borderRadius: BorderRadius.circular(16.r),
+                  child: SizedBox(
+                    width: 56.r,
+                    height: 56.r,
+                    child: Icon(
+                      LucideIcons.bot,
+                      color: const Color(0xFF4D7CFE),
+                      size: 30.r,
+                    ),
+                  ),
                 ),
-              );
-            },
-          ),
+              ),
+            ),
+          ],
         ),
       ),
     );

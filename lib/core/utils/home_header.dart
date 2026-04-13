@@ -5,6 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/core/providers.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
   final String name_;
@@ -35,7 +36,7 @@ class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
                       radius: 24.r,
                       backgroundColor: Colors.grey, // Neutral background
                       child: Icon(
-                        Icons.person,
+                        LucideIcons.userCircle2,
                         size: 42.r,
                         color: Colors.white,
                       ),
@@ -94,8 +95,8 @@ class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
                   onPressed: onExit,
                   tooltip: "Exit",
                   icon: Icon(
-                    Icons.exit_to_app,
-                    size: 38.r,
+                    LucideIcons.logOut,
+                    size: 35.r,
                     color: const Color(0xff003F6B),
                   ),
                 ),
