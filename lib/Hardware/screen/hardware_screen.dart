@@ -10,11 +10,13 @@ class HardwareScreen extends StatefulWidget {
     super.key,
     this.patientId,
     this.patientName,
+    this.automaticallyImplyLeading = true,
   });
 
   /// When set (e.g. doctor viewing a patient), vitals load for this id; otherwise uses the signed-in user.
   final String? patientId;
   final String? patientName;
+  final bool automaticallyImplyLeading;
 
   @override
   State<HardwareScreen> createState() => _HardwareScreenState();
@@ -114,6 +116,16 @@ class _HardwareScreenState extends State<HardwareScreen> {
     }
 
     return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(kToolbarHeight),
+        child: AppBackground(
+          child: AppBar(
+            automaticallyImplyLeading: widget.automaticallyImplyLeading,
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+          ),
+        ),
+      ),
       body: Stack(
         children: [
           SafeArea(

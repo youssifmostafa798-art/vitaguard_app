@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
@@ -100,7 +101,7 @@ class _ReportsState extends State<Reports> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Gap(20),
+                      Gap(20.h),
 
                       CustemField(
                         title: "mobile number",
@@ -108,7 +109,7 @@ class _ReportsState extends State<Reports> {
                         controller: _phoneController,
                       ),
 
-                      const Gap(20),
+                      Gap(20.h),
 
                       CustemField(
                         title: "Patient's name (optional)",
@@ -116,9 +117,9 @@ class _ReportsState extends State<Reports> {
                         controller: _nameController,
                       ),
 
-                      const Gap(20),
+                      Gap(20.h),
 
-                      const Text(
+                      Text(
                         "Upload Report Image",
                         style: TextStyle(
                           fontSize: 16,
@@ -126,16 +127,16 @@ class _ReportsState extends State<Reports> {
                           color: Color(0xff0D3B66),
                         ),
                       ),
-                      const Gap(10),
+                      Gap(10.h),
 
                       GestureDetector(
                         onTap: _pickImage,
                         child: Container(
-                          height: 180,
+                          height: 180.h,
                           width: double.infinity,
                           decoration: BoxDecoration(
                             border: Border.all(color: const Color(0xff0D3B66)),
-                            borderRadius: BorderRadius.circular(25),
+                            borderRadius: BorderRadius.circular(25.r),
                           ),
                           child: _selectedFile != null
                               ? ClipRRect(
@@ -167,13 +168,13 @@ class _ReportsState extends State<Reports> {
                         ),
                       ),
 
-                      const Gap(40),
+                      Gap(40.h),
                       Button(
                         title: _isLoading ? "Uploading..." : "Confirm",
                         onTap: _isLoading ? null : _uploadReport,
                       ),
 
-                      const Gap(30),
+                      Gap(30.h),
                     ],
                   ),
                 ),
