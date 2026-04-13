@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:vitaguard_app/Hardware/screen/hardware_screen.dart';
 import 'package:vitaguard_app/doctor/chat/screen/chat_list_dr.dart';
 import 'package:vitaguard_app/doctor/home/screen/doctor_home.dart';
-import 'package:vitaguard_app/components/bottom_nav.dart';
+import 'package:vitaguard_app/components/flexible_nav_bar.dart';
 import 'package:vitaguard_app/patient/x_ray_model/screen/doctor_x_ray_review_entry_screen.dart';
 
 class MainDoctor extends StatefulWidget {
@@ -26,8 +25,6 @@ class _MainDoctorState extends State<MainDoctor> {
       DoctorHomes(name: widget.name),
       ChatListDr(),
       DoctorXRayReviewEntryScreen(),
-      //delete the device & change the nav in bottom
-      HardwareScreen(),
     ];
   }
 
@@ -35,13 +32,14 @@ class _MainDoctorState extends State<MainDoctor> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: currentIndex, children: screens),
-      bottomNavigationBar: HomeBottomNav(
+      bottomNavigationBar: FlexibleNavBar(
         currentIndex: currentIndex,
         onTap: (index) {
           setState(() {
             currentIndex = index;
           });
         },
+        hiddenIndexes: [3, 4, 5],
       ),
     );
   }

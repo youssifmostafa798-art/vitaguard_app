@@ -29,7 +29,7 @@ class RoleScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       Gap(10.h),
-                      const VitaGuardLogo(size: 80),
+                      VitaGuardLogo(size: 180.h),
                       Gap(20.h),
                       const CustemText(
                         text: "Choose Your Role",

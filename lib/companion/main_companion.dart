@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vitaguard_app/Hardware/screen/hardware_screen.dart';
 import 'package:vitaguard_app/companion/home/screens/companion_home.dart';
-import 'package:vitaguard_app/components/bottom_nav.dart';
+import 'package:vitaguard_app/components/flexible_nav_bar.dart';
 import 'package:vitaguard_app/patient/chat/screen/chat_list_patient.dart';
 import 'package:vitaguard_app/patient/x_ray_model/screen/upload_x_ray.dart';
 
@@ -34,13 +34,14 @@ class _MainCompanionState extends State<MainCompanion> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: currentIndex, children: screens),
-      bottomNavigationBar: HomeBottomNav(
+      bottomNavigationBar: FlexibleNavBar(
         currentIndex: currentIndex,
         onTap: (index) {
           setState(() {
             currentIndex = index;
           });
         },
+        hiddenIndexes: [],
       ),
     );
   }

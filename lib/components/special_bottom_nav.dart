@@ -24,7 +24,7 @@ class _SpecialBottomNavState extends State<SpecialBottomNav>
       duration: const Duration(milliseconds: 300),
     );
 
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.elasticInOut),
     );
   }
@@ -48,12 +48,12 @@ class _SpecialBottomNavState extends State<SpecialBottomNav>
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.all(20.r),
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
+      margin: EdgeInsets.all(14.r),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(45.r),
-        border: Border.all(color: const Color(0xff003F6B), width: 3),
+        borderRadius: BorderRadius.circular(40.r),
+        border: Border.all(color: const Color(0xff003F6B), width: 2),
         boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
         ],
@@ -92,13 +92,13 @@ class _SpecialBottomNavState extends State<SpecialBottomNav>
           curve: Curves.easeInOut,
           padding: EdgeInsets.symmetric(
             vertical: 8.h,
-            horizontal: isSelected ? 16.w : 8.w,
+            horizontal: isSelected ? 12.w : 7.w,
           ),
           decoration: BoxDecoration(
             color: isSelected
                 ? const Color(0xff003F6B).withValues(alpha: 0.1)
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(30.r),
+            borderRadius: BorderRadius.circular(25.r),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -114,7 +114,7 @@ class _SpecialBottomNavState extends State<SpecialBottomNav>
                     scale: scale,
                     child: Icon(
                       icon,
-                      size: 26.r,
+                      size: 22.r,
                       color: isSelected ? const Color(0xff003F6B) : Colors.grey,
                     ),
                   );
@@ -124,7 +124,7 @@ class _SpecialBottomNavState extends State<SpecialBottomNav>
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeInOut,
-                  margin: EdgeInsets.only(left: 5.w),
+                  margin: EdgeInsets.only(left: 4.w),
                   child: Text(
                     label,
                     style: TextStyle(
