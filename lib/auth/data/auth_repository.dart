@@ -112,34 +112,19 @@ class AuthRepository {
       },
     );
 
-    // Step 2: Resolve the patient ID now that we have an auth token,
-    // allowing RLS policies on `patients` to pass for authenticated users.
-    final patientSnapshot = await _client
-        .from('patients')
-        .select('id')
-        .eq('companion_code', companionCode)
-        .limit(1);
+    // Step 2: Use the secure RPC function to verify the code and link the patient.
+    // This bypasses RLS read restrictions since the companion is not yet linked.
+    final success = await _client.rpc(
+      'link_companion_to_patient',
+      params: {'p_code': companionCode},
+    );
 
-    final patientId = patientSnapshot.isNotEmpty
-        ? patientSnapshot.first['id'] as String?
-        : null;
-
-    if (patientId == null) {
+    if (success != true) {
       // Clean up the orphaned account on code mismatch.
       try {
         await _client.auth.signOut();
       } catch (_) {}
       throw StateError('Invalid companion code.');
-    }
-
-    // Step 3: Upsert the companion link (the DB trigger may already create
-    // the companions row; this ensures linked_patient_id is set correctly).
-    final uid = response.user?.id;
-    if (uid != null) {
-      await _client.from('companions').upsert({
-        'id': uid,
-        'linked_patient_id': patientId,
-      });
     }
 
     return response;

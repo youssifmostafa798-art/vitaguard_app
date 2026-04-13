@@ -9,23 +9,14 @@ class CompanionRepository {
   String get _uid => _supabase.currentUid;
 
   Future<void> linkPatient(String code) async {
-    final snapshot = await _client
-        .from('patients')
-        .select('id')
-        .eq('companion_code', code)
-        .limit(1);
+    final success = await _client.rpc(
+      'link_companion_to_patient',
+      params: {'p_code': code},
+    );
 
-    final patientId = snapshot.isNotEmpty
-        ? snapshot.first['id'] as String?
-        : null;
-    if (patientId == null) {
+    if (success != true) {
       throw StateError('Invalid companion code.');
     }
-
-    await _client.from('companions').upsert({
-      'id': _uid,
-      'linked_patient_id': patientId,
-    });
   }
 
   Future<dynamic> getPatientStatus() async {
