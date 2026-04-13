@@ -122,12 +122,12 @@ class _CompanionRegisterScreenState
                       ),
                       if (hasError) SizedBox(height: 20.h),
                       AuthTextField(
-                        hint: "User Name",
+                        hint: "Your Full Name (Companion)",
                         controller: _nameController,
                       ),
                       SizedBox(height: 20.h),
                       AuthTextField(
-                        hint: "Email",
+                        hint: "Your Email Address",
                         controller: _emailController,
                       ),
                       SizedBox(height: 20.h),
