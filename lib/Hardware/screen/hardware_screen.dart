@@ -6,7 +6,15 @@ import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 
 class HardwareScreen extends StatefulWidget {
-  const HardwareScreen({super.key});
+  const HardwareScreen({
+    super.key,
+    this.patientId,
+    this.patientName,
+  });
+
+  /// When set (e.g. doctor viewing a patient), vitals load for this id; otherwise uses the signed-in user.
+  final String? patientId;
+  final String? patientName;
 
   @override
   State<HardwareScreen> createState() => _HardwareScreenState();
@@ -25,7 +33,8 @@ class _HardwareScreenState extends State<HardwareScreen> {
   }
 
   Future<void> _subscribeToVitals() async {
-    final patientId = Supabase.instance.client.auth.currentUser?.id;
+    final String? patientId =
+        widget.patientId ?? Supabase.instance.client.auth.currentUser?.id;
     if (patientId == null) return;
 
     // 1. Load the most recent row right away so the screen isn't blank
@@ -141,12 +150,33 @@ class _HardwareScreenState extends State<HardwareScreen> {
                           ),
                         ),
                         SizedBox(width: 10.w),
-                        Text(
-                          'VitaGuard Core',
-                          style: textTheme.titleLarge?.copyWith(
-                            fontSize: 32.sp,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'VitaGuard Core',
+                                style: textTheme.titleLarge?.copyWith(
+                                  fontSize: 32.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              if (widget.patientName != null &&
+                                  widget.patientName!.isNotEmpty) ...[
+                                SizedBox(height: 4.h),
+                                Text(
+                                  widget.patientName!,
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    fontSize: 16.sp,
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                       ],
