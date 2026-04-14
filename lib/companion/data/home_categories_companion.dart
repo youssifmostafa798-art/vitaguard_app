@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:vitaguard_app/companion/home/screens/alarts.dart';
 import 'package:vitaguard_app/models/category_model.dart';
 import 'package:vitaguard_app/patient/home/screen/daily_report.dart';
@@ -10,7 +11,7 @@ List<CategoryModel> homeCategoriesCompanion(
 ) {
   return [
     CategoryModel(
-      icon: Icons.medical_information,
+      icon: LucideIcons.fileClock,
       title: "Medical history",
       onTap: () {
         Navigator.push(
@@ -22,7 +23,7 @@ List<CategoryModel> homeCategoriesCompanion(
       },
     ),
     CategoryModel(
-      icon: Icons.description,
+      icon: LucideIcons.clipboardCheck,
       title: "Daily Report",
       onTap: () {
         Navigator.push(
@@ -32,7 +33,7 @@ List<CategoryModel> homeCategoriesCompanion(
       },
     ),
     CategoryModel(
-      icon: Icons.add_alert,
+      icon: LucideIcons.bellRing,
       title: "Alert",
       onTap: () {
         Navigator.push(

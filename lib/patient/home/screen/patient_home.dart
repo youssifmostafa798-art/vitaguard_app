@@ -32,12 +32,11 @@ class PatientHome extends ConsumerWidget {
       body: SafeArea(
         child: AppBackground(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: ListView(
               children: [
                 Gap(20.h),
                 HomeSearch(),
-
 
                 Gap(30.h),
                 CategoryGridPatient(patientName: name),

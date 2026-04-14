@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:vitaguard_app/facility/home.chat/screens/facility_home.dart';
+import 'package:vitaguard_app/facility/home.chat/screens/chat_list_facility.dart';
 import 'package:vitaguard_app/facility/report/reports.dart';
 import 'package:vitaguard_app/facility/offer/current_offers.dart';
 import 'package:vitaguard_app/components/special_bottom_nav.dart';
 
-//edit
 class MainFacility extends StatefulWidget {
   final String name;
 
@@ -22,7 +21,7 @@ class _MainFacilityState extends State<MainFacility> {
   @override
   void initState() {
     super.initState();
-    screens = [FacilityHome(name: widget.name), Reports(), CurrentOffers()];
+    screens = [ChatListFacility(name: widget.name), Reports(), CurrentOffers()];
   }
 
   @override

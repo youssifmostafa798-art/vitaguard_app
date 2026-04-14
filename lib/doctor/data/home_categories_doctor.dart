@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:vitaguard_app/doctor/home/screen/daily_reports.dart';
 import 'package:vitaguard_app/doctor/home/screen/medical_reports.dart';
 import 'package:vitaguard_app/models/category_model.dart';
@@ -6,7 +7,7 @@ import 'package:vitaguard_app/models/category_model.dart';
 List<CategoryModel> homeCategoriesDr(BuildContext context, String drName) {
   return [
     CategoryModel(
-      icon: Icons.description,
+      icon: LucideIcons.fileText,
       title: "Medical Reports",
       onTap: () {
         Navigator.push(
@@ -16,7 +17,7 @@ List<CategoryModel> homeCategoriesDr(BuildContext context, String drName) {
       },
     ),
     CategoryModel(
-      icon: Icons.today,
+      icon: LucideIcons.clipboardCheck,
       title: "Daily Reports",
       onTap: () {
         Navigator.push(
@@ -26,7 +27,7 @@ List<CategoryModel> homeCategoriesDr(BuildContext context, String drName) {
       },
     ),
     CategoryModel(
-      icon: Icons.medical_information,
+      icon: LucideIcons.microscope,
       title: "Labs",
       onTap: () {
         ScaffoldMessenger.of(

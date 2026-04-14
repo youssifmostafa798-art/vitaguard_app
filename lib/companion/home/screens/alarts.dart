@@ -20,8 +20,6 @@ class Alarts extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Gap(10),
-
                 const Gap(30),
 
                 ///  Result Container

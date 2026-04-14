@@ -7,7 +7,6 @@ import 'package:vitaguard_app/companion/home/widget/category_grid_companion.dart
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/utils/home_header.dart';
 import 'package:vitaguard_app/patient/home/widget/home_search.dart';
-import 'package:vitaguard_app/patient/home/widget/info_slider.dart';
 import 'package:vitaguard_app/core/providers.dart';
 
 class CompanionHome extends ConsumerWidget {
@@ -38,15 +37,7 @@ class CompanionHome extends ConsumerWidget {
               children: [
                 Gap(20.h),
                 const HomeSearch(),
-                Gap(25.h),
-                InfoSlider(
-                  images: [
-                    'assets/PNG/2437635 1.png',
-                    'assets/PNG/توعيه 1.png',
-                    'assets/PNG/توعيه 2.png',
-                    'assets/PNG/توعيه 3.png',
-                  ],
-                ),
+
                 Gap(30.h),
                 CategoryGridCompanion(companionName: name),
                 Gap(10.h),

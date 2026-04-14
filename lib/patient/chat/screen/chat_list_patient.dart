@@ -9,6 +9,7 @@ import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/models/chat_preview_card.dart';
 import 'package:vitaguard_app/models/message_model.dart';
 import 'package:vitaguard_app/patient/chat/screen/chat_patient_detail.dart';
+import 'package:vitaguard_app/patient/home/widget/home_search.dart';
 
 class ChatListPatient extends StatefulWidget {
   const ChatListPatient({super.key});
@@ -36,70 +37,76 @@ class _ChatListPatientState extends State<ChatListPatient> {
                 return AppBackground(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      return SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16.w),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 8.r,
-                                    height: 8.r,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF00A3FF),
-                                      shape: BoxShape.circle,
+                      return Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 10.w),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              Gap(20.h),
+                              HomeSearch(),
+                              Gap(10.h),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 8.r,
+                                      height: 8.r,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF00A3FF),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    Gap(8.w),
+                                    CustemText(
+                                      text: "Active",
+                                      size: 18,
+                                      weight: FontWeight.w600,
+                                      color: const Color(0xff003F6B),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (chats.isEmpty)
+                                Padding(
+                                  padding: EdgeInsets.all(24.r),
+                                  child: Text(
+                                    'No conversations yet.',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 14.sp,
                                     ),
                                   ),
-                                  Gap(8.w),
-                                  CustemText(
-                                    text: "Active",
-                                    size: 18,
-                                    weight: FontWeight.w600,
-                                    color: const Color(0xff003F6B),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (chats.isEmpty)
-                              Padding(
-                                padding: EdgeInsets.all(24.r),
-                                child: Text(
-                                  'No conversations yet.',
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 14.sp,
-                                  ),
-                                ),
-                              )
-                            else
-                              ListView.separated(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: chats.length,
-                                separatorBuilder: (context, index) =>
-                                    const Divider(height: 1),
-                                itemBuilder: (context, index) {
-                                  final chat = chats[index];
-                                  return ChatPreviewCard(
-                                    chat: chat,
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              ChatPatientDetail(
-                                            chatName: chat.name,
-                                            chatId: chat.id,
+                                )
+                              else
+                                ListView.separated(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: chats.length,
+                                  separatorBuilder: (context, index) =>
+                                      const Divider(height: 1),
+                                  itemBuilder: (context, index) {
+                                    final chat = chats[index];
+                                    return ChatPreviewCard(
+                                      chat: chat,
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                ChatPatientDetail(
+                                                  chatName: chat.name,
+                                                  chatId: chat.id,
+                                                ),
                                           ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
-                            SizedBox(height: 92.h),
-                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                              SizedBox(height: 92.h),
+                            ],
+                          ),
                         ),
                       );
                     },

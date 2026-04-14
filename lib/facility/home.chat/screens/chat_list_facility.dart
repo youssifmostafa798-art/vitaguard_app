@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -10,17 +11,18 @@ import 'package:vitaguard_app/models/chat_preview_card.dart';
 import 'package:vitaguard_app/patient/home/widget/home_search.dart';
 import 'package:vitaguard_app/models/message_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-//delete
+import 'package:vitaguard_app/auth/ui/screens/role_screen.dart';
+import 'package:vitaguard_app/core/providers.dart';
 
-class ChatListFacility extends StatefulWidget {
+class ChatListFacility extends ConsumerStatefulWidget {
   final String name;
   const ChatListFacility({super.key, required this.name});
 
   @override
-  State<ChatListFacility> createState() => _ChatListFacilityState();
+  ConsumerState<ChatListFacility> createState() => _ChatListFacilityState();
 }
 
-class _ChatListFacilityState extends State<ChatListFacility> {
+class _ChatListFacilityState extends ConsumerState<ChatListFacility> {
   late final Stream<List<ChatPreview>> _chatStream;
   void _onBotTap() {}
 
@@ -87,7 +89,6 @@ class _ChatListFacilityState extends State<ChatListFacility> {
     }
   }
 
-  //delete
   final List<ChatPreview> chats = [
     ChatPreview(
       id: '1',
@@ -201,96 +202,106 @@ class _ChatListFacilityState extends State<ChatListFacility> {
       appBar: HomeHeader(
         name_: widget.name,
         onExit: () {
-          Navigator.pop(context);
+          ref.read(authProvider).logout();
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const RoleScreen()),
+            (route) => false,
+          );
         },
       ),
       body: SafeArea(
         child: Stack(
           children: [
             AppBackground(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        Gap(20.h),
-                        const HomeSearch(),
-                        // Active chats section
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16.w),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 8.r,
-                                height: 8.r,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF00A3FF),
-                                  shape: BoxShape.circle,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          Gap(20.h),
+                          HomeSearch(),
+                          Gap(10.h),
+                          // Active chats section
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16.w),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 8.r,
+                                  height: 8.r,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF00A3FF),
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
-                              ),
-                              Gap(8.w),
-                              CustemText(
-                                text: "Active",
-                                size: 18,
-                                weight: FontWeight.w600,
-                                color: const Color(0xff003F6B),
-                              ),
-                            ],
+                                Gap(8.w),
+                                CustemText(
+                                  text: "Active",
+                                  size: 18,
+                                  weight: FontWeight.w600,
+                                  color: const Color(0xff003F6B),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        // Chat list
-                        StreamBuilder<List<ChatPreview>>(
-                          stream: _chatStream,
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
-
-                            final chatsList = snapshot.data ?? [];
-
-                            if (chatsList.isEmpty) {
-                              return Padding(
-                                padding: EdgeInsets.symmetric(vertical: 40.h),
-                                child: const Text(
-                                  "No active conversations found.",
-                                ),
-                              );
-                            }
-
-                            return ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: chatsList.length,
-                              separatorBuilder: (context, index) =>
-                                  const Divider(height: 1),
-                              itemBuilder: (context, index) {
-                                final chat = chatsList[index];
-                                return ChatPreviewCard(
-                                  chat: chat,
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => ChatFacilityDetail(
-                                          chatName: chat.name,
-                                          chatId: chat.id,
-                                        ),
-                                      ),
-                                    );
-                                  },
+                          // Chat list
+                          StreamBuilder<List<ChatPreview>>(
+                            stream: _chatStream,
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
                                 );
-                              },
-                            );
-                          },
-                        ),
-                        SizedBox(height: 92.h),
-                      ],
-                    ),
-                  );
-                },
+                              }
+
+                              final chatsList = snapshot.data ?? [];
+
+                              if (chatsList.isEmpty) {
+                                return Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 40.h),
+                                  child: const Text(
+                                    "No active conversations found.",
+                                  ),
+                                );
+                              }
+
+                              return ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: chatsList.length,
+                                separatorBuilder: (context, index) =>
+                                    const Divider(height: 1),
+                                itemBuilder: (context, index) {
+                                  final chat = chatsList[index];
+                                  return ChatPreviewCard(
+                                    chat: chat,
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              ChatFacilityDetail(
+                                                chatName: chat.name,
+                                                chatId: chat.id,
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                          SizedBox(height: 92.h),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
             Positioned(
