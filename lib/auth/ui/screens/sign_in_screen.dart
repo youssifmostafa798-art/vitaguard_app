@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:vitaguard_app/auth/ui/widgets/auth_textfield.dart';
-import 'package:vitaguard_app/components/custem_background.dart';
-import 'package:vitaguard_app/components/custem_bottom.dart';
-import 'package:vitaguard_app/components/custom_logo.dart';
-import 'package:vitaguard_app/core/providers.dart';
 
 // Import target screens
 import 'package:vitaguard_app/patient/main_patient.dart';
 import 'package:vitaguard_app/doctor/main_doctor.dart';
 import 'package:vitaguard_app/companion/main_companion.dart';
 import 'package:vitaguard_app/facility/main_facility.dart';
+import 'package:vitaguard_app/auth/ui/widgets/auth_textfield.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/components/custem_bottom.dart';
+import 'package:vitaguard_app/components/custom_logo.dart';
+import 'package:vitaguard_app/core/providers.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
