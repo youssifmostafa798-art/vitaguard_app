@@ -138,7 +138,6 @@ class SupabaseAiChatRepository implements AiChatRepository {
 
     final response = await _client.functions.invoke(
       'chatbot',
-      headers: {'Authorization': 'Bearer ${session.accessToken}'},
       body: {
         'conversationId': conversationId,
         'userMessageId': userMessageId,

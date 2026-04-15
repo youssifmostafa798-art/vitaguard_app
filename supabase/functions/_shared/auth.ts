@@ -2,9 +2,9 @@ import { supabase } from "./supabase_client.ts";
 
 export async function getUserIdFromRequest(req: Request) {
   const authHeader = req.headers.get("Authorization") ?? "";
-  const token = authHeader.replace("Bearer ", "");
+  const token = authHeader.replace(/^[Bb]earer\s+/, "");
   if (!token) {
-    throw new Error("Missing Authorization header.");
+    throw new Error("Missing or malformed Authorization header.");
   }
 
   const { data, error } = await supabase.auth.getUser(token);

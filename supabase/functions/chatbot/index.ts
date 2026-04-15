@@ -5,8 +5,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getUserIdFromRequest } from "../_shared/auth.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
-const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemini-2.5-flash";
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "AIzaSyBlOIuJNwvkfzaYCseAbhMuF5ubEg6YiFA";
+const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemini-1.5-flash";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_PUBLIC_KEY =
   Deno.env.get("SUPABASE_ANON_KEY") ??
@@ -79,11 +79,15 @@ Deno.serve(async (req) => {
     }
 
     const authHeader = req.headers.get("Authorization") ?? "";
+    console.log(`[Chatbot] Incoming request. AuthHeader present: ${!!authHeader}`);
+
     if (!authHeader) {
       throw new HttpError(401, "Missing Authorization header.");
     }
 
     const userId = await getUserIdFromRequest(req);
+    console.log(`[Chatbot] Authenticated user: ${userId}`);
+
     const body = await req.json();
     const conversationId = String(body?.conversationId ?? "").trim();
     const userMessageId = String(body?.userMessageId ?? "").trim();
