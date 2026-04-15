@@ -13,15 +13,12 @@ DECLARE
   v_target_id uuid;
 BEGIN
   -- Determine target companion ID safely.
-  -- If logged in (linking from dashboard), force using the authenticated ID.
-  -- If not logged in (immediate post-signup), safely use the provided UUID.
   IF auth.uid() IS NOT NULL THEN
     v_target_id := auth.uid();
   ELSE
     v_target_id := p_user_id;
   END IF;
 
-  -- Failsafe check
   IF v_target_id IS NULL THEN
      RETURN false;
   END IF;
@@ -32,10 +29,14 @@ BEGIN
   WHERE companion_code = p_code
   LIMIT 1;
 
-  -- 2. If no patient exists with this code, return false
   IF v_patient_id IS NULL THEN
     RETURN false;
   END IF;
+
+  -- 2. Auto-repair missing profile (if the trigger failed or during legacy sync)
+  INSERT INTO profiles (id, role, name, is_active)
+  VALUES (v_target_id, 'companion', 'Companion User', true)
+  ON CONFLICT (id) DO NOTHING;
 
   -- 3. Insert or update the link in the companions table
   INSERT INTO companions (id, linked_patient_id)
@@ -47,6 +48,4 @@ BEGIN
 END;
 $$;
 
--- Grant execution permission to both authenticated AND anonymous users
--- (Anonymous is required for the immediate post-signup step if email confirmations are enabled)
 GRANT EXECUTE ON FUNCTION public.link_companion_to_patient(text, uuid) TO authenticated, anon;
