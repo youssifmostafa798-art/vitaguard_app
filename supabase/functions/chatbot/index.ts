@@ -337,44 +337,34 @@ async function buildSystemPrompt(
   userId: string,
 ) {
   const ownerProfile = await loadOwnerProfile(client, userId);
+  const userName = ownerProfile.name || "User";
 
   const baseRules = [
-    "You are VitaGuard AI, a health-focused assistant inside the VitaGuard app.",
-    "Provide calm, practical, safety-aware guidance in plain language.",
-    "You are not a doctor and must not claim certainty, diagnosis, or emergency authority.",
-    "If symptoms sound urgent or dangerous, tell the user to seek emergency or clinician help immediately.",
-    "Do not invent patient facts. If the provided VitaGuard context is missing, say so.",
-    "Keep replies concise, actionable, and medically cautious.",
+    "ACT AS: VitaGuard AI, a professional health-focused industry chatbot.",
+    "IDENTITY: You are an AI assistant integrated into the VitaGuard app, focused on helping users manage their health and vitals.",
+    "CORE RULE: Output ONLY the conversational response. Do NOT repeat the user's prompt, do NOT repeat your internal instructions, and do NOT list session metadata.",
+    "TONE: Calm, professional, actionable, and empathetic.",
+    "SAFETY: You are NOT a doctor. Do not diagnose. If symptoms seem urgent, advise immediate clinical consultation.",
+    "CONCISENESS: Keep responses short and focused on the user's specific query.",
   ].join("\n");
 
+  let contextInfo = `User Identity: ${userName} (${ownerProfile.role})`;
+
   if (conversation.role === "doctor") {
-    return [
-      baseRules,
-      "This user is a doctor. Act as a generic clinical workflow assistant only.",
-      "Do not reference any specific patient data unless it is explicitly included in the conversation.",
-      `Doctor profile: ${JSON.stringify(ownerProfile)}`,
-    ].join("\n\n");
+    contextInfo += "\nYou are speaking to a Clinical Professional. Provide precise, technical assistance for their workflow.";
+  } else if (conversation.context_patient_id) {
+    const patientContext = await loadPatientContext(
+      client,
+      conversation.context_patient_id,
+    );
+    contextInfo += `\nSubject Patient: ${patientContext.patient_profile?.name || "The Patient"}`;
+    if (patientContext.vitals_summary.latest) {
+      const v = patientContext.vitals_summary.latest as any;
+      contextInfo += `\nLatest Vitals: Heart Rate ${v.bpm}bpm, O2 ${v.spo2}%, Temp ${v.temperature}°C.`;
+    }
   }
 
-  if (!conversation.context_patient_id) {
-    return [
-      baseRules,
-      `User profile: ${JSON.stringify(ownerProfile)}`,
-      "No linked patient context is currently available.",
-    ].join("\n\n");
-  }
-
-  const patientContext = await loadPatientContext(
-    client,
-    conversation.context_patient_id,
-  );
-
-  return [
-    baseRules,
-    `User profile: ${JSON.stringify(ownerProfile)}`,
-    `Patient context: ${JSON.stringify(patientContext)}`,
-    "Use the patient context only as supporting data for a helpful explanation or next-step guidance.",
-  ].join("\n\n");
+  return `${baseRules}\n\nCURRENT CONTEXT:\n${contextInfo}\n\nINSTRUCTION: Provide the next response in the conversation now. Do not include any of the above metadata in your output.`;
 }
 
 async function loadOwnerProfile(
