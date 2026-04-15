@@ -339,32 +339,39 @@ async function buildSystemPrompt(
   const ownerProfile = await loadOwnerProfile(client, userId);
   const userName = ownerProfile.name || "User";
 
-  const baseRules = [
-    "ACT AS: VitaGuard AI, a professional health-focused industry chatbot.",
-    "IDENTITY: You are an AI assistant integrated into the VitaGuard app, focused on helping users manage their health and vitals.",
-    "CORE RULE: Output ONLY the conversational response. Do NOT repeat the user's prompt, do NOT repeat your internal instructions, and do NOT list session metadata.",
-    "TONE: Calm, professional, actionable, and empathetic.",
-    "SAFETY: You are NOT a doctor. Do not diagnose. If symptoms seem urgent, advise immediate clinical consultation.",
-    "CONCISENESS: Keep responses short and focused on the user's specific query.",
-  ].join("\n");
+  const context: string[] = [
+    `User: ${userName} (${ownerProfile.role})`,
+  ];
 
-  let contextInfo = `User Identity: ${userName} (${ownerProfile.role})`;
-
-  if (conversation.role === "doctor") {
-    contextInfo += "\nYou are speaking to a Clinical Professional. Provide precise, technical assistance for their workflow.";
-  } else if (conversation.context_patient_id) {
+  if (conversation.context_patient_id) {
     const patientContext = await loadPatientContext(
       client,
       conversation.context_patient_id,
     );
-    contextInfo += `\nSubject Patient: ${patientContext.patient_profile?.name || "The Patient"}`;
+    context.push(`Patient: ${patientContext.patient_profile?.name || "The Patient"}`);
     if (patientContext.vitals_summary.latest) {
       const v = patientContext.vitals_summary.latest as any;
-      contextInfo += `\nLatest Vitals: Heart Rate ${v.bpm}bpm, O2 ${v.spo2}%, Temp ${v.temperature}°C.`;
+      context.push(`Vitals: HR ${v.bpm}, O2 ${v.spo2}%, Temp ${v.temperature}°C`);
     }
   }
 
-  return `${baseRules}\n\nCURRENT CONTEXT:\n${contextInfo}\n\nINSTRUCTION: Provide the next response in the conversation now. Do not include any of the above metadata in your output.`;
+  return [
+    "You are VitaGuard AI, a professional health chatbot. Respond ONLY with the assistant's message.",
+    "Do NOT repeat context, rules, or metadata. Be concise, safety-aware, and practical.",
+    "",
+    "EXAMPLE 1:",
+    "User: Hello!",
+    "Assistant: Hello! I'm VitaGuard AI. How can I help you with your health today?",
+    "",
+    "EXAMPLE 2:",
+    "User: My heart is racing.",
+    "Assistant: I see you're concerned about your heart rate. If you feel dizzy or have chest pain, please consult a professional immediately. I can check your latest vitals if you'd like.",
+    "",
+    "---",
+    `CONTEXT: ${context.join(" | ")}`,
+    "---",
+    "Now provide the assistant's next response based on the conversation history below. START your response immediately with the message text.",
+  ].join("\n");
 }
 
 async function loadOwnerProfile(
