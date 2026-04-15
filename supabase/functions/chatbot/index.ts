@@ -531,7 +531,7 @@ async function* streamGeminiText(args: {
   history: Array<Pick<MessageRow, "role" | "content">>;
 }) {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:streamGenerateContent?alt=sse`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent?alt=sse`,
     {
       method: "POST",
       headers: {
