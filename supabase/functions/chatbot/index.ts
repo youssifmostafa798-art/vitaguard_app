@@ -6,7 +6,7 @@ import { getUserIdFromRequest } from "../_shared/auth.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "AIzaSyBlOIuJNwvkfzaYCseAbhMuF5ubEg6YiFA";
-const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemini-1.5-flash";
+const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemma-4-26b-it";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_PUBLIC_KEY =
   Deno.env.get("SUPABASE_ANON_KEY") ??
@@ -531,7 +531,7 @@ async function* streamGeminiText(args: {
   history: Array<Pick<MessageRow, "role" | "content">>;
 }) {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent?alt=sse`,
+    `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:streamGenerateContent?alt=sse`,
     {
       method: "POST",
       headers: {
