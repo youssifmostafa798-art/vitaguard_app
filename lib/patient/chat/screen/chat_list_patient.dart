@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:vitaguard_app/ai_chat/screen/ai_chat_screen.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/core/chat/chat_repository.dart';
@@ -12,15 +13,32 @@ import 'package:vitaguard_app/patient/chat/screen/chat_patient_detail.dart';
 import 'package:vitaguard_app/patient/home/widget/home_search.dart';
 
 class ChatListPatient extends StatefulWidget {
-  const ChatListPatient({super.key});
+  final ChatRepository? repository;
+  final Widget? aiChatScreen;
+
+  const ChatListPatient({super.key, this.repository, this.aiChatScreen});
 
   @override
   State<ChatListPatient> createState() => _ChatListPatientState();
 }
 
 class _ChatListPatientState extends State<ChatListPatient> {
-  final ChatRepository _repository = ChatRepository();
-  void _onBotTap() {}
+  late final ChatRepository _repository;
+
+  @override
+  void initState() {
+    super.initState();
+    _repository = widget.repository ?? ChatRepository();
+  }
+
+  void _onBotTap() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => widget.aiChatScreen ?? const AiChatScreen(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

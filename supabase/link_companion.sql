@@ -11,6 +11,7 @@ AS $$
 DECLARE
   v_patient_id uuid;
   v_target_id uuid;
+  v_user_exists boolean;
 BEGIN
   -- Determine target companion ID safely.
   IF auth.uid() IS NOT NULL THEN
@@ -23,10 +24,20 @@ BEGIN
      RETURN false;
   END IF;
 
-  -- 1. Find the patient with the matching code
+  -- PREVENT 23503 (Foreign Key Violation)
+  -- 0. Check if the v_target_id actually exists in auth.users!
+  SELECT EXISTS (
+    SELECT 1 FROM auth.users WHERE id = v_target_id
+  ) INTO v_user_exists;
+
+  IF NOT v_user_exists THEN
+    RETURN false;
+  END IF;
+
+  -- 1. Find the patient with the matching code (Case-insensitive & trimmed)
   SELECT id INTO v_patient_id
   FROM patients
-  WHERE companion_code = p_code
+  WHERE upper(trim(companion_code)) = upper(trim(p_code))
   LIMIT 1;
 
   IF v_patient_id IS NULL THEN
