@@ -190,7 +190,10 @@ async function processAssistantReply(args: {
       args.userId,
     );
 
-    for await (const chunk of streamGeminiText({ systemPrompt, history })) {
+    const rawStream = streamGeminiText({ systemPrompt, history });
+    const cleanStream = safeCleanStream(rawStream);
+
+    for await (const chunk of cleanStream) {
       generated += chunk;
 
       const shouldFlush =
@@ -356,21 +359,17 @@ async function buildSystemPrompt(
   }
 
   return [
-    "You are VitaGuard AI, a professional health chatbot. Respond ONLY with the assistant's message.",
-    "Do NOT repeat context, rules, or metadata. Be concise, safety-aware, and practical.",
+    "You are VitaGuard AI, a professional health chatbot. Respond exclusively to the user.",
+    "Do NOT repeat context or metadata.",
+    "CRITICAL: You must place your final message to the user INSIDE <reply> and </reply> XML tags.",
+    "Anything outside these tags is considered private reasoning and will NOT be shown to the user.",
     "",
-    "EXAMPLE 1:",
-    "User: Hello!",
-    "Assistant: Hello! I'm VitaGuard AI. How can I help you with your health today?",
-    "",
-    "EXAMPLE 2:",
-    "User: My heart is racing.",
-    "Assistant: I see you're concerned about your heart rate. If you feel dizzy or have chest pain, please consult a professional immediately. I can check your latest vitals if you'd like.",
+    "EXAMPLE RESPONSE:",
+    "<reply>Hello! I'm VitaGuard AI. How can I help you with your health today?</reply>",
     "",
     "---",
     `CONTEXT: ${context.join(" | ")}`,
     "---",
-    "Now provide the assistant's next response based on the conversation history below. START your response immediately with the message text.",
   ].join("\n");
 }
 
@@ -609,6 +608,57 @@ function parseSseText(event: string) {
     .filter((text) => text.length > 0)
     .join("");
 }
+
+// Global buffer across stream chunks to parse <reply> tags seamlessly.
+let globalStreamBuffer = "";
+let foundReplyStart = false;
+
+// We export a clean generator function wrapper to handle the state.
+async function* safeCleanStream(stream: AsyncGenerator<string>) {
+  let insideReply = false;
+  let textBuffer = "";
+  
+  for await (const chunk of stream) {
+    textBuffer += chunk;
+    
+    // Have we found the start?
+    if (!insideReply) {
+      const startIdx = textBuffer.indexOf("<reply>");
+      if (startIdx !== -1) {
+        insideReply = true;
+        // Chop off everything before and including `<reply>`
+        textBuffer = textBuffer.substring(startIdx + 7);
+      }
+    }
+    
+    // If we're inside the reply, start emitting
+    if (insideReply) {
+      const endIdx = textBuffer.indexOf("</reply>");
+      if (endIdx !== -1) {
+        // We found the end! Emit up to the end tag and finish.
+        yield textBuffer.substring(0, endIdx);
+        textBuffer = "";
+        break; // Stop streaming, ignore any trailing text.
+      } else {
+        // Safe to emit anything that clearly isn't part of an end tag yet
+        // If it starts looking like "</reply>", hold it in buffer
+        const potentialEndMatch = textBuffer.lastIndexOf("<");
+        if (potentialEndMatch !== -1 && textBuffer.length - potentialEndMatch < 8) {
+           // It might be forming </reply>. Emit stuff before.
+           if (potentialEndMatch > 0) {
+             const safePortion = textBuffer.substring(0, potentialEndMatch);
+             yield safePortion;
+             textBuffer = textBuffer.substring(potentialEndMatch);
+           }
+        } else {
+           yield textBuffer;
+           textBuffer = "";
+        }
+      }
+    }
+  }
+}
+
 
 function extractTextFromGeminiResponse(response: unknown) {
   const candidates = Array.isArray((response as any)?.candidates)

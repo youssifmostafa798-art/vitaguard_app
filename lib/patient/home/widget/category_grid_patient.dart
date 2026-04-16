@@ -6,12 +6,19 @@ import 'package:vitaguard_app/patient/home/widget/category_item.dart';
 
 class CategoryGridPatient extends StatelessWidget {
   final String patientName;
+  final String searchQuery;
 
-  const CategoryGridPatient({super.key, required this.patientName});
+  const CategoryGridPatient({super.key, required this.patientName, this.searchQuery = ''});
 
   @override
   Widget build(BuildContext context) {
-    final categories = homeCategoriesPatient(context, patientName);
+    var categories = homeCategoriesPatient(context, patientName);
+    
+    if (searchQuery.isNotEmpty) {
+      categories = categories.where((category) {
+        return category.title.toLowerCase().contains(searchQuery.toLowerCase());
+      }).toList();
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,

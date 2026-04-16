@@ -23,7 +23,7 @@ class SupabaseAiChatRepository implements AiChatRepository {
   final SupabaseService _supabase;
 
   SupabaseAiChatRepository({SupabaseService? supabase})
-      : _supabase = supabase ?? SupabaseService.instance;
+    : _supabase = supabase ?? SupabaseService.instance;
 
   SupabaseClient get _client => _supabase.client;
 
@@ -99,16 +99,18 @@ class SupabaseAiChatRepository implements AiChatRepository {
         .map(
           (rows) => rows
               .map(
-                (row) => AiMessage.fromMap(
-                  Map<String, dynamic>.from(row as Map),
-                ),
+                (row) =>
+                    AiMessage.fromMap(Map<String, dynamic>.from(row as Map)),
               )
               .toList(),
         );
   }
 
   @override
-  Future<String> insertUserMessage(String conversationId, String content) async {
+  Future<String> insertUserMessage(
+    String conversationId,
+    String content,
+  ) async {
     final messageId = Uuid.v4();
     final now = DateTime.now().toIso8601String();
 
@@ -138,10 +140,7 @@ class SupabaseAiChatRepository implements AiChatRepository {
 
     final response = await _client.functions.invoke(
       'chatbot',
-      body: {
-        'conversationId': conversationId,
-        'userMessageId': userMessageId,
-      },
+      body: {'conversationId': conversationId, 'userMessageId': userMessageId},
     );
 
     if (response.status != 202) {

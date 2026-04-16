@@ -16,6 +16,16 @@ class PatientRepository {
 
   String get _uid => _supabase.currentUid;
 
+  Future<List<Map<String, dynamic>>> getAvailableDoctors() async {
+    final response = await _client
+        .from('profiles')
+        .select('id, name, email')
+        .eq('role', 'doctor')
+        .order('name', ascending: true);
+        
+    return List<Map<String, dynamic>>.from(response);
+  }
+
   Future<void> submitDailyReport(DailyReport report) async {
     final data = report.toMap();
     await _client.from('patient_daily_reports').insert({
