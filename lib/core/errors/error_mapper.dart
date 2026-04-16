@@ -31,6 +31,10 @@ class ErrorMapper {
 
     if (error is FunctionException) {
       final msg = error.reasonPhrase ?? 'Function error (${error.status}).';
+      // If we have a status 401, it's definitely an auth/session issue
+      if (error.status == 401) {
+        return 'Session expired or unauthorized. Please log in again to continue.';
+      }
       // If we have a status 400, try to return a more helpful message
       if (error.status == 400) {
         return 'Server error: $msg';

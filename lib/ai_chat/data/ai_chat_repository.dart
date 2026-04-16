@@ -149,21 +149,20 @@ class SupabaseAiChatRepository implements AiChatRepository {
     required String conversationId,
     required String userMessageId,
   }) async {
-    final session = _client.auth.currentSession;
-    if (session == null) {
-      throw StateError('You must be logged in to chat with VitaGuard AI.');
+    // Force a session refresh to prevent 401s from stale tokens
+    try {
+      await _client.auth.refreshSession();
+    } catch (_) {
+      // If refresh fails, invoke will naturally fail with 401 anyway
     }
 
     final response = await _client.functions.invoke(
       'chatbot',
       body: {'conversationId': conversationId, 'userMessageId': userMessageId},
-      headers: {
-        'Authorization': 'Bearer ${session.accessToken}',
-      },
     );
 
     if (response.status != 202) {
-      final message = _extractErrorMessage(response.data);
+      final message = _extractErrorMessage(response);
       throw StateError(
         message ?? 'The AI assistant could not start a reply right now.',
       );
@@ -223,12 +222,18 @@ class SupabaseAiChatRepository implements AiChatRepository {
     }
   }
 
-  String? _extractErrorMessage(dynamic data) {
-    if (data is Map<String, dynamic>) {
-      final error = data['error'];
-      if (error is String && error.isNotEmpty) {
-        return error;
+  String? _extractErrorMessage(dynamic error) {
+    if (error is FunctionException) {
+      final msg = error.reasonPhrase ?? 'Function error (${error.status}).';
+      // If we have a status 401, it's definitely an auth/session issue
+      if (error.status == 401) {
+        return 'Session expired or unauthorized. Please log in again to continue.';
       }
+      // If we have a status 400, try to return a more helpful message
+      if (error.status == 400) {
+        return 'Server error: $msg';
+      }
+      return msg;
     }
     return null;
   }
