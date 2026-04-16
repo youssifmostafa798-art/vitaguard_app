@@ -228,11 +228,15 @@ async function processAssistantReply(args: {
       ? error.message
       : "Chatbot generation failed.";
 
+    const friendlyMessage = (message === "AI_SERVICE_ERROR")
+      ? "The AI service is currently unavailable."
+      : "Generation failed due to a server error.";
+
     await finalizeConversation(userClient, args.conversation.id, SAFE_ERROR_REPLY);
     await updateAssistantMessage(userClient, args.assistantMessageId, {
       content: SAFE_ERROR_REPLY,
       status: "error",
-      error_message: message.slice(0, 300),
+      error_message: friendlyMessage,
     });
   }
 }
