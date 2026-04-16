@@ -492,10 +492,4 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       ),
     );
   }
-
-  @override
-  void dispose() {
-    _messageController.dispose();
-    super.dispose();
-  }
 }
