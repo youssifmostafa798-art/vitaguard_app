@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
@@ -56,11 +57,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         builder: (context, _) {
           final provider = _provider;
           final title = provider.conversation?.title ?? 'VitaGuard AI';
-          final isUnauthorized = provider.error != null && (
+          final hasUser = Supabase.instance.client.auth.currentSession?.user != null;
+          
+          final isUnauthorized = !hasUser || (provider.error != null && (
             provider.error!.toLowerCase().contains('logged in') ||
             provider.error!.toLowerCase().contains('session expired') ||
             provider.error!.toLowerCase().contains('unauthorized')
-          );
+          ));
 
           return Scaffold(
             appBar: AppBar(
@@ -116,9 +119,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ),
             Gap(30.h),
             ElevatedButton(
-              onPressed: () => Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const SignInScreen()),
-              ),
+              onPressed: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SignInScreen()),
+                );
+                // When returning from login, check if we have a session and refresh
+                if (mounted && Supabase.instance.client.auth.currentSession != null) {
+                  _provider.ensureConversation(forceRefresh: true);
+                }
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00A3FF),
                 padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 12.h),
