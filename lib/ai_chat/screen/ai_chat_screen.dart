@@ -59,11 +59,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           final title = provider.conversation?.title ?? 'VitaGuard AI';
           final hasUser = Supabase.instance.client.auth.currentSession?.user != null;
           
-          final isUnauthorized = !hasUser || (provider.error != null && (
-            provider.error!.toLowerCase().contains('logged in') ||
-            provider.error!.toLowerCase().contains('session expired') ||
-            provider.error!.toLowerCase().contains('unauthorized')
-          ));
+          // Full-screen lock ONLY if we have no local user session.
+          // Other auth errors (like server-side 401s) will show in the inline error bubble below.
+          final isLocked = !hasUser;
 
           return Scaffold(
             appBar: AppBar(
@@ -72,7 +70,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               elevation: 0,
               centerTitle: true,
               iconTheme: const IconThemeData(color: Color(0xFF0D3B66)),
-              bottom: isUnauthorized ? null : TabBar(
+              bottom: isLocked ? null : TabBar(
                 labelColor: const Color(0xFF00A3FF),
                 unselectedLabelColor: const Color(0xFF51617A),
                 indicatorColor: const Color(0xFF00A3FF),
@@ -84,7 +82,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ),
             body: SafeArea(
               child: AppBackground(
-                child: isUnauthorized ? _buildUnauthorizedOverlay() : TabBarView(
+                child: isLocked ? _buildUnauthorizedOverlay() : TabBarView(
                   children: [
                     _buildActiveChatTab(provider),
                     _buildHistoryTab(provider),
