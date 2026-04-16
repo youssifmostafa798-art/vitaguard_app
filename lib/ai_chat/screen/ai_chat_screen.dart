@@ -10,6 +10,7 @@ import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/message_input.dart';
 import 'package:intl/intl.dart';
 import 'package:vitaguard_app/core/providers.dart';
+import 'package:vitaguard_app/auth/ui/screens/sign_in_screen.dart';
 class AiChatScreen extends ConsumerStatefulWidget {
   final AiChatProvider? provider;
 
@@ -115,7 +116,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ),
             Gap(30.h),
             ElevatedButton(
-              onPressed: () => Navigator.of(context).pushReplacementNamed('/login'), // Replace with actual login route
+              onPressed: () => Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const SignInScreen()),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00A3FF),
                 padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 12.h),
