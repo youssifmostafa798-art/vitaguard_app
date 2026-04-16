@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:vitaguard_app/ai_chat/data/ai_chat_models.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 
@@ -25,6 +26,8 @@ class AiMessageBubble extends StatelessWidget {
     final senderColor = isUser
         ? Colors.white
         : (message.isError ? const Color(0xFFC62828) : const Color(0xFF0D3B66));
+    final textColor = isUser ? Colors.white : const Color(0xFF1B263B);
+    
     final localTime = message.createdAt.toLocal();
     final now = DateTime.now();
     final isToday = localTime.year == now.year && localTime.month == now.month && localTime.day == now.day;
@@ -38,6 +41,7 @@ class AiMessageBubble extends StatelessWidget {
     } else {
       timeText = '${DateFormat('MMM d, y').format(localTime)} $timeStr';
     }
+    
     final displayText = message.content.trim().isEmpty && message.isStreaming
         ? 'Thinking...'
         : message.content;
@@ -105,18 +109,22 @@ class AiMessageBubble extends StatelessWidget {
                         color: senderColor,
                       ),
                     ),
-                  CustemText(
-                    text: displayText,
-                    size: 15,
-                    color: isUser ? Colors.white : const Color(0xFF1B263B),
+                  MarkdownBody(
+                    data: displayText,
+                    styleSheet: MarkdownStyleSheet(
+                      p: TextStyle(color: textColor, fontSize: 15.sp, height: 1.4),
+                      strong: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 15.sp),
+                      em: TextStyle(color: textColor, fontStyle: FontStyle.italic, fontSize: 15.sp),
+                      listBullet: TextStyle(color: textColor, fontSize: 15.sp),
+                    ),
                   ),
-                  if (message.isStreaming)
+                  if (message.isStreaming && message.content.isNotEmpty)
                     Padding(
-                      padding: EdgeInsets.only(top: 4.h),
-                      child: CustemText(
-                        text: 'Generating response...',
-                        size: 11,
-                        color: const Color(0xFF6B7A90),
+                      padding: EdgeInsets.only(top: 8.h),
+                      child: SizedBox(
+                        width: 12.w,
+                        height: 12.w,
+                        child: const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00A3FF)),
                       ),
                     ),
                   if (message.isError && message.errorMessage != null)

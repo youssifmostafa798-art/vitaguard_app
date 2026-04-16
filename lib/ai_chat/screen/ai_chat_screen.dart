@@ -224,8 +224,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   height: 14.r,
                   child: const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00A3FF)),
                 ),
-                Gap(8.w),
-                Text('VitaGuard AI is computing...', style: TextStyle(fontSize: 12.sp, color: const Color(0xFF51617A), fontStyle: FontStyle.italic)),
               ],
             ),
           ),
