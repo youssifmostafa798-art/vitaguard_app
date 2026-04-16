@@ -23,6 +23,7 @@ class AiChatScreen extends ConsumerStatefulWidget {
 
 class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final TextEditingController _messageController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   bool _isHandlingQuickReply = false;
 
   AiChatProvider get _provider => widget.provider ?? ref.read(aiChatProvider);
@@ -33,6 +34,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _provider.ensureConversation();
     });
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _sendMessage() async {
@@ -327,6 +335,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     );
   }
 
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+    }
+  }
+
   Widget _buildMessages(AiChatProvider provider) {
     if (provider.isLoading && provider.conversation == null) {
       return const Center(child: CircularProgressIndicator());
@@ -374,12 +388,17 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           );
         }
 
+        // Auto-scroll logic when messages update
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+
         return ListView.builder(
-          reverse: true,
+          key: const PageStorageKey('chat_list'),
+          controller: _scrollController,
           padding: EdgeInsets.fromLTRB(8.w, 12.h, 8.w, 16.h),
           itemCount: messages.length + 1,
           itemBuilder: (context, index) {
-            if (index == messages.length) {
+            // Header: Welcome message at the very top (index 0 in a non-reversed list)
+            if (index == 0) {
               return Padding(
                 padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
                 child: Column(
@@ -410,12 +429,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               );
             }
 
-            final message = messages[messages.length - 1 - index];
-            final previous = index < messages.length - 1
-                ? messages[messages.length - 2 - index]
-                : null;
+            // Messages: Standard linear order (index starts at 1)
+            final messageIndex = index - 1;
+            final message = messages[messageIndex];
+            final previous = messageIndex > 0 ? messages[messageIndex - 1] : null;
 
             return AiMessageBubble(
+              key: ValueKey(message.id),
               message: message,
               isPreviousSameSender: previous?.role == message.role,
             );
