@@ -53,11 +53,10 @@ class AiMessageBubble extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12.r),
               ),
               child: Center(
-                child: CustemText(
-                  text: 'AI',
-                  size: 11,
-                  weight: FontWeight.w700,
+                child: Icon(
+                  Icons.health_and_safety,
                   color: const Color(0xFF0D3B66),
+                  size: 20.r,
                 ),
               ),
             ),

@@ -86,6 +86,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   Expanded(
                     child: _buildMessages(provider),
                   ),
+                  _buildQuickReplies(provider),
                   MessageInput(
                     controller: _messageController,
                     onSend: _sendMessage,
@@ -150,8 +151,39 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         return ListView.builder(
           reverse: true,
           padding: EdgeInsets.fromLTRB(8.w, 12.h, 8.w, 16.h),
-          itemCount: messages.length,
+          itemCount: messages.length + 1,
           itemBuilder: (context, index) {
+            if (index == messages.length) {
+              return Padding(
+                padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
+                child: Column(
+                  children: [
+                    Icon(Icons.health_and_safety, color: const Color(0xFF003F6B), size: 40.r),
+                    Gap(10.h),
+                    Text(
+                      'Welcome to VitaGuard AI',
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF003F6B),
+                      ),
+                    ),
+                    Gap(6.h),
+                    Text(
+                      'Disclaimer: I am an AI, not a doctor. This chat is not a substitute for professional medical advice, diagnosis, or treatment.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: const Color(0xFF51617A),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                    Gap(20.h),
+                  ],
+                ),
+              );
+            }
+
             final message = messages[messages.length - 1 - index];
             final previous = index < messages.length - 1
                 ? messages[messages.length - 2 - index]
@@ -164,6 +196,43 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildQuickReplies(AiChatProvider provider) {
+    if (provider.conversation == null || provider.isLoading || provider.isSending) return const SizedBox.shrink();
+
+    final suggestions = [
+      'Check my symptoms',
+      'Daily wellness tip',
+      'Track my mood',
+      'Set a health goal',
+    ];
+
+    return SizedBox(
+      height: 50.h,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        itemCount: suggestions.length,
+        separatorBuilder: (_, __) => Gap(8.w),
+        itemBuilder: (context, index) {
+          final suggestion = suggestions[index];
+          return ActionChip(
+            label: Text(
+              suggestion,
+              style: TextStyle(fontSize: 12.sp, color: const Color(0xFF003F6B)),
+            ),
+            backgroundColor: Colors.white,
+            side: const BorderSide(color: Color(0xFF00A3FF)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+            onPressed: () {
+              _messageController.text = suggestion;
+              _sendMessage();
+            },
+          );
+        },
+      ),
     );
   }
 

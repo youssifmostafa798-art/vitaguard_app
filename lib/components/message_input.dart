@@ -51,14 +51,31 @@ class MessageInput extends StatelessWidget {
             ),
           ),
           Gap(8.w),
-
-          CircleAvatar(
-            radius: 24.r,
-            backgroundColor: enabled ? const Color(0xFF00A3FF) : Colors.grey,
-            child: IconButton(
-              icon: Icon(Icons.send, color: Colors.white, size: 22.r),
-              onPressed: enabled ? onSend : null,
-            ),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, child) {
+              final isTyping = value.text.trim().isNotEmpty;
+              return CircleAvatar(
+                radius: 24.r,
+                backgroundColor: enabled ? const Color(0xFF00A3FF) : Colors.grey,
+                child: IconButton(
+                  icon: Icon(
+                    isTyping ? Icons.send : Icons.mic, 
+                    color: Colors.white, 
+                    size: 22.r,
+                  ),
+                  onPressed: enabled
+                      ? (isTyping 
+                          ? onSend 
+                          : () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Voice input coming soon!')),
+                              );
+                            })
+                      : null,
+                ),
+              );
+            },
           ),
         ],
       ),

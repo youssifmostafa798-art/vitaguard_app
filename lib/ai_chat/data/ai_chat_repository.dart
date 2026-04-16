@@ -47,7 +47,7 @@ class SupabaseAiChatRepository implements AiChatRepository {
     }
 
     final role = await _loadConversationRole();
-    final now = DateTime.now().toIso8601String();
+    final now = DateTime.now().toUtc().toIso8601String();
 
     try {
       final inserted = await _client
@@ -112,7 +112,7 @@ class SupabaseAiChatRepository implements AiChatRepository {
     String content,
   ) async {
     final messageId = Uuid.v4();
-    final now = DateTime.now().toIso8601String();
+    final now = DateTime.now().toUtc().toIso8601String();
 
     await _client.from('ai_messages').insert({
       'id': messageId,
