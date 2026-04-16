@@ -8,9 +8,8 @@ import 'package:vitaguard_app/ai_chat/ui/ai_chat_provider.dart';
 import 'package:vitaguard_app/ai_chat/widget/ai_message_bubble.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/message_input.dart';
+import 'package:intl/intl.dart';
 import 'package:vitaguard_app/core/providers.dart';
-import 'package:vitaguard_app/core/utils/simple_header.dart';
-
 class AiChatScreen extends ConsumerStatefulWidget {
   final AiChatProvider? provider;
 
@@ -250,7 +249,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         return ListView.separated(
           padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
           itemCount: history.length,
-          separatorBuilder: (_, __) => Gap(12.h),
+          separatorBuilder: (context, index) => Gap(12.h),
           itemBuilder: (context, index) {
             final conversation = history[index];
             final localTime = conversation.createdAt.toLocal();
@@ -273,7 +272,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   border: Border.all(color: isCurrent ? const Color(0xFF00A3FF) : const Color(0xFFE2E8F0)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     )

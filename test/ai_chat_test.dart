@@ -171,9 +171,14 @@ class FakeAiChatRepository implements AiChatRepository {
   final List<(String, String)> requestedReplies = [];
 
   @override
-  Future<AiConversation> ensureConversation() async {
+  Future<AiConversation> ensureConversation([String? conversationId]) async {
     ensureConversationCalls += 1;
     return conversation;
+  }
+
+  @override
+  Future<List<AiConversation>> fetchConversationHistory() async {
+    return [conversation];
   }
 
   @override
