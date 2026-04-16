@@ -41,12 +41,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final ok = await _provider.sendMessage(text);
     if (!ok && mounted) {
       _messageController.text = text;
-      final error = _provider.error;
-      if (error != null && error.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error)),
-        );
-      }
+      // Removed SnackBar to avoid duplicate error display.
+      // Error is already shown in the persistent bubble above the message list.
     }
   }
 
@@ -442,12 +438,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             child: ActionChip(
               label: Text(
                 suggestion,
+                overflow: TextOverflow.visible,
+                softWrap: false,
                 style: TextStyle(fontSize: 13.sp, color: const Color(0xFF003F6B)),
               ),
               backgroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 4.w), // Reduce internal padding if needed
               side: const BorderSide(color: Color(0xFF00A3FF)),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
-              onPressed: _isHandlingQuickReply
+              onPressed: _isHandlingQuickReply || provider.isSending
                   ? null
                   : () async {
                       setState(() => _isHandlingQuickReply = true);

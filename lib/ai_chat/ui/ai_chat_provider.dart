@@ -16,6 +16,7 @@ class AiChatProvider with ChangeNotifier {
   AiConversation? _conversation;
   Stream<List<AiMessage>>? _messageStream;
   String? _loadedUserId;
+  DateTime _lastMessageSentAt = DateTime.fromMillisecondsSinceEpoch(0);
 
   bool get isLoading => _isLoading;
   bool get isSending => _isSending;
@@ -70,6 +71,13 @@ class AiChatProvider with ChangeNotifier {
     final text = content.trim();
     if (text.isEmpty || _isSending) return false;
 
+    // Debounce: Prevent identical messages within 1 second
+    final now = DateTime.now();
+    if (now.difference(_lastMessageSentAt).inMilliseconds < 1000) {
+       return false;
+    }
+    _lastMessageSentAt = now;
+
     await ensureConversation();
     final conversation = _conversation;
     if (conversation == null) {
@@ -77,7 +85,7 @@ class AiChatProvider with ChangeNotifier {
     }
 
     _isSending = true;
-    _error = null;
+    _error = null; // Clear stale error
     notifyListeners();
 
     try {

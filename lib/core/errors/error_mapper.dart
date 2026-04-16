@@ -43,12 +43,19 @@ class ErrorMapper {
     }
 
     final errorStr = error.toString().toLowerCase();
+    
+    // Mask technical details / JSON / Gemini specific leakage
     if (errorStr.contains('unauthorized') || errorStr.contains('invalid auth token') || errorStr.contains('missing authorization')) {
       return 'Session expired or unauthorized. Please log in again to continue.';
     }
     
-    if (errorStr.contains('bad request')) {
-      return 'Bad Request: The server could not process the scan. Check your internet or try a different image.';
+    if (errorStr.contains('gemini') || 
+        errorStr.contains('v1beta') || 
+        errorStr.contains('v1/') ||
+        errorStr.contains('{') || 
+        errorStr.contains('status:') ||
+        errorStr.contains('bad request')) {
+      return 'Sorry, I\'m having trouble connecting right now. Please try again in a moment.';
     }
 
     return error.toString();
