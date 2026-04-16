@@ -9,10 +9,8 @@ import 'package:vitaguard_app/patient/home/widget/category_grid_patient.dart';
 import 'package:vitaguard_app/patient/home/widget/home_search.dart';
 import 'package:vitaguard_app/core/providers.dart';
 
-import 'package:vitaguard_app/patient/ui/patient_provider.dart';
 import 'package:vitaguard_app/patient/chat/screen/chat_list_patient.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
-import 'package:vitaguard_app/patient/data/patient_repository.dart';
 
 class PatientHome extends ConsumerStatefulWidget {
   final String name;
@@ -69,7 +67,7 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
   }
 
   Widget _buildAvailableDoctorsList() {
-    final patientRepo = PatientRepository();
+    final patientRepo = ref.read(patientProvider).repository;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
