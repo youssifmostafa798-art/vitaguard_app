@@ -142,7 +142,7 @@ Future<void> _pumpHarness(WidgetTester tester, Widget child) async {
         designSize: ScreenUtilHelper.designSize,
         minTextAdapt: true,
         splitScreenMode: true,
-        builder: (_, __) => MaterialApp(home: child),
+        builder: (context, childWidget) => MaterialApp(home: child),
       ),
     ),
   );

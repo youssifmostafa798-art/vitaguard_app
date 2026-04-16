@@ -11,6 +11,8 @@ import 'package:vitaguard_app/core/providers.dart';
 
 import 'package:vitaguard_app/patient/ui/patient_provider.dart';
 import 'package:vitaguard_app/patient/chat/screen/chat_list_patient.dart';
+import 'package:vitaguard_app/components/custem_text.dart';
+import 'package:vitaguard_app/patient/data/patient_repository.dart';
 
 class PatientHome extends ConsumerStatefulWidget {
   final String name;
@@ -67,7 +69,7 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
   }
 
   Widget _buildAvailableDoctorsList() {
-    final patientRepo = ref.watch(patientRepositoryProvider);
+    final patientRepo = PatientRepository();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,7 +131,7 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
                         children: [
                           CircleAvatar(
                             radius: 30.r,
-                            backgroundColor: const Color(0xff003F6B).withOpacity(0.1),
+                            backgroundColor: const Color(0xff003F6B).withValues(alpha: 0.1),
                             child: Icon(Icons.person, color: const Color(0xff003F6B), size: 30.r),
                           ),
                           Gap(10.h),

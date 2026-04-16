@@ -226,6 +226,7 @@ class AuthRepository {
             );
           }
         } catch (e) {
+          // ignore: avoid_print
           print('Auto-repair failed for patient record: $e');
         }
       }

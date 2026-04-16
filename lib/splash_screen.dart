@@ -237,10 +237,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 shape: BoxShape.circle,
                 color: i == 1
                     ? const Color(0xFF00C8FF)
-                    : const Color(0xFF00C8FF).withOpacity(0.5),
+                    : const Color(0xFF00C8FF).withValues(alpha: 0.5),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF00C8FF).withOpacity(0.6),
+                    color: const Color(0xFF00C8FF).withValues(alpha: 0.6),
                     blurRadius: 6.r,
                     spreadRadius: 1.r,
                   ),
