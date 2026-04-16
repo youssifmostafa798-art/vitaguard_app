@@ -1,7 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.22.0";
 
-// Environment Secrets
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "AIzaSyBlOIuJNwvkfzaYCseAbhMuF5ubEg6YiFA";
 const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") || "gemma-4-26b-a4b-it";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
@@ -18,6 +17,7 @@ async function jsonResponse(data: any, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
+      "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "POST",
       "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -38,15 +38,7 @@ async function getUserIdFromRequest(req: Request) {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST",
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-      },
-    });
-  }
+  if (req.method === "OPTIONS") return jsonResponse("ok");
 
   try {
     const userId = await getUserIdFromRequest(req);
@@ -57,21 +49,17 @@ Deno.serve(async (req: Request) => {
     const assistantMessageId = crypto.randomUUID();
     const now = new Date().toISOString();
 
-    // 1. Create the placeholder without any visible text
-    const { error: insErr } = await supabase.from("ai_messages").insert({
+    await supabase.from("ai_messages").insert({
       id: assistantMessageId,
       conversation_id: conversationId,
       owner_user_id: userId,
       role: "assistant",
-      content: "", // Start empty
+      content: "",
       status: "streaming",
       created_at: now,
       updated_at: now,
     });
 
-    if (insErr) throw insErr;
-
-    // 2. Start worker
     (EdgeRuntime as any).waitUntil(processRequest(supabase, conversationId, assistantMessageId, userMessageId));
 
     return jsonResponse({ assistantMessageId, status: "streaming" }, 202);
@@ -98,7 +86,14 @@ async function processRequest(supabase: any, conversationId: string, assistantMe
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ 
       model: GEMINI_MODEL,
-      systemInstruction: "You are VitaGuard AI, a professional medical chatbot. Reply naturally and helpful. IMPORTANT: ALWAYS HIDE your internal reasoning or thought process. ONLY output the final response meant for the user.",
+      systemInstruction: `You are VitaGuard AI.
+STRICT FORMATTING RULES:
+1. USE STANDARD MARKDOWN ONLY.
+2. For bolding, use **text** WITHOUT internal spaces (e.g., do NOT use ** text **).
+3. Use * for bullet points (e.g., * Item).
+4. Hide all your internal thinking or tags (<thought>).
+5. Never show technical debugging info.
+6. Provide expert healthcare answers and wellness tips.`,
     });
 
     const chat = model.startChat({
@@ -119,10 +114,13 @@ async function processRequest(supabase: any, conversationId: string, assistantMe
       if (!chunk.text) continue;
       
       const chunkText = chunk.text();
-      // Heuristic: Some MoE models in early April 2026 might output thinking tokens delimited by tags.
-      // We strip anything inside <thought> if present to ensure industry-clean response.
-      const cleanText = chunkText.replace(/<thought>[\s\S]*?<\/thought>/gi, "").replace(/<thought>[\s\S]*$/gi, "");
+      // 1. Remove thought tags
+      let cleanText = chunkText.replace(/<thought>[\s\S]*?<\/thought>/gi, "").replace(/<thought>[\s\S]*$/gi, "");
       
+      // 2. Clean up malformed bolding with spaces (common in MoE output)
+      // Fixes "** text **" -> "**text**" for correct Markdown parsing
+      cleanText = cleanText.replace(/\*\*\s+(.*?)\s+\*\*/g, "**$1**");
+
       if (cleanText) {
         fullText += cleanText;
         await supabase.from("ai_messages").update({
@@ -140,7 +138,7 @@ async function processRequest(supabase: any, conversationId: string, assistantMe
 
   } catch (error) {
     await supabase.from("ai_messages").update({
-      content: "I'm sorry, I'm having trouble providing a response right now. Please try again soon.",
+      content: "I'm sorry, I'm having trouble thinking right now. Please try again soon.",
       status: "error",
       error_message: error instanceof Error ? error.message : "Generation failed",
       updated_at: new Date().toISOString(),

@@ -333,11 +333,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     );
   }
 
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-    }
-  }
 
   Widget _buildMessages(AiChatProvider provider) {
     if (provider.isLoading && provider.conversation == null) {
@@ -386,17 +381,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           );
         }
 
-        // Auto-scroll logic when messages update
-        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-
         return ListView.builder(
           key: const PageStorageKey('chat_list'),
           controller: _scrollController,
           padding: EdgeInsets.fromLTRB(8.w, 12.h, 8.w, 16.h),
+          reverse: true, // Industry standard: newest at bottom
           itemCount: messages.length + 1,
           itemBuilder: (context, index) {
-            // Header: Welcome message at the very top (index 0 in a non-reversed list)
-            if (index == 0) {
+            // Header at the very top (index == length in a reversed list)
+            if (index == messages.length) {
               return Padding(
                 padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
                 child: Column(
@@ -427,15 +420,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               );
             }
 
-            // Messages: Standard linear order (index starts at 1)
-            final messageIndex = index - 1;
-            final message = messages[messageIndex];
-            final previous = messageIndex > 0 ? messages[messageIndex - 1] : null;
+            // Message logic
+            final message = messages[index];
+            // In a reversed list, the one "above" it has a HIGHER index (older)
+            final nextIsSame = index + 1 < messages.length && messages[index + 1].role == message.role;
 
             return AiMessageBubble(
               key: ValueKey(message.id),
               message: message,
-              isPreviousSameSender: previous?.role == message.role,
+              isPreviousSameSender: nextIsSame,
             );
           },
         );
