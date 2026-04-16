@@ -59,7 +59,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         builder: (context, _) {
           final provider = _provider;
           final title = provider.conversation?.title ?? 'VitaGuard AI';
-          final isUnauthorized = provider.error != null && provider.error!.toLowerCase().contains('logged in');
+          final isUnauthorized = provider.error != null && (
+            provider.error!.toLowerCase().contains('logged in') ||
+            provider.error!.toLowerCase().contains('session expired') ||
+            provider.error!.toLowerCase().contains('unauthorized')
+          );
 
           return Scaffold(
             appBar: AppBar(

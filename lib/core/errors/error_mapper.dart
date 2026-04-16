@@ -42,11 +42,15 @@ class ErrorMapper {
       return error.message;
     }
 
-    final errorStr = error.toString();
-    if (errorStr.contains('Bad Request')) {
+    final errorStr = error.toString().toLowerCase();
+    if (errorStr.contains('unauthorized') || errorStr.contains('invalid auth token') || errorStr.contains('missing authorization')) {
+      return 'Session expired or unauthorized. Please log in again to continue.';
+    }
+    
+    if (errorStr.contains('bad request')) {
       return 'Bad Request: The server could not process the scan. Check your internet or try a different image.';
     }
 
-    return errorStr;
+    return error.toString();
   }
 }
