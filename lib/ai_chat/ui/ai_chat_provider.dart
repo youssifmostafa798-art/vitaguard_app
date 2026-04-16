@@ -23,7 +23,12 @@ class AiChatProvider with ChangeNotifier {
   AiConversation? get conversation => _conversation;
   Stream<List<AiMessage>>? get messageStream => _messageStream;
 
-  Future<void> ensureConversation({bool forceRefresh = false}) async {
+  Future<List<AiConversation>> fetchUserHistory() async {
+    if (_repository.currentUserIdOrNull == null) return [];
+    return await _repository.fetchConversationHistory();
+  }
+
+  Future<void> ensureConversation({bool forceRefresh = false, String? conversationId}) async {
     final currentUserId = _repository.currentUserIdOrNull;
     if (currentUserId == null) {
       _conversation = null;
@@ -34,7 +39,10 @@ class AiChatProvider with ChangeNotifier {
       return;
     }
 
+    final isTargetingDifferentConversation = conversationId != null && _conversation?.id != conversationId;
+
     if (!forceRefresh &&
+        !isTargetingDifferentConversation &&
         _conversation != null &&
         _loadedUserId == currentUserId &&
         _messageStream != null) {
@@ -46,7 +54,7 @@ class AiChatProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final conversation = await _repository.ensureConversation();
+      final conversation = await _repository.ensureConversation(conversationId);
       _conversation = conversation;
       _messageStream = _repository.streamMessages(conversation.id);
       _loadedUserId = currentUserId;

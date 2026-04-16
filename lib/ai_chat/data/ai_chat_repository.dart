@@ -7,7 +7,9 @@ import 'package:vitaguard_app/core/utils/uuid.dart';
 abstract class AiChatRepository {
   String? get currentUserIdOrNull;
 
-  Future<AiConversation> ensureConversation();
+  Future<AiConversation> ensureConversation([String? conversationId]);
+  
+  Future<List<AiConversation>> fetchConversationHistory();
 
   Stream<List<AiMessage>> streamMessages(String conversationId);
 
@@ -33,11 +35,43 @@ class SupabaseAiChatRepository implements AiChatRepository {
   String get _uid => _supabase.currentUid;
 
   @override
-  Future<AiConversation> ensureConversation() async {
+  Future<List<AiConversation>> fetchConversationHistory() async {
+    final rows = await _client
+        .from('ai_conversations')
+        .select()
+        .eq('owner_user_id', _uid)
+        .order('created_at', ascending: false);
+
+    return rows.map((row) => AiConversation.fromMap(Map<String, dynamic>.from(row as Map))).toList();
+  }
+
+  @override
+  Future<AiConversation> ensureConversation([String? conversationId]) async {
+    if (conversationId != null) {
+      final existing = await _client
+          .from('ai_conversations')
+          .select()
+          .eq('owner_user_id', _uid)
+          .eq('id', conversationId)
+          .limit(1);
+          
+      if (existing.isNotEmpty) {
+        return AiConversation.fromMap(
+          Map<String, dynamic>.from(existing.first as Map),
+        );
+      }
+      throw StateError('Requested conversation not found.');
+    }
+
+    final nowDateTime = DateTime.now();
+    final todayStart = DateTime.utc(nowDateTime.year, nowDateTime.month, nowDateTime.day).toIso8601String();
+
     final existing = await _client
         .from('ai_conversations')
         .select()
         .eq('owner_user_id', _uid)
+        .gte('created_at', todayStart)
+        .order('created_at', ascending: false)
         .limit(1);
 
     if (existing.isNotEmpty) {
@@ -49,44 +83,26 @@ class SupabaseAiChatRepository implements AiChatRepository {
     final role = await _loadConversationRole();
     final now = DateTime.now().toUtc().toIso8601String();
 
-    try {
-      final inserted = await _client
-          .from('ai_conversations')
-          .insert({
-            'owner_user_id': _uid,
-            'role': _roleToValue(role),
-            'context_patient_id': await _resolveContextPatientId(role),
-            'title': _defaultTitle(role),
-            'created_at': now,
-            'updated_at': now,
-          })
-          .select()
-          .limit(1);
+    final inserted = await _client
+        .from('ai_conversations')
+        .insert({
+          'owner_user_id': _uid,
+          'role': _roleToValue(role),
+          'context_patient_id': await _resolveContextPatientId(role),
+          'title': _defaultTitle(role),
+          'created_at': now,
+          'updated_at': now,
+        })
+        .select()
+        .limit(1);
 
-      if (inserted.isEmpty) {
-        throw StateError('Failed to create AI conversation.');
-      }
-
-      return AiConversation.fromMap(
-        Map<String, dynamic>.from(inserted.first as Map),
-      );
-    } on PostgrestException catch (error) {
-      if (error.code != '23505') rethrow;
-
-      final rows = await _client
-          .from('ai_conversations')
-          .select()
-          .eq('owner_user_id', _uid)
-          .limit(1);
-
-      if (rows.isEmpty) {
-        throw StateError('Failed to load existing AI conversation.');
-      }
-
-      return AiConversation.fromMap(
-        Map<String, dynamic>.from(rows.first as Map),
-      );
+    if (inserted.isEmpty) {
+      throw StateError('Failed to create AI conversation.');
     }
+
+    return AiConversation.fromMap(
+      Map<String, dynamic>.from(inserted.first as Map),
+    );
   }
 
   @override

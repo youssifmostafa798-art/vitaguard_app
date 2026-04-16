@@ -25,7 +25,19 @@ class AiMessageBubble extends StatelessWidget {
     final senderColor = isUser
         ? Colors.white
         : (message.isError ? const Color(0xFFC62828) : const Color(0xFF0D3B66));
-    final timeText = DateFormat('HH:mm').format(message.createdAt.toLocal());
+    final localTime = message.createdAt.toLocal();
+    final now = DateTime.now();
+    final isToday = localTime.year == now.year && localTime.month == now.month && localTime.day == now.day;
+    final isYesterday = localTime.year == now.year && localTime.month == now.month && localTime.day == now.day - 1;
+    final timeStr = DateFormat('HH:mm').format(localTime);
+    String timeText;
+    if (isToday) {
+      timeText = 'Today $timeStr';
+    } else if (isYesterday) {
+      timeText = 'Yesterday $timeStr';
+    } else {
+      timeText = '${DateFormat('MMM d, y').format(localTime)} $timeStr';
+    }
     final displayText = message.content.trim().isEmpty && message.isStreaming
         ? 'Thinking...'
         : message.content;
@@ -42,7 +54,7 @@ class AiMessageBubble extends StatelessWidget {
             : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!isUser && !isPreviousSameSender)
+          if (!isUser)
             Container(
               width: 32.r,
               height: 32.r,
@@ -60,7 +72,7 @@ class AiMessageBubble extends StatelessWidget {
                 ),
               ),
             ),
-          if (!isUser && !isPreviousSameSender) Gap(8.w),
+          if (!isUser) Gap(8.w),
           Flexible(
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
@@ -83,7 +95,7 @@ class AiMessageBubble extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (!isUser && !isPreviousSameSender)
+                  if (!isUser)
                     Padding(
                       padding: EdgeInsets.only(bottom: 4.h),
                       child: CustemText(

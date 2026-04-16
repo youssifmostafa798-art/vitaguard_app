@@ -22,6 +22,7 @@ class AiChatScreen extends ConsumerStatefulWidget {
 
 class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final TextEditingController _messageController = TextEditingController();
+  bool _isHandlingQuickReply = false;
 
   AiChatProvider get _provider => widget.provider ?? ref.read(aiChatProvider);
 
@@ -52,51 +53,266 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: _provider,
-      builder: (context, _) {
-        final provider = _provider;
-        final title = provider.conversation?.title ?? 'VitaGuard AI';
+    return DefaultTabController(
+      length: 2,
+      child: ListenableBuilder(
+        listenable: _provider,
+        builder: (context, _) {
+          final provider = _provider;
+          final title = provider.conversation?.title ?? 'VitaGuard AI';
+          final isUnauthorized = provider.error != null && provider.error!.toLowerCase().contains('logged in');
 
-        return Scaffold(
-          appBar: SimpleHeader(title: title),
-          body: SafeArea(
-            child: AppBackground(
-              child: Column(
-                children: [
-                  if (provider.error != null)
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 0),
-                      child: Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(12.r),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF4E5),
-                          borderRadius: BorderRadius.circular(16.r),
-                          border: Border.all(color: const Color(0xFFFFD08A)),
-                        ),
-                        child: Text(
-                          provider.error!,
-                          style: TextStyle(
-                            color: const Color(0xFF8A5200),
-                            fontSize: 13.sp,
-                          ),
-                        ),
-                      ),
-                    ),
-                  Expanded(
-                    child: _buildMessages(provider),
-                  ),
-                  _buildQuickReplies(provider),
-                  MessageInput(
-                    controller: _messageController,
-                    onSend: _sendMessage,
-                    enabled: !provider.isLoading && !provider.isSending,
-                  ),
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18.sp, color: const Color(0xFF0D3B66))),
+              backgroundColor: Colors.white,
+              elevation: 0,
+              centerTitle: true,
+              iconTheme: const IconThemeData(color: Color(0xFF0D3B66)),
+              bottom: isUnauthorized ? null : TabBar(
+                labelColor: const Color(0xFF00A3FF),
+                unselectedLabelColor: const Color(0xFF51617A),
+                indicatorColor: const Color(0xFF00A3FF),
+                tabs: const [
+                  Tab(text: "Active Chat"),
+                  Tab(text: "History"),
                 ],
               ),
             ),
+            body: SafeArea(
+              child: AppBackground(
+                child: isUnauthorized ? _buildUnauthorizedOverlay() : TabBarView(
+                  children: [
+                    _buildActiveChatTab(provider),
+                    _buildHistoryTab(provider),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildUnauthorizedOverlay() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(24.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.lock_outline, size: 80.r, color: const Color(0xFFC62828)),
+            Gap(20.h),
+            Text(
+              'Authentication Required',
+              style: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0D3B66)),
+            ),
+            Gap(12.h),
+            Text(
+              'For your privacy and security, you must be logged in securely to interact with the VitaGuard AI and access your health data.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14.sp, color: const Color(0xFF51617A)),
+            ),
+            Gap(30.h),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pushReplacementNamed('/login'), // Replace with actual login route
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00A3FF),
+                padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 12.h),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
+              ),
+              child: Text('Log in now', style: TextStyle(fontSize: 16.sp, color: Colors.white, fontWeight: FontWeight.bold)),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActiveChatTab(AiChatProvider provider) {
+    bool isHistorical = false;
+    String displayDate = '';
+    
+    if (provider.conversation != null) {
+      final localTime = provider.conversation!.createdAt.toLocal();
+      final now = DateTime.now();
+      isHistorical = localTime.year != now.year || localTime.month != now.month || localTime.day != now.day;
+      if (isHistorical) {
+        displayDate = DateFormat('MMMM d, yyyy').format(localTime);
+      }
+    }
+
+    return Column(
+      children: [
+        if (provider.error != null)
+          Padding(
+            padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 0),
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(12.r),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF4E5),
+                borderRadius: BorderRadius.circular(16.r),
+                border: Border.all(color: const Color(0xFFFFD08A)),
+              ),
+              child: Text(
+                provider.error!,
+                style: TextStyle(color: const Color(0xFF8A5200), fontSize: 13.sp),
+              ),
+            ),
           ),
+        
+        if (isHistorical)
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 16.w),
+            color: const Color(0xFFE8F5E9),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Viewing Historical Session ($displayDate)',
+                    style: TextStyle(fontSize: 12.sp, color: const Color(0xFF1B5E20), fontWeight: FontWeight.bold),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    provider.ensureConversation(forceRefresh: true);
+                  },
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    backgroundColor: const Color(0xFFC8E6C9),
+                  ),
+                  child: Text('Return to Today', style: TextStyle(fontSize: 12.sp, color: const Color(0xFF1B5E20))),
+                )
+              ],
+            ),
+          ),
+          
+        Expanded(
+          child: _buildMessages(provider),
+        ),
+        _buildQuickReplies(provider),
+        if (provider.isSending)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 6.h, horizontal: 16.w),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 14.r,
+                  height: 14.r,
+                  child: const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00A3FF)),
+                ),
+                Gap(8.w),
+                Text('VitaGuard AI is computing...', style: TextStyle(fontSize: 12.sp, color: const Color(0xFF51617A), fontStyle: FontStyle.italic)),
+              ],
+            ),
+          ),
+        MessageInput(
+          controller: _messageController,
+          onSend: _sendMessage,
+          enabled: !provider.isLoading && !provider.isSending,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHistoryTab(AiChatProvider provider) {
+    if (provider.error != null && provider.error!.toLowerCase().contains('logged in')) {
+      return const SizedBox.shrink(); // Prevent fetching if fully unauthorized
+    }
+
+    return FutureBuilder<List<AiConversation>>(
+      future: provider.fetchUserHistory(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFF00A3FF)));
+        }
+        
+        if (snapshot.hasError) {
+          return Center(child: Text("Unable to load history."));
+        }
+
+        final history = snapshot.data ?? [];
+        if (history.isEmpty) {
+          return Center(
+            child: Text(
+              "No past conversations found.",
+              style: TextStyle(color: const Color(0xFF51617A), fontSize: 16.sp),
+            ),
+          );
+        }
+
+        return ListView.separated(
+          padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+          itemCount: history.length,
+          separatorBuilder: (_, __) => Gap(12.h),
+          itemBuilder: (context, index) {
+            final conversation = history[index];
+            final localTime = conversation.createdAt.toLocal();
+            final dateStr = DateFormat('MMMM d, yyyy').format(localTime);
+            final timeStr = DateFormat('h:mm a').format(localTime);
+
+            final isCurrent = provider.conversation?.id == conversation.id;
+
+            return InkWell(
+              onTap: () {
+                provider.ensureConversation(conversationId: conversation.id, forceRefresh: true);
+                DefaultTabController.of(context).animateTo(0);
+              },
+              borderRadius: BorderRadius.circular(12.r),
+              child: Container(
+                padding: EdgeInsets.all(16.r),
+                decoration: BoxDecoration(
+                  color: isCurrent ? const Color(0xFFE3EEF7) : Colors.white,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: isCurrent ? const Color(0xFF00A3FF) : const Color(0xFFE2E8F0)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    )
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48.r,
+                      height: 48.r,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      child: Icon(Icons.history, color: const Color(0xFF51617A), size: 24.r),
+                    ),
+                    Gap(16.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            dateStr,
+                            style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0D3B66)),
+                          ),
+                          Gap(4.h),
+                          Text(
+                            'Session started at $timeStr',
+                            style: TextStyle(fontSize: 13.sp, color: const Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.chevron_right, color: const Color(0xFFCBD5E1), size: 24.r),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -210,29 +426,37 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       'Set a health goal',
     ];
 
-    return SizedBox(
-      height: 50.h,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-        itemCount: suggestions.length,
-        separatorBuilder: (context, sepIndex) => Gap(8.w),
-        itemBuilder: (context, index) {
-          final suggestion = suggestions[index];
-          return ActionChip(
-            label: Text(
-              suggestion,
-              style: TextStyle(fontSize: 12.sp, color: const Color(0xFF003F6B)),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      child: Row(
+        children: suggestions.asMap().entries.map((entry) {
+          final isLast = entry.key == suggestions.length - 1;
+          final suggestion = entry.value;
+
+          return Padding(
+            padding: EdgeInsets.only(right: isLast ? 0 : 8.w),
+            child: ActionChip(
+              label: Text(
+                suggestion,
+                style: TextStyle(fontSize: 13.sp, color: const Color(0xFF003F6B)),
+              ),
+              backgroundColor: Colors.white,
+              side: const BorderSide(color: Color(0xFF00A3FF)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+              onPressed: _isHandlingQuickReply
+                  ? null
+                  : () async {
+                      setState(() => _isHandlingQuickReply = true);
+                      _messageController.text = suggestion;
+                      await _sendMessage();
+                      if (mounted) {
+                        setState(() => _isHandlingQuickReply = false);
+                      }
+                    },
             ),
-            backgroundColor: Colors.white,
-            side: const BorderSide(color: Color(0xFF00A3FF)),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
-            onPressed: () {
-              _messageController.text = suggestion;
-              _sendMessage();
-            },
           );
-        },
+        }).toList(),
       ),
     );
   }
