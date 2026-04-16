@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:gap/gap.dart';
 
 import 'package:vitaguard_app/ai_chat/data/ai_chat_models.dart';
 import 'package:vitaguard_app/ai_chat/ui/ai_chat_provider.dart';
@@ -215,7 +216,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         itemCount: suggestions.length,
-        separatorBuilder: (_, __) => Gap(8.w),
+        separatorBuilder: (context, sepIndex) => Gap(8.w),
         itemBuilder: (context, index) {
           final suggestion = suggestions[index];
           return ActionChip(
