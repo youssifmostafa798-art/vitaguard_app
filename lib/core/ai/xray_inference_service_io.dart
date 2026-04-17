@@ -62,6 +62,8 @@ class XrayInferenceService {
       final prediction = data['prediction'] as String;
       final confidence = (data['confidence'] as num).toDouble();
       final reportText = data['report_text'] as String;
+      final probNormal = (data['normal_prob'] as num?)?.toDouble();
+      final probPneumonia = (data['pneumonia_prob'] as num?)?.toDouble();
 
       return XRayResult(
         isValid: true,
@@ -69,6 +71,8 @@ class XrayInferenceService {
         confidence: confidence,
         reportText: reportText,
         imagePath: imageFile.path,
+        probNormal: probNormal,
+        probPneumonia: probPneumonia,
       );
     } catch (e) {
       debugPrint("X-ray analysis failed: $e");

@@ -68,6 +68,8 @@ class XRayResult {
   final double? confidence;
   final String? reportText;
   final String? imagePath;
+  final double? probNormal;
+  final double? probPneumonia;
 
   XRayResult({
     required this.isValid,
@@ -75,6 +77,8 @@ class XRayResult {
     this.confidence,
     this.reportText,
     this.imagePath,
+    this.probNormal,
+    this.probPneumonia,
   });
 
   Map<String, dynamic> toMap() {
@@ -84,6 +88,8 @@ class XRayResult {
       'confidence': confidence,
       'reportText': reportText,
       'imagePath': imagePath,
+      'prob_normal': probNormal,
+      'prob_pneumonia': probPneumonia,
     };
   }
 
@@ -94,6 +100,8 @@ class XRayResult {
       confidence: (json['confidence'] as num?)?.toDouble(),
       reportText: json['reportText'] ?? json['report_text'],
       imagePath: json['imagePath'] ?? json['image_path'],
+      probNormal: (json['prob_normal'] as num?)?.toDouble(),
+      probPneumonia: (json['prob_pneumonia'] as num?)?.toDouble(),
     );
   }
 }

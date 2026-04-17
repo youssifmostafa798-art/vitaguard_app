@@ -60,6 +60,8 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                               aiData != null && aiData.useHeatmapPlaceholder,
                         ),
                         if (aiData != null) ...[
+                          Gap(8.h),
+                          const _AiAssistantBadge(),
                           Gap(16.h),
                           AiDiagnosisMetricRow(
                             confidencePercentText: aiData.confidencePercentText,
@@ -69,17 +71,37 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                           AiDiagnosisFindingsSection(labels: aiData.labels),
                           Gap(12.h),
                           AiDiagnosisSummaryCard(
-                            title: 'AI summary',
+                            title: 'AI Summary',
                             body: aiData.summary,
                           ),
                           Gap(12.h),
-                          Text(
-                            'Decision support only — clinical correlation required.',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.textSecondary,
-                                  fontStyle: FontStyle.italic,
-                                  height: 1.35,
+                          AiDiagnosisSummaryCard(
+                            title: 'Differential Diagnosis',
+                            body: aiData.differentialDiagnosis,
+                          ),
+                          Gap(12.h),
+                          Container(
+                            padding: EdgeInsets.all(12.r),
+                            decoration: BoxDecoration(
+                              color: AppColors.error.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(8.r),
+                              border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.warning_amber_rounded, size: 18.sp, color: AppColors.error),
+                                Gap(8.w),
+                                Expanded(
+                                  child: Text(
+                                    'PRELIMINARY REPORT: Clinical correlation required. Not a final diagnosis.',
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: AppColors.error,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                  ),
                                 ),
+                              ],
+                            ),
                           ),
                         ],
                       ]),
@@ -99,6 +121,40 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AiAssistantBadge extends StatelessWidget {
+  const _AiAssistantBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.auto_awesome, size: 14.sp, color: AppColors.primary),
+            Gap(6.w),
+            Text(
+              'AI PRELIMINARY ASSISTANT',
+              style: TextStyle(
+                fontSize: 10.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primary,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
         ),
       ),
     );

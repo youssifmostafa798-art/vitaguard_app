@@ -109,7 +109,10 @@ Deno.serve(async (req) => {
     const probs = exp.map(v => v / sum);
 
     const prediction = probs[1] > probs[0] ? 'PNEUMONIA' : 'NORMAL';
-    const confidence = Math.max(...probs);
+    
+    // Safety: No 100% confidence in Medical AI
+    const rawConfidence = Math.max(...probs);
+    const confidence = rawConfidence >= 1.0 ? 0.999 : rawConfidence;
 
     // 4. Save to DB
     console.log(`Saving result: ${prediction} (${confidence})`);
@@ -122,7 +125,9 @@ Deno.serve(async (req) => {
         confidence: confidence,
         image_path: image_path,
         model_version: 'v1.0.0',
-        inference_source: 'supabase_edge'
+        inference_source: 'supabase_edge',
+        prob_normal: probs[0],
+        prob_pneumonia: probs[1]
       });
 
     if (dbError) throw dbError;
@@ -130,6 +135,8 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ 
       prediction, 
       confidence,
+      normal_prob: probs[0],
+      pneumonia_prob: probs[1],
       report_text: prediction === 'PNEUMONIA' ? 'Suggested findings of pneumonia.' : 'Normal lung patterns detected.'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

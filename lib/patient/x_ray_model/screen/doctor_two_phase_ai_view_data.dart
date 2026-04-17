@@ -12,19 +12,21 @@ class AiReviewViewData {
     required this.labels,
     required this.summary,
     required this.useHeatmapPlaceholder,
+    required this.differentialDiagnosis,
   });
 
   final String confidencePercentText;
   final String severityLabel;
   final List<String> labels;
   final String summary;
+  final String differentialDiagnosis;
 
   /// When true, UI shows a synthetic overlay; replace with real tensor when available.
   final bool useHeatmapPlaceholder;
 
   static AiReviewViewData fromXRayResult(XRayResult result) {
     final confidenceText = result.confidence != null
-        ? '${(result.confidence! * 100).clamp(0, 100).toStringAsFixed(1)}%'
+        ? '${(result.confidence! * 100).clamp(0, 99.9).toStringAsFixed(1)}%'
         : 'N/A';
 
     if (!result.isValid) {
@@ -36,6 +38,7 @@ class AiReviewViewData {
             result.reportText ??
             'The image could not be analyzed as a valid chest X-ray.',
         useHeatmapPlaceholder: false,
+        differentialDiagnosis: 'N/A',
       );
     }
 
@@ -57,11 +60,20 @@ class AiReviewViewData {
       if (!isPneumonia) 'No strong pneumonia pattern detected',
     ];
 
+    final probPneu = result.probPneumonia != null 
+        ? (result.probPneumonia! * 100).toStringAsFixed(1) 
+        : (isPneumonia ? (conf * 100).toStringAsFixed(1) : '0.0');
+    final probNorm = result.probNormal != null 
+        ? (result.probNormal! * 100).toStringAsFixed(1) 
+        : (!isPneumonia ? (conf * 100).toStringAsFixed(1) : '0.0');
+
+    final differential = 'Pneumonia: $probPneu% | Normal: $probNorm%';
+
     final summary =
         result.reportText ??
         (isPneumonia
-            ? 'AI suggests findings that may be consistent with pneumonia. Clinical correlation is required.'
-            : 'AI suggests lung fields without a strong pneumonia signal. Clinical correlation is required.');
+            ? 'AI suggests findings consistent with pneumonia ($probPneu% probability). Clinical correlation is required.'
+            : 'AI suggests lung fields without a strong pneumonia signal ($probNorm% probability of normal study).');
 
     return AiReviewViewData(
       confidencePercentText: confidenceText,
@@ -69,6 +81,7 @@ class AiReviewViewData {
       labels: labels,
       summary: summary,
       useHeatmapPlaceholder: true,
+      differentialDiagnosis: differential,
     );
   }
 }
