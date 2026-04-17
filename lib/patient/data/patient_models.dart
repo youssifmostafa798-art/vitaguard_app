@@ -63,6 +63,7 @@ class DailyReport {
 }
 
 class XRayResult {
+  final String? id;
   final bool isValid;
   final String? prediction;
   final double? confidence;
@@ -72,6 +73,7 @@ class XRayResult {
   final double? probPneumonia;
 
   XRayResult({
+    this.id,
     required this.isValid,
     this.prediction,
     this.confidence,
@@ -83,6 +85,7 @@ class XRayResult {
 
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'isValid': isValid,
       'prediction': prediction,
       'confidence': confidence,
@@ -95,6 +98,7 @@ class XRayResult {
 
   factory XRayResult.fromMap(Map<String, dynamic> json) {
     return XRayResult(
+      id: json['id'],
       isValid: json['isValid'] ?? json['is_valid'] ?? false,
       prediction: json['prediction'],
       confidence: (json['confidence'] as num?)?.toDouble(),

@@ -63,11 +63,11 @@ class AiReviewViewData {
     final confidenceText = result.confidence != null
         ? '${(result.confidence! * 100).clamp(0, 99.9).toStringAsFixed(1)}%'
         : 'N/A';
-
+    final reportText = result.reportText ?? '';
     final pred = (result.prediction ?? 'UNKNOWN').toUpperCase();
     final isPneumonia = pred.contains('PNEUMONIA');
     final isIndeterminate = pred.contains('INDETERMINATE');
-    final isTechError = summaryContent.startsWith('TECH_ERROR:');
+    final isTechError = reportText.startsWith('TECH_ERROR:');
 
     if (isIndeterminate || isTechError) {
       return AiReviewViewData(
@@ -75,8 +75,8 @@ class AiReviewViewData {
         severityLabel: 'UNSTABLE',
         labels: const [],
         summary: isTechError 
-            ? summaryContent.replaceFirst('TECH_ERROR:', '') 
-            : summaryContent.isEmpty ? 'The AI engine encountered a processing delay. This study requires standard clinical correlation.' : summaryContent,
+            ? reportText.replaceFirst('TECH_ERROR:', '') 
+            : reportText.isEmpty ? 'The AI engine encountered a processing delay. This study requires standard clinical correlation.' : reportText,
         friendlyErrorAdvice: isTechError 
             ? 'A technical engine error occurred. Please report this specific message to the engineering team.'
             : 'The image may be clear enough for a doctor, but the AI engine requires a retry.',
