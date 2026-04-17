@@ -188,3 +188,131 @@ class AiDiagnosisSummaryCard extends StatelessWidget {
     );
   }
 }
+
+/// Professional, calm error display using Amber tones. 
+/// Replaces scary technical boxes with actionable guidance.
+class AiErrorDisplay extends StatelessWidget {
+  const AiErrorDisplay({
+    super.key,
+    required this.message,
+    required this.advice,
+    required this.onRetry,
+    required this.onUploadNew,
+  });
+
+  final String message;
+  final String advice;
+  final VoidCallback onRetry;
+  final VoidCallback onUploadNew;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    const amberBase = Color(0xFFF39C12);
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(20.r),
+      decoration: BoxDecoration(
+        color: amberBase.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: amberBase.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.warning_amber_rounded, size: 48.sp, color: amberBase),
+          Gap(16.h),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          Gap(8.h),
+          Text(
+            advice,
+            textAlign: TextAlign.center,
+            style: textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.4,
+            ),
+          ),
+          Gap(24.h),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onUploadNew,
+                  icon: const Icon(Icons.upload_file_outlined),
+                  label: const Text('New Upload'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textSecondary,
+                    side: BorderSide(color: AppColors.border),
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                  ),
+                ),
+              ),
+              Gap(12.w),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Try Again'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AiAnalysisAssistantBadge extends StatelessWidget {
+  const AiAnalysisAssistantBadge({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.auto_awesome, size: 14.sp, color: AppColors.primary),
+            Gap(6.w),
+            Text(
+              'AI ANALYSIS ASSISTANT',
+              style: TextStyle(
+                fontSize: 10.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primary,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class Gap extends StatelessWidget {
+  const Gap(this.height, {super.key});
+  final double height;
+  @override
+  Widget build(BuildContext context) => SizedBox(height: height);
+}

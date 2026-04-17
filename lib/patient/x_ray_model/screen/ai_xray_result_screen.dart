@@ -18,10 +18,12 @@ class AiXRayResultScreen extends ConsumerStatefulWidget {
     super.key,
     required this.imageFile,
     required this.result,
+    this.onRetry,
   });
 
   final File imageFile;
   final XRayResult result;
+  final Future<void> Function()? onRetry;
 
   @override
   ConsumerState<AiXRayResultScreen> createState() => _AiXRayResultScreenState();
@@ -37,10 +39,12 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
     final AiReviewViewData? aiData =
         _aiLayerOn ? AiReviewViewData.fromXRayResult(widget.result) : null;
 
+    final isError = widget.result.isValid == false;
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: SimpleHeader(
-        title: 'AI X-Ray Diagnosis',
+        title: 'AI Analysis Assistant',
         automaticallyImplyLeading: true,
       ),
       body: SafeArea(
@@ -61,47 +65,95 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                         ),
                         if (aiData != null) ...[
                           Gap(8.h),
-                          const _AiAssistantBadge(),
+                          const AiAnalysisAssistantBadge(),
                           Gap(16.h),
-                          AiDiagnosisMetricRow(
-                            confidencePercentText: aiData.confidencePercentText,
-                            severityLabel: aiData.severityLabel,
-                          ),
-                          Gap(12.h),
-                          AiDiagnosisFindingsSection(labels: aiData.labels),
-                          Gap(12.h),
-                          AiDiagnosisSummaryCard(
-                            title: 'AI Summary',
-                            body: aiData.summary,
-                          ),
-                          Gap(12.h),
-                          AiDiagnosisSummaryCard(
-                            title: 'Differential Diagnosis',
-                            body: aiData.differentialDiagnosis,
-                          ),
-                          Gap(12.h),
-                          Container(
-                            padding: EdgeInsets.all(12.r),
-                            decoration: BoxDecoration(
-                              color: AppColors.error.withValues(alpha: 0.05),
-                              borderRadius: BorderRadius.circular(8.r),
-                              border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
+                          if (aiData.isError)
+                            AiErrorDisplay(
+                              message: aiData.summary,
+                              advice: aiData.friendlyErrorAdvice ?? '',
+                              onRetry: () {
+                                if (widget.onRetry != null) {
+                                  widget.onRetry!();
+                                }
+                              },
+                              onUploadNew: () => Navigator.pop(context),
+                            )
+                          else ...[
+                            AiDiagnosisMetricRow(
+                              confidencePercentText: aiData.confidencePercentText,
+                              severityLabel: aiData.severityLabel,
                             ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.warning_amber_rounded, size: 18.sp, color: AppColors.error),
-                                Gap(8.w),
-                                Expanded(
+                            Gap(12.h),
+                            AiDiagnosisFindingsSection(labels: aiData.labels),
+                            Gap(12.h),
+                            AiDiagnosisSummaryCard(
+                              title: 'AI Summary',
+                              body: aiData.summary,
+                            ),
+                            Gap(12.h),
+                            AiDiagnosisSummaryCard(
+                              title: 'Differential Diagnosis',
+                              body: aiData.differentialDiagnosis,
+                            ),
+                          ],
+                          Gap(16.h),
+                          // Subtle disclaimer
+                          Column(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(12.r),
+                                decoration: BoxDecoration(
+                                  color: (aiData.isError ? Colors.amber : AppColors.error)
+                                      .withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(8.r),
+                                  border: Border.all(
+                                    color: (aiData.isError ? Colors.amber : AppColors.error)
+                                        .withValues(alpha: 0.2),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      aiData.isError ? Icons.info_outline : Icons.warning_amber_rounded,
+                                      size: 18.sp,
+                                      color: aiData.isError ? Colors.amber.shade700 : AppColors.error,
+                                    ),
+                                    Gap(8.w),
+                                    Expanded(
+                                      child: Text(
+                                        aiData.isError
+                                            ? 'The report is currently incomplete. Clinical judgment is required.'
+                                            : 'PRELIMINARY REPORT: Clinical correlation required. Not a final diagnosis.',
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: aiData.isError
+                                                  ? Colors.amber.shade900
+                                                  : AppColors.error,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (aiData.isError) ...[
+                                Gap(12.h),
+                                TextButton(
+                                  onPressed: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Error reported. Thank you for your feedback.')),
+                                    );
+                                  },
                                   child: Text(
-                                    'PRELIMINARY REPORT: Clinical correlation required. Not a final diagnosis.',
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          color: AppColors.error,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                    'Report an issue with this analysis',
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      color: AppColors.textSecondary,
+                                      decoration: TextDecoration.underline,
+                                    ),
                                   ),
                                 ),
                               ],
-                            ),
+                            ],
                           ),
                         ],
                       ]),
@@ -109,52 +161,19 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                   ),
                 ],
               ),
-              Positioned(
-                top: 8.h,
-                right: 12.w,
-                child: SafeArea(
-                  child: AiLayerToggle(
-                    aiLayerOn: _aiLayerOn,
-                    onChanged: (v) => setState(() => _aiLayerOn = v),
+              if (!isError)
+                Positioned(
+                  top: 8.h,
+                  right: 12.w,
+                  child: SafeArea(
+                    child: AiLayerToggle(
+                      aiLayerOn: _aiLayerOn,
+                      onChanged: (v) => setState(() => _aiLayerOn = v),
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AiAssistantBadge extends StatelessWidget {
-  const _AiAssistantBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(20.r),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.auto_awesome, size: 14.sp, color: AppColors.primary),
-            Gap(6.w),
-            Text(
-              'AI PRELIMINARY ASSISTANT',
-              style: TextStyle(
-                fontSize: 10.sp,
-                fontWeight: FontWeight.w800,
-                color: AppColors.primary,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
         ),
       ),
     );

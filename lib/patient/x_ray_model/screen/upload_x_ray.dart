@@ -51,6 +51,10 @@ class _UploadXRayState extends ConsumerState<UploadXRay> {
           builder: (_) => AiXRayResultScreen(
             imageFile: _selectedImage!,
             result: result,
+            onRetry: () async {
+              Navigator.pop(context);
+              _handleScan();
+            },
           ),
         ),
       );
@@ -132,7 +136,27 @@ class _UploadXRayState extends ConsumerState<UploadXRay> {
                       const Gap(50),
 
                       if (isLoading)
-                        const CircularProgressIndicator()
+                        Column(
+                          children: [
+                            const CircularProgressIndicator(),
+                            const Gap(12),
+                            Text(
+                              'Analyzing image...',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const Gap(4),
+                            Text(
+                              '(this usually takes 5-15 seconds)',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        )
                       else
                         Button(title: 'Scan', onTap: _handleScan),
                       const Gap(20),

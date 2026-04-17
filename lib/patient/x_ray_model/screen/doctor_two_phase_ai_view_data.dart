@@ -20,27 +20,58 @@ class AiReviewViewData {
   final List<String> labels;
   final String summary;
   final String differentialDiagnosis;
+  final bool isError;
+  final String? friendlyErrorAdvice;
 
   /// When true, UI shows a synthetic overlay; replace with real tensor when available.
   final bool useHeatmapPlaceholder;
 
+  const AiReviewViewData({
+    required this.confidencePercentText,
+    required this.severityLabel,
+    required this.labels,
+    required this.summary,
+    required this.differentialDiagnosis,
+    required this.useHeatmapPlaceholder,
+    this.isError = false,
+    this.friendlyErrorAdvice,
+  });
+
   static AiReviewViewData fromXRayResult(XRayResult result) {
+    if (!result.isValid) {
+      final technicalError = result.reportText ?? '';
+      String friendlyMessage = 'Sorry, we couldn\'t process this X-ray.';
+      String? advice = 'Try re-uploading or taking a new photo.';
+
+      if (technicalError.contains('401') || technicalError.contains('Unauthorized')) {
+        friendlyMessage = 'Authentication issue detected.';
+        advice = 'Please try logging in again to reset your session.';
+      } else if (technicalError.contains('WASM') || technicalError.contains('FunctionException') || technicalError.contains('normalize')) {
+        friendlyMessage = 'Analysis temporarily unavailable.';
+        advice = 'Our AI engine is busy or updating. Please try again in 30 seconds.';
+      } else if (technicalError.contains('too blurry') || technicalError.contains('resolution')) {
+        friendlyMessage = 'Image quality is too low.';
+        advice = 'Please ensure the X-ray is clear and high-resolution.';
+      } else if (technicalError.contains('format')) {
+        friendlyMessage = 'File format not supported.';
+        advice = 'Please use a high-quality JPG or PNG file.';
+      }
+
+      return AiReviewViewData(
+        confidencePercentText: 'N/A',
+        severityLabel: 'Indeterminate',
+        labels: const ['Analysis Incomplete'],
+        summary: friendlyMessage,
+        friendlyErrorAdvice: advice,
+        useHeatmapPlaceholder: false,
+        differentialDiagnosis: 'Differential diagnosis unavailable.',
+        isError: true,
+      );
+    }
+
     final confidenceText = result.confidence != null
         ? '${(result.confidence! * 100).clamp(0, 99.9).toStringAsFixed(1)}%'
         : 'N/A';
-
-    if (!result.isValid) {
-      return AiReviewViewData(
-        confidencePercentText: confidenceText,
-        severityLabel: 'Indeterminate',
-        labels: const ['Invalid or unreadable study'],
-        summary:
-            result.reportText ??
-            'The image could not be analyzed as a valid chest X-ray.',
-        useHeatmapPlaceholder: false,
-        differentialDiagnosis: 'N/A',
-      );
-    }
 
     final pred = (result.prediction ?? 'UNKNOWN').toUpperCase();
     final isPneumonia = pred.contains('PNEUMONIA');
@@ -82,6 +113,7 @@ class AiReviewViewData {
       summary: summary,
       useHeatmapPlaceholder: true,
       differentialDiagnosis: differential,
+      isError: false,
     );
   }
 }

@@ -6,6 +6,7 @@ import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts"
 // This must be set before any sessions are created
 ort.env.wasm.numThreads = 1;
 ort.env.wasm.proxy = false;
+ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
