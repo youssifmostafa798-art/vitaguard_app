@@ -1,55 +1,46 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0"
-import * as ort from "https://esm.sh/onnxruntime-web@1.17.3"
+import * as ort from "https://esm.sh/onnxruntime-web@1.17.3?target=deno"
 import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts"
 
 // ENFORCE SINGLE THREADED & NO-SIMD EXECUTION GLOBALLY
 ort.env.wasm.numThreads = 1;
 ort.env.wasm.simd = false;
-ort.env.wasm.proxy = false;
-ort.env.wasm.wasmPaths = {
-  'ort-wasm.wasm': 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/ort-wasm.wasm',
-  'ort-wasm-threaded.wasm': 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/ort-wasm-threaded.wasm',
-  'ort-wasm-simd.wasm': 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/ort-wasm-simd.wasm',
-  'ort-wasm-simd-threaded.wasm': 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/ort-wasm-simd-threaded.wasm',
-};
+ort.env.wasm.proxy = false; // CRITICAL: Workers are not supported in Edge Functions
+ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 // Global variable to cache the model session
-let session: ort.InferenceSession | null = null;
+let session: any = null;
 
-async function loadModel(supabase: any) {
+async function loadModel() {
   if (session) return session;
 
-  console.log("[TRACE] Downloading model...");
-  const { data, error } = await supabase
-    .storage
-    .from('ai-models')
-    .download('Model.onnx');
-
-  if (error) {
-    console.error("[ERROR] Model download failed:", error);
-    throw new Error("Model download failed");
-  }
-
-  const modelBuffer = await data.arrayBuffer();
-  console.log("[TRACE] Initializing ONNX session (WASM)...");
-  
   try {
-    session = await ort.InferenceSession.create(modelBuffer, {
+    console.log("[TRACE] Loading local model file...");
+    const modelBuffer = await Deno.readFile(new URL("./Model.onnx", import.meta.url));
+    console.log("[TRACE] Model read. Creating session (WASM)...");
+
+    // Use a promise race to timeout if ORT hangs
+    const sessionPromise = ort.InferenceSession.create(modelBuffer, {
       executionProviders: ['wasm'],
       graphOptimizationLevel: 'disabled',
     });
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("ONNX Session creation timed out")), 15000)
+    );
+
+    session = await Promise.race([sessionPromise, timeoutPromise]);
     console.log("[TRACE] ONNX Session Ready.");
+    return session;
   } catch (err) {
-    console.error("[ERROR] Session creation failed:", err);
+    console.error("[CRITICAL] ONNX session failure:", err);
     throw err;
   }
-  
-  return session;
 }
 
 Deno.serve(async (req) => {
@@ -117,7 +108,7 @@ Deno.serve(async (req) => {
     let inferenceError = false;
 
     try {
-      const modelSession = await loadModel(supabase);
+      const modelSession = await loadModel();
       console.log("[TRACE] Creating input tensor...");
       const tensor = new ort.Tensor('float32', float32Data, [1, 3, 224, 224]);
       const feeds = { input: tensor };
