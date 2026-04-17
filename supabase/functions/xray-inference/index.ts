@@ -1,6 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0"
-import * as ort from "https://esm.sh/onnxruntime-web@1.20.1"
+import * as ort from "npm:onnxruntime-web@1.18.0"
 import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts"
+
+// ENFORCE SINGLE THREADED EXECUTION GLOBALLY
+// This must be set before any sessions are created
+ort.env.wasm.numThreads = 1;
+ort.env.wasm.proxy = false;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,6 +36,7 @@ async function loadModel(supabase: any) {
   // but for simple models it works well.
   session = await ort.InferenceSession.create(modelBuffer, {
     executionProviders: ['wasm'],
+    numThreads: 1,
   });
   
   return session;
@@ -83,11 +89,13 @@ Deno.serve(async (req) => {
     for (let c = 0; c < 3; c++) {
       for (let y = 0; y < 224; y++) {
         for (let x = 0; x < 224; x++) {
-          const pixel = image.getPixelAt(x + 1, y + 1); // imagescript uses 1-based indexing for pixels? 
-          // Actually, let's use the buffer directly if possible or iterate correctly.
-          // image.getPixelAt(x, y) returns [r, g, b, a] 0-255
-          const rgba = Image.getRGBA(pixel);
-          const val = c === 0 ? rgba[0] : (c === 1 ? rgba[1] : rgba[2]);
+          const pixel = image.getPixelAt(x + 1, y + 1); 
+          // Extract RGBA from uint32: [R(8), G(8), B(8), A(8)]
+          const r = (pixel >> 24) & 0xff;
+          const g = (pixel >> 16) & 0xff;
+          const b = (pixel >> 8) & 0xff;
+          
+          const val = c === 0 ? r : (c === 1 ? g : b);
           float32Data[i++] = (val / 255.0 - mean[c]) / std[c];
         }
       }

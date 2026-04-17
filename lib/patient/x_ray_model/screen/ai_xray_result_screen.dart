@@ -28,8 +28,8 @@ class AiXRayResultScreen extends ConsumerStatefulWidget {
 }
 
 class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
-  /// Default OFF — no AI widgets in the tree until the user opts in.
-  bool _aiLayerOn = false;
+  /// Default ON — show summary and analysis immediately.
+  bool _aiLayerOn = true;
 
   @override
   Widget build(BuildContext context) {
