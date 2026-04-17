@@ -63,13 +63,34 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { image_url, result_id } = body;
     resultId = result_id;
-    console.log(`[TRACE] Processing Request: ${result_id}`);
+    console.log(`[TRACE] Processing Request: ${resultId}`);
 
-    const imageUrl = new URL(image_url);
-    const response = await fetch(imageUrl);
-    const imageBuffer = await response.arrayBuffer();
-    
-    console.log("[TRACE] Decoding Image...");
+    // 1. Authenticated Download (Secure)
+    console.log("[TRACE] Fetching image path from database...");
+    const { data: resultRow, error: fetchErr } = await supabase
+      .from('patient_xray_results')
+      .select('image_path')
+      .eq('id', resultId)
+      .single();
+
+    if (fetchErr || !resultRow?.image_path) {
+      throw new Error(`Failed to find image_path for result_id: ${resultId}. Error: ${fetchErr?.message}`);
+    }
+
+    console.log(`[TRACE] Downloading image from storage: ${resultRow.image_path}`);
+    const { data: imgData, error: dlError } = await supabase
+      .storage
+      .from('xray-images')
+      .download(resultRow.image_path);
+
+    if (dlError) throw new Error(`Storage download failed: ${dlError.message}`);
+
+    const imageBuffer = await imgData.arrayBuffer();
+    if (imageBuffer.byteLength < 100) {
+      throw new Error(`Downloaded image buffer is too small (${imageBuffer.byteLength} bytes). Possible corrupted file.`);
+    }
+
+    console.log("[TRACE] Decoding Image (ImageScript)...");
     const image = await Image.decode(imageBuffer);
     image.resize(224, 224);
     
