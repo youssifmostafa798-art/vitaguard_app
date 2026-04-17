@@ -3,11 +3,15 @@ import * as ort from "https://esm.sh/onnxruntime-web@1.17.3"
 import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts"
 
 // ENFORCE SINGLE THREADED & NO-SIMD EXECUTION GLOBALLY
-// This is critical for Deno serverless stability.
 ort.env.wasm.numThreads = 1;
 ort.env.wasm.simd = false;
 ort.env.wasm.proxy = false;
-ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/";
+ort.env.wasm.wasmPaths = {
+  'ort-wasm.wasm': 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/ort-wasm.wasm',
+  'ort-wasm-threaded.wasm': 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/ort-wasm-threaded.wasm',
+  'ort-wasm-simd.wasm': 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/ort-wasm-simd.wasm',
+  'ort-wasm-simd-threaded.wasm': 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/ort-wasm-simd-threaded.wasm',
+};
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -37,7 +41,7 @@ async function loadModel(supabase: any) {
   try {
     session = await ort.InferenceSession.create(modelBuffer, {
       executionProviders: ['wasm'],
-      graphOptimizationLevel: 'all',
+      graphOptimizationLevel: 'disabled',
     });
     console.log("[TRACE] ONNX Session Ready.");
   } catch (err) {
@@ -114,8 +118,11 @@ Deno.serve(async (req) => {
 
     try {
       const modelSession = await loadModel(supabase);
+      console.log("[TRACE] Creating input tensor...");
       const tensor = new ort.Tensor('float32', float32Data, [1, 3, 224, 224]);
       const feeds = { input: tensor };
+      
+      console.log("[TRACE] Executing session.run()...");
       const results = await modelSession.run(feeds);
       
       const output = results.output.data as Float32Array;
@@ -130,10 +137,11 @@ Deno.serve(async (req) => {
       confidence = rawConfidence >= 1.0 ? 0.999 : rawConfidence;
       console.log(`[TRACE] Inference Success: ${prediction} (${confidence})`);
     } catch (engineErr) {
-      console.error("[CRITICAL] Inference engine failed. Falling back to SAFE MODE.", engineErr);
+      console.error("[CRITICAL] Inference engine failed. Error:", engineErr);
       inferenceError = true;
       prediction = 'INDETERMINATE';
       confidence = 0.5;
+      probs = [0.5, 0.5];
     }
 
     // 4. Save to DB (even if indeterminate)
@@ -171,6 +179,9 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ 
       error: error.message,
       prediction: 'INDETERMINATE',
+      confidence: 0.5,
+      normal_prob: 0.5,
+      pneumonia_prob: 0.5,
       report_text: "System is busy. Please correlation with clinical findings."
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

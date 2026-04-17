@@ -59,11 +59,11 @@ class XrayInferenceService {
       }
 
       final data = response.data as Map<String, dynamic>;
-      final prediction = data['prediction'] as String;
-      final confidence = (data['confidence'] as num).toDouble();
-      final reportText = data['report_text'] as String;
-      final probNormal = (data['normal_prob'] as num?)?.toDouble();
-      final probPneumonia = (data['pneumonia_prob'] as num?)?.toDouble();
+      final prediction = (data['prediction'] as String?) ?? 'INDETERMINATE';
+      final confidence = (data['confidence'] as num?)?.toDouble() ?? 0.5;
+      final reportText = (data['report_text'] as String?) ?? 'Clinical correlation required.';
+      final probNormal = (data['normal_prob'] as num?)?.toDouble() ?? 0.5;
+      final probPneumonia = (data['pneumonia_prob'] as num?)?.toDouble() ?? 0.5;
 
       return XRayResult(
         isValid: true,

@@ -35,9 +35,8 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Build view data only when the AI layer is shown (decision-support data).
-    final AiReviewViewData? aiData =
-        _aiLayerOn ? AiReviewViewData.fromXRayResult(widget.result) : null;
+    // Compute view data regardless of toggle — the report should always be visible.
+    final AiReviewViewData aiData = AiReviewViewData.fromXRayResult(widget.result);
 
     final isError = widget.result.isValid == false;
 
@@ -50,116 +49,114 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
       body: SafeArea(
         child: AppBackground(
           child: Stack(
-            clipBehavior: Clip.none,
             children: [
-              CustomScrollView(
-                slivers: [
-                  SliverPadding(
-                    padding: EdgeInsets.fromLTRB(20.w, 56.h, 20.w, 32.h),
-                    sliver: SliverList(
-                      delegate: SliverChildListDelegate([
-                        XRayImageWithOptionalHeatmap(
-                          imageFile: widget.imageFile,
-                          showHeatmapOverlay:
-                              aiData != null && aiData.useHeatmapPlaceholder,
+              SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(20.w, 56.h, 20.w, 32.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    XRayImageWithOptionalHeatmap(
+                      imageFile: widget.imageFile,
+                      showHeatmapOverlay:
+                          _aiLayerOn && aiData.useHeatmapPlaceholder,
+                    ),
+                    Gap(8.h),
+                    // Only show the badge if the AI layer is ON
+                    if (_aiLayerOn) const AiAnalysisAssistantBadge(),
+                    Gap(16.h),
+                    
+                    if (aiData.isError)
+                      AiErrorDisplay(
+                        message: aiData.summary,
+                        advice: aiData.friendlyErrorAdvice ?? '',
+                        onRetry: () {
+                          if (widget.onRetry != null) {
+                            widget.onRetry!();
+                          }
+                        },
+                        onUploadNew: () => Navigator.pop(context),
+                      )
+                    else ...[
+                      AiDiagnosisMetricRow(
+                        confidencePercentText: aiData.confidencePercentText,
+                        severityLabel: aiData.severityLabel,
+                      ),
+                      Gap(12.h),
+                      AiDiagnosisFindingsSection(labels: aiData.labels),
+                      Gap(12.h),
+                      AiDiagnosisSummaryCard(
+                        title: 'AI Summary',
+                        body: aiData.summary,
+                      ),
+                      Gap(12.h),
+                      AiDiagnosisSummaryCard(
+                        title: 'Differential Diagnosis',
+                        body: aiData.differentialDiagnosis,
+                      ),
+                    ],
+                    
+                    Gap(16.h),
+                    
+                    // The disclaimer and report issue link are ALWAYS at the bottom
+                    Container(
+                      padding: EdgeInsets.all(12.r),
+                      decoration: BoxDecoration(
+                        color: (aiData.isError ? Colors.amber : AppColors.error)
+                            .withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(
+                          color: (aiData.isError ? Colors.amber : AppColors.error)
+                              .withValues(alpha: 0.2),
                         ),
-                        if (aiData != null) ...[
-                          Gap(8.h),
-                          const AiAnalysisAssistantBadge(),
-                          Gap(16.h),
-                          if (aiData.isError)
-                            AiErrorDisplay(
-                              message: aiData.summary,
-                              advice: aiData.friendlyErrorAdvice ?? '',
-                              onRetry: () {
-                                if (widget.onRetry != null) {
-                                  widget.onRetry!();
-                                }
-                              },
-                              onUploadNew: () => Navigator.pop(context),
-                            )
-                          else ...[
-                            AiDiagnosisMetricRow(
-                              confidencePercentText: aiData.confidencePercentText,
-                              severityLabel: aiData.severityLabel,
-                            ),
-                            Gap(12.h),
-                            AiDiagnosisFindingsSection(labels: aiData.labels),
-                            Gap(12.h),
-                            AiDiagnosisSummaryCard(
-                              title: 'AI Summary',
-                              body: aiData.summary,
-                            ),
-                            Gap(12.h),
-                            AiDiagnosisSummaryCard(
-                              title: 'Differential Diagnosis',
-                              body: aiData.differentialDiagnosis,
-                            ),
-                          ],
-                          Gap(16.h),
-                          // Subtle disclaimer
-                          Column(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(12.r),
-                                decoration: BoxDecoration(
-                                  color: (aiData.isError ? Colors.amber : AppColors.error)
-                                      .withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(8.r),
-                                  border: Border.all(
-                                    color: (aiData.isError ? Colors.amber : AppColors.error)
-                                        .withValues(alpha: 0.2),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            aiData.isError ? Icons.info_outline : Icons.warning_amber_rounded,
+                            size: 18.sp,
+                            color: aiData.isError ? Colors.amber.shade700 : AppColors.error,
+                          ),
+                          Gap(8.w),
+                          Expanded(
+                            child: Text(
+                              aiData.isError
+                                  ? 'The report is currently incomplete. Clinical judgment is required.'
+                                  : 'PRELIMINARY REPORT: Clinical correlation required. Not a final diagnosis.',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: aiData.isError
+                                        ? Colors.amber.shade900
+                                        : AppColors.error,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      aiData.isError ? Icons.info_outline : Icons.warning_amber_rounded,
-                                      size: 18.sp,
-                                      color: aiData.isError ? Colors.amber.shade700 : AppColors.error,
-                                    ),
-                                    Gap(8.w),
-                                    Expanded(
-                                      child: Text(
-                                        aiData.isError
-                                            ? 'The report is currently incomplete. Clinical judgment is required.'
-                                            : 'PRELIMINARY REPORT: Clinical correlation required. Not a final diagnosis.',
-                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                              color: aiData.isError
-                                                  ? Colors.amber.shade900
-                                                  : AppColors.error,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (aiData.isError) ...[
-                                Gap(12.h),
-                                TextButton(
-                                  onPressed: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Error reported. Thank you for your feedback.')),
-                                    );
-                                  },
-                                  child: Text(
-                                    'Report an issue with this analysis',
-                                    style: TextStyle(
-                                      fontSize: 12.sp,
-                                      color: AppColors.textSecondary,
-                                      decoration: TextDecoration.underline,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
+                            ),
                           ),
                         ],
-                      ]),
+                      ),
                     ),
-                  ),
-                ],
+                    
+                    if (aiData.isError) ...[
+                      Gap(12.h),
+                      Center(
+                        child: TextButton(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Error reported. Thank you for your feedback.')),
+                            );
+                          },
+                          child: Text(
+                            'Report an issue with this analysis',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: AppColors.textSecondary,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
               if (!isError)
                 Positioned(
