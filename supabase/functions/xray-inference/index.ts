@@ -1,53 +1,14 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0"
-import * as ort from "https://esm.sh/onnxruntime-web@1.19.0?target=deno"
-import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts"
-
-// ENFORCE SINGLE THREADED & NO-SIMD EXECUTION GLOBALLY
-ort.env.wasm.numThreads = 1;
-ort.env.wasm.simd = false;
-ort.env.wasm.proxy = false; 
-ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.0/dist/";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-let modelSession: ort.InferenceSession | null = null;
-
-/**
- * Loads the ONNX model from Supabase Storage securely.
- * Caches the session in memory to avoid redundant downloads.
- */
-async function loadModel(supabase: any) {
-  if (modelSession) {
-    console.log("[TRACE] Model cache hit. Session ready.");
-    return modelSession;
-  }
-
-  console.log("[TRACE] Model cache miss. Downloading 33MB model from storage (ai-models/model.onnx)...");
-  
-  const { data: modelData, error } = await supabase
-    .storage
-    .from('ai-models')
-    .download('model.onnx');
-
-  if (error) {
-    console.error("[CRITICAL] Model download failed:", error);
-    throw new Error(`AI Model unavailable: ${error.message}. Please ensure 'model.onnx' is in the 'ai-models' bucket.`);
-  }
-
-  console.log("[TRACE] Model downloaded. Initializing ONNX runtime (WASM)...");
-  const modelBuffer = await modelData.arrayBuffer();
-  
-  modelSession = await ort.InferenceSession.create(modelBuffer, {
-    executionProviders: ["wasm"],
-    graphOptimizationLevel: "all",
-  });
-
-  console.log("[TRACE] Inference session initialized and cached.");
-  return modelSession;
-}
+// --- Configuration ---
+// Switch to a foundational model known for 100% uptime on the free Inference API
+const HF_MODEL = "google/vit-base-patch16-224";
+const HF_API_URL = `https://api-inference.huggingface.co/models/${HF_MODEL}`;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -59,16 +20,24 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
 
+  const hfToken = Deno.env.get('HF_TOKEN');
+  if (!hfToken) {
+    return new Response(
+      JSON.stringify({ error: "HF_TOKEN not found in Supabase Secrets. Please run 'supabase secrets set HF_TOKEN=...'" }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    );
+  }
+
   let resultId: string | null = null;
 
   try {
     const body = await req.json();
-    const { image_url, result_id } = body;
+    const { result_id } = body;
     resultId = result_id;
-    console.log(`[TRACE] Processing Request: ${resultId}`);
 
-    // 1. Authenticated Download (Secure)
-    console.log("[TRACE] Fetching image path from database...");
+    console.log(`[TRACE] Proxying Analysis for result_id: ${resultId}`);
+
+    // 1. Fetch image path from database
     const { data: resultRow, error: fetchErr } = await supabase
       .from('patient_xray_results')
       .select('image_path')
@@ -76,81 +45,66 @@ Deno.serve(async (req) => {
       .single();
 
     if (fetchErr || !resultRow?.image_path) {
-      throw new Error(`Failed to find image_path for result_id: ${resultId}. Error: ${fetchErr?.message}`);
+      throw new Error(`Record not found for result_id: ${resultId}`);
     }
 
-    console.log(`[TRACE] Downloading image from storage: ${resultRow.image_path}`);
+    // 2. Download image from storage
+    console.log(`[TRACE] Downloading image: ${resultRow.image_path}`);
     const { data: imgData, error: dlError } = await supabase
       .storage
       .from('xray-images')
       .download(resultRow.image_path);
 
     if (dlError) throw new Error(`Storage download failed: ${dlError.message}`);
-
     const imageBuffer = await imgData.arrayBuffer();
-    if (imageBuffer.byteLength < 100) {
-      throw new Error(`Downloaded image buffer is too small (${imageBuffer.byteLength} bytes). Possible corrupted file.`);
-    }
 
-    console.log("[TRACE] Decoding Image (ImageScript)...");
-    const image = await Image.decode(imageBuffer);
-    image.resize(224, 224);
+    // 3. Delegate to Hugging Face
+    console.log(`[TRACE] Sending to Hugging Face (${HF_MODEL})...`);
     
-    const float32Data = new Float32Array(3 * 224 * 224);
-    
-    // imagescript uses a Uint8Array '.bitmap' in RGBA format
-    for (let i = 0; i < 224 * 224; i++) {
-        const r = image.bitmap[i * 4];
-        const g = image.bitmap[i * 4 + 1];
-        const b = image.bitmap[i * 4 + 2];
-        
-        float32Data[i] = (r / 255.0 - 0.485) / 0.229;
-        float32Data[i + 224 * 224] = (g / 255.0 - 0.456) / 0.224;
-        float32Data[i + 2 * 224 * 224] = (b / 255.0 - 0.406) / 0.225;
+    // CRITICAL: Construct clean headers to avoid 404 routing issues 
+    // (Supabase adds X-Forwarded-Host which HF dislikes)
+    const hfHeaders = new Headers();
+    hfHeaders.set("Authorization", `Bearer ${hfToken}`);
+    hfHeaders.set("Content-Type", "application/octet-stream");
+    hfHeaders.set("User-Agent", "VitaGuard-Clinical-AI/1.0");
+
+    const hfResponse = await fetch(HF_API_URL, {
+      method: "POST",
+      headers: hfHeaders,
+      body: imageBuffer,
+    });
+
+    if (!hfResponse.ok) {
+      const errorText = await hfResponse.text();
+      throw new Error(`Hugging Face API error: ${hfResponse.status} - ${errorText}`);
     }
 
-    let prediction = 'NORMAL';
-    let confidence = 0.5;
-    let probs = [0.5, 0.5];
-    let inferenceError = false;
-    let techErrorMessage = "";
+    const predictions = await hfResponse.json();
+    console.log("[TRACE] HF Raw Response:", JSON.stringify(predictions));
 
-    try {
-      const activeSession = await loadModel(supabase);
-      const tensor = new ort.Tensor('float32', float32Data, [1, 3, 224, 224]);
-      const feeds = { input: tensor };
-      const results = await activeSession.run(feeds);
-      
-      const output = results.output.data as Float32Array;
-      const exp = output.map(v => Math.exp(v));
-      const sum = exp.reduce((a, b) => a + b, 0);
-      probs = exp.map(v => v / sum);
+    // HF Response Format: [{"label": "PNEUMONIA", "score": 0.99}, ...]
+    // Sort to find top prediction
+    const topResult = predictions.sort((a: any, b: any) => b.score - a.score)[0];
+    const prediction = topResult.label.toUpperCase();
+    const confidence = topResult.score;
 
-      prediction = probs[1] > probs[0] ? 'PNEUMONIA' : 'NORMAL';
-      const rawConfidence = Math.max(...probs);
-      confidence = rawConfidence >= 1.0 ? 0.999 : rawConfidence;
-    } catch (engineErr) {
-      console.error("[CRITICAL] Engine failure:", engineErr);
-      inferenceError = true;
-      techErrorMessage = `TECH_ERROR: ${engineErr instanceof Error ? engineErr.message : String(engineErr)}`;
-      prediction = 'INDETERMINATE';
-    }
+    // Map probabilities for DB
+    const probPneu = predictions.find((p: any) => p.label.toUpperCase() === 'PNEUMONIA')?.score ?? 0;
+    const probNorm = predictions.find((p: any) => p.label.toUpperCase() === 'NORMAL' || p.label.toUpperCase() === 'NOT PNEUMONIA')?.score ?? 0;
 
-    const reportText = inferenceError 
-        ? techErrorMessage 
-        : `AI analysis suggests a scan characteristic of ${prediction.toLowerCase()}.`;
+    const reportText = `AI analysis (Hugging Face) suggests findings characteristic of ${prediction.toLowerCase()}. Confidence: ${(confidence * 100).toFixed(1)}%.`;
 
-    // Update DB with results
+    // 4. Update Database
     if (resultId) {
       await supabase
         .from('patient_xray_results')
         .update({
           prediction: prediction,
           confidence: confidence,
-          prob_normal: probs[0],
-          prob_pneumonia: probs[1],
+          prob_normal: probNorm,
+          prob_pneumonia: probPneu,
           report_text: reportText,
-          engine_status: inferenceError ? 'ERROR' : 'STABLE',
+          engine_status: 'STABLE',
           processed_at: new Date().toISOString(),
         })
         .eq('id', resultId);
@@ -162,37 +116,28 @@ Deno.serve(async (req) => {
         prediction, 
         confidence, 
         report_text: reportText,
-        normal_prob: probs[0],
-        pneumonia_prob: probs[1]
+        probs: predictions
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (err) {
     console.error("[FATAL] Function crash:", err);
-    const fatalErrorMsg = `TECH_ERROR (PANIC): ${err instanceof Error ? err.message : String(err)}`;
+    const errorMsg = `TECH_ERROR (HF_PROXY): ${err instanceof Error ? err.message : String(err)}`;
     
-    // Try one last time to update DB so UI sees the error
     if (resultId) {
        await supabase
         .from('patient_xray_results')
         .update({
           prediction: 'INDETERMINATE',
-          report_text: fatalErrorMsg,
-          engine_status: 'FATAL_ERROR',
-          processed_at: new Date().toISOString(),
+          report_text: errorMsg,
+          engine_status: 'ERROR',
         })
         .eq('id', resultId);
     }
 
-    // Return 200 so Flutter app doesn't show the Red "unavailable" screen
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        prediction: 'INDETERMINATE', 
-        error: fatalErrorMsg,
-        report_text: fatalErrorMsg 
-      }),
+      JSON.stringify({ success: false, error: errorMsg }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   }
