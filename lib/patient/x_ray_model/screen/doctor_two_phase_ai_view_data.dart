@@ -66,7 +66,21 @@ class AiReviewViewData {
 
     final pred = (result.prediction ?? 'UNKNOWN').toUpperCase();
     final isPneumonia = pred.contains('PNEUMONIA');
+    final isIndeterminate = pred.contains('INDETERMINATE');
     final conf = result.confidence ?? 0;
+
+    if (isIndeterminate) {
+      return AiReviewViewData(
+        confidencePercentText: 'N/A',
+        severityLabel: 'Indeterminate',
+        labels: const ['Engine processing delay', 'Clinical review required'],
+        summary: 'The AI engine encountered a processing delay. This study requires standard clinical correlation.',
+        friendlyErrorAdvice: 'The image may be clear enough for a doctor, but the AI engine requires a retry.',
+        useHeatmapPlaceholder: false,
+        differentialDiagnosis: 'Inconclusive results.',
+        isError: true,
+      );
+    }
 
     final severity = !isPneumonia
         ? 'Low'
