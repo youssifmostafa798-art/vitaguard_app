@@ -44,5 +44,5 @@ BEGIN
             and public.is_owner(split_part(name, '/', 1)::uuid)
           );
     END IF;
-END
+END;
 $$;

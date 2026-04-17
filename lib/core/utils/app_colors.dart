@@ -13,4 +13,5 @@ class AppColors {
   static const Color border = Color(0xFFE0E4E8);
   static const Color pairedChipBg = Color(0xFFE8F5E9);
   static const Color pairedChipText = Color(0xFF2E7D32);
+  static const Color error = Color(0xFFE74C3C);
 }
