@@ -310,6 +310,3 @@ class AiAnalysisAssistantBadge extends StatelessWidget {
     );
   }
 }
-
-  }
-}
