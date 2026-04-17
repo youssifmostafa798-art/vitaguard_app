@@ -13,38 +13,40 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-let session: any = null;
+let modelSession: ort.InferenceSession | null = null;
 
-async function loadModel() {
-  if (session) return session;
-
-  try {
-    console.log("[DIAG] Deno Memory Usage:", Deno.memoryUsage());
-    const modelUrl = new URL("./Model.onnx", import.meta.url);
-    console.log("[DIAG] Checking local model file:", modelUrl.toString());
-    
-    const fileStat = await Deno.stat(modelUrl);
-    console.log(`[DIAG] Model file size: ${fileStat.size} bytes`);
-
-    const modelBuffer = await Deno.readFile(modelUrl);
-    console.log("[TRACE] Model read. Creating session (WASM)...");
-
-    const sessionPromise = ort.InferenceSession.create(modelBuffer, {
-      executionProviders: ['wasm'],
-      graphOptimizationLevel: 'disabled',
-    });
-
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("ONNX Session creation timed out (15s)")), 15000)
-    );
-
-    session = await Promise.race([sessionPromise, timeoutPromise]);
-    console.log("[TRACE] ONNX Session Ready.");
-    return session;
-  } catch (err) {
-    console.error("[CRITICAL] ONNX failure details:", err);
-    throw err;
+/**
+ * Loads the ONNX model from Supabase Storage securely.
+ * Caches the session in memory to avoid redundant downloads.
+ */
+async function loadModel(supabase: any) {
+  if (modelSession) {
+    console.log("[TRACE] Model cache hit. Session ready.");
+    return modelSession;
   }
+
+  console.log("[TRACE] Model cache miss. Downloading 33MB model from storage (ai-models/model.onnx)...");
+  
+  const { data: modelData, error } = await supabase
+    .storage
+    .from('ai-models')
+    .download('model.onnx');
+
+  if (error) {
+    console.error("[CRITICAL] Model download failed:", error);
+    throw new Error(`AI Model unavailable: ${error.message}. Please ensure 'model.onnx' is in the 'ai-models' bucket.`);
+  }
+
+  console.log("[TRACE] Model downloaded. Initializing ONNX runtime (WASM)...");
+  const modelBuffer = await modelData.arrayBuffer();
+  
+  modelSession = await ort.InferenceSession.create(modelBuffer, {
+    executionProviders: ["wasm"],
+    graphOptimizationLevel: "all",
+  });
+
+  console.log("[TRACE] Inference session initialized and cached.");
+  return modelSession;
 }
 
 Deno.serve(async (req) => {
@@ -95,13 +97,12 @@ Deno.serve(async (req) => {
     image.resize(224, 224);
     
     const float32Data = new Float32Array(3 * 224 * 224);
-    const pixels = image.getFlattened();
     
+    // imagescript uses a Uint8Array '.bitmap' in RGBA format
     for (let i = 0; i < 224 * 224; i++) {
-        const pixel = pixels[i];
-        const r = (pixel >> 24) & 0xff;
-        const g = (pixel >> 16) & 0xff;
-        const b = (pixel >> 8) & 0xff;
+        const r = image.bitmap[i * 4];
+        const g = image.bitmap[i * 4 + 1];
+        const b = image.bitmap[i * 4 + 2];
         
         float32Data[i] = (r / 255.0 - 0.485) / 0.229;
         float32Data[i + 224 * 224] = (g / 255.0 - 0.456) / 0.224;
@@ -115,10 +116,10 @@ Deno.serve(async (req) => {
     let techErrorMessage = "";
 
     try {
-      const modelSession = await loadModel();
+      const activeSession = await loadModel(supabase);
       const tensor = new ort.Tensor('float32', float32Data, [1, 3, 224, 224]);
       const feeds = { input: tensor };
-      const results = await modelSession.run(feeds);
+      const results = await activeSession.run(feeds);
       
       const output = results.output.data as Float32Array;
       const exp = output.map(v => Math.exp(v));
@@ -135,6 +136,10 @@ Deno.serve(async (req) => {
       prediction = 'INDETERMINATE';
     }
 
+    const reportText = inferenceError 
+        ? techErrorMessage 
+        : `AI analysis suggests a scan characteristic of ${prediction.toLowerCase()}.`;
+
     // Update DB with results
     if (resultId) {
       await supabase
@@ -144,9 +149,7 @@ Deno.serve(async (req) => {
           confidence: confidence,
           prob_normal: probs[0],
           prob_pneumonia: probs[1],
-          report_text: inferenceError 
-              ? techErrorMessage 
-              : `AI analysis suggests a scan characteristic of ${prediction.toLowerCase()}.`,
+          report_text: reportText,
           engine_status: inferenceError ? 'ERROR' : 'STABLE',
           processed_at: new Date().toISOString(),
         })
@@ -154,7 +157,14 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, prediction, confidence }),
+      JSON.stringify({ 
+        success: true, 
+        prediction, 
+        confidence, 
+        report_text: reportText,
+        normal_prob: probs[0],
+        pneumonia_prob: probs[1]
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

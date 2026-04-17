@@ -60,21 +60,27 @@ def convert(model_path, output_path):
     model.eval()
     print("Weights loaded successfully.")
 
-    dummy_input = torch.randn(1, 3, 224, 224)
-    print(f"Exporting to {output_path}...")
-    
     # We use dynamo=False if supported, or just hope the fixed pooling works
+    dummy_input = torch.randn(1, 3, 224, 224)
+    print(f"Exporting model to {output_path}...")
     torch.onnx.export(
         model, 
         dummy_input, 
         output_path,
         export_params=True,
-        opset_version=15, # Try a modern but stable opset
+        opset_version=18, # Use a modern opset
         do_constant_folding=True,
         input_names=['input'],
-        output_names=['output']
+        output_names=['output'],
+        # Ensure we don't use external data
+        # some versions of torch split if model is 'large', but 32MB is small.
     )
-    print("Export complete.")
+    import onnx
+    print("Consolidating into a single file...")
+    onnx_model = onnx.load(output_path)
+    # This will save everything into one file if it's < 2GB
+    onnx.save_model(onnx_model, output_path, save_as_external_data=False)
+    print("Consolidation successful.")
 
 if __name__ == "__main__":
     convert(
