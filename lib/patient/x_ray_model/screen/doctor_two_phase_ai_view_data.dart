@@ -11,8 +11,10 @@ class AiReviewViewData {
     required this.severityLabel,
     required this.labels,
     required this.summary,
-    required this.useHeatmapPlaceholder,
     required this.differentialDiagnosis,
+    required this.useHeatmapPlaceholder,
+    this.isError = false,
+    this.friendlyErrorAdvice,
   });
 
   final String confidencePercentText;
@@ -25,17 +27,6 @@ class AiReviewViewData {
 
   /// When true, UI shows a synthetic overlay; replace with real tensor when available.
   final bool useHeatmapPlaceholder;
-
-  const AiReviewViewData({
-    required this.confidencePercentText,
-    required this.severityLabel,
-    required this.labels,
-    required this.summary,
-    required this.differentialDiagnosis,
-    required this.useHeatmapPlaceholder,
-    this.isError = false,
-    this.friendlyErrorAdvice,
-  });
 
   static AiReviewViewData fromXRayResult(XRayResult result) {
     if (!result.isValid) {

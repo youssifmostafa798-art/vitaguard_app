@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:gap/gap.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/patient/x_ray_model/screen/widgets/heatmap_overlay_placeholder.dart';
 
@@ -310,9 +311,5 @@ class AiAnalysisAssistantBadge extends StatelessWidget {
   }
 }
 
-class Gap extends StatelessWidget {
-  const Gap(this.height, {super.key});
-  final double height;
-  @override
-  Widget build(BuildContext context) => SizedBox(height: height);
+  }
 }
