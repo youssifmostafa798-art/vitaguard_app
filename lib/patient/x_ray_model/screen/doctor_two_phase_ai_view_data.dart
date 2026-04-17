@@ -67,20 +67,26 @@ class AiReviewViewData {
     final pred = (result.prediction ?? 'UNKNOWN').toUpperCase();
     final isPneumonia = pred.contains('PNEUMONIA');
     final isIndeterminate = pred.contains('INDETERMINATE');
-    final conf = result.confidence ?? 0;
+    final isTechError = summaryContent.startsWith('TECH_ERROR:');
 
-    if (isIndeterminate) {
+    if (isIndeterminate || isTechError) {
       return AiReviewViewData(
         confidencePercentText: 'N/A',
-        severityLabel: 'Indeterminate',
-        labels: const ['Engine processing delay', 'Clinical review required'],
-        summary: 'The AI engine encountered a processing delay. This study requires standard clinical correlation.',
-        friendlyErrorAdvice: 'The image may be clear enough for a doctor, but the AI engine requires a retry.',
+        severityLabel: 'UNSTABLE',
+        labels: const [],
+        summary: isTechError 
+            ? summaryContent.replaceFirst('TECH_ERROR:', '') 
+            : summaryContent.isEmpty ? 'The AI engine encountered a processing delay. This study requires standard clinical correlation.' : summaryContent,
+        friendlyErrorAdvice: isTechError 
+            ? 'A technical engine error occurred. Please report this specific message to the engineering team.'
+            : 'The image may be clear enough for a doctor, but the AI engine requires a retry.',
         useHeatmapPlaceholder: false,
-        differentialDiagnosis: 'Inconclusive results.',
+        differentialDiagnosis: 'Incomplete study. Please correlate with clinical findings and laboratory data.',
         isError: true,
       );
     }
+
+    final conf = result.confidence ?? 0;
 
     final severity = !isPneumonia
         ? 'Low'

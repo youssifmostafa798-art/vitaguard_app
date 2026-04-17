@@ -2,7 +2,10 @@ ALTER TABLE patient_xray_results
 ADD COLUMN IF NOT EXISTS model_version TEXT DEFAULT 'v1.0.0',
 ADD COLUMN IF NOT EXISTS inference_source TEXT DEFAULT 'supabase_edge',
 ADD COLUMN IF NOT EXISTS prob_normal NUMERIC,
-ADD COLUMN IF NOT EXISTS prob_pneumonia NUMERIC;
+ADD COLUMN IF NOT EXISTS prob_pneumonia NUMERIC,
+ADD COLUMN IF NOT EXISTS report_text TEXT,
+ADD COLUMN IF NOT EXISTS engine_status TEXT DEFAULT 'STABLE',
+ADD COLUMN IF NOT EXISTS processed_at TIMESTAMPTZ;
 
 -- Ensure storage buckets exist
 -- Note: In a real Supabase environment, these are usually created via the Dashboard 

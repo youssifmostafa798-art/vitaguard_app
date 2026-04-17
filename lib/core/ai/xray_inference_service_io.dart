@@ -34,7 +34,7 @@ class XrayInferenceService {
       final user = _supabase.auth.currentUser;
       if (user == null) throw Exception("Unauthorized: No logged-in user found.");
 
-      // 1. Upload to Supabase Storage (xray-images bucket)
+      // 1. Upload to Supabase Storage
       final fileName = "${DateTime.now().millisecondsSinceEpoch}.jpg";
       final filePath = "${user.id}/$fileName";
       
@@ -45,27 +45,46 @@ class XrayInferenceService {
             fileOptions: const FileOptions(contentType: 'image/jpeg'),
           );
 
-      // 2. Call Supabase Edge Function
+      // 2. Pre-insert record to get a result_id
+      final insertResponse = await _supabase
+          .from('patient_xray_results')
+          .insert({
+            'patient_id': user.id,
+            'prediction': 'PENDING',
+            'image_path': filePath,
+            'report_text': 'Analysis in progress...',
+            'engine_status': 'INITIALIZING',
+          })
+          .select('id')
+          .single();
+      
+      final resultId = insertResponse['id'] as String;
+
+      // 3. Generate Public URL for the engine to fetch
+      final imageUrl = _supabase.storage.from('xray-images').getPublicUrl(filePath);
+
+      // 4. Call Supabase Edge Function with aligned keys
       final response = await _supabase.functions.invoke(
         'xray-inference',
         body: {
-          'image_path': filePath,
-          'patient_id': user.id,
+          'image_url': imageUrl,
+          'result_id': resultId,
         },
       );
-
-      if (response.status != 200) {
-        throw Exception("Edge Function error: ${response.data}");
-      }
 
       final data = response.data as Map<String, dynamic>;
       final prediction = (data['prediction'] as String?) ?? 'INDETERMINATE';
       final confidence = (data['confidence'] as num?)?.toDouble() ?? 0.5;
-      final reportText = (data['report_text'] as String?) ?? 'Clinical correlation required.';
+      
+      // Look for technical error in the response JSON
+      final rawError = data['error'] as String?;
+      final reportText = (data['report_text'] as String?) ?? rawError ?? 'Engine failure. Technical correlation required.';
+      
       final probNormal = (data['normal_prob'] as num?)?.toDouble() ?? 0.5;
       final probPneumonia = (data['pneumonia_prob'] as num?)?.toDouble() ?? 0.5;
 
       return XRayResult(
+        id: resultId,
         isValid: true,
         prediction: prediction,
         confidence: confidence,
@@ -78,9 +97,9 @@ class XrayInferenceService {
       debugPrint("X-ray analysis failed: $e");
       return XRayResult(
         isValid: false,
-        prediction: null,
+        prediction: 'INDETERMINATE',
         confidence: null,
-        reportText: 'Analysis failed: ${e.toString()}',
+        reportText: 'TECH_ERROR (LOCAL): ${e.toString()}',
         imagePath: imageFile.path,
       );
     }
