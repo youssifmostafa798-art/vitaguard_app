@@ -6,9 +6,9 @@ const corsHeaders = {
 };
 
 // --- Configuration ---
-// Switch to a foundational model known for 100% uptime on the free Inference API
-const HF_MODEL = "google/vit-base-patch16-224";
-const HF_API_URL = `https://api-inference.huggingface.co/models/${HF_MODEL}`;
+// --- Configuration ---
+const PRIMARY_MODEL = "AhmedMIX/vitaguard-xray".trim();
+const FALLBACK_MODEL = "google/vit-base-patch16-224".trim();
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -20,12 +20,12 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
 
-  const hfToken = Deno.env.get('HF_TOKEN');
+  const hfToken = (Deno.env.get('HF_TOKEN') ?? '').trim();
   if (!hfToken) {
-    return new Response(
-      JSON.stringify({ error: "HF_TOKEN not found in Supabase Secrets. Please run 'supabase secrets set HF_TOKEN=...'" }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    );
+    return new Response(JSON.stringify({ error: "HF_TOKEN not found" }), { 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+      status: 500 
+    });
   }
 
   let resultId: string | null = null;
@@ -35,64 +35,100 @@ Deno.serve(async (req) => {
     const { result_id } = body;
     resultId = result_id;
 
-    console.log(`[TRACE] Proxying Analysis for result_id: ${resultId}`);
+    console.log(`[DEEP_ROUTING] Stabilizing Analysis for: ${resultId}`);
 
-    // 1. Fetch image path from database
+    // 1. Fetch metadata & image
     const { data: resultRow, error: fetchErr } = await supabase
       .from('patient_xray_results')
       .select('image_path')
       .eq('id', resultId)
       .single();
 
-    if (fetchErr || !resultRow?.image_path) {
-      throw new Error(`Record not found for result_id: ${resultId}`);
-    }
+    if (fetchErr || !resultRow?.image_path) throw new Error(`Record not found`);
 
-    // 2. Download image from storage
-    console.log(`[TRACE] Downloading image: ${resultRow.image_path}`);
     const { data: imgData, error: dlError } = await supabase
       .storage
       .from('xray-images')
       .download(resultRow.image_path);
 
-    if (dlError) throw new Error(`Storage download failed: ${dlError.message}`);
+    if (dlError) throw new Error(`Storage error: ${dlError.message}`);
     const imageBuffer = await imgData.arrayBuffer();
 
-    // 3. Delegate to Hugging Face
-    console.log(`[TRACE] Sending to Hugging Face (${HF_MODEL})...`);
-    
-    // CRITICAL: Construct clean headers to avoid 404 routing issues 
-    // (Supabase adds X-Forwarded-Host which HF dislikes)
-    const hfHeaders = new Headers();
-    hfHeaders.set("Authorization", `Bearer ${hfToken}`);
-    hfHeaders.set("Content-Type", "application/octet-stream");
-    hfHeaders.set("User-Agent", "VitaGuard-Clinical-AI/1.0");
+    // 2. RESILIENT MULTI-DOMAIN SHUFFLING & FALLBACK
+    const models = [PRIMARY_MODEL, FALLBACK_MODEL];
+    const baseUrls = [
+      "https://api-inference.huggingface.co/models",
+      "https://api-inference.hf.co/models",
+      "https://huggingface.co/api/models"
+    ];
 
-    const hfResponse = await fetch(HF_API_URL, {
-      method: "POST",
-      headers: hfHeaders,
-      body: imageBuffer,
-    });
+    let predictions = null;
+    let lastError = "";
 
-    if (!hfResponse.ok) {
-      const errorText = await hfResponse.text();
-      throw new Error(`Hugging Face API error: ${hfResponse.status} - ${errorText}`);
+    // Diagnostic DoH (DNS-over-HTTPS) Check
+    try {
+      const doh = await fetch("https://dns.google/resolve?name=api-inference.huggingface.co&type=A");
+      const dohJson = await doh.json();
+      console.log(`[DOH_DIAGNOSTIC] api-inference.huggingface.co IP: ${dohJson.Answer?.[0]?.data || "NOT_FOUND"}`);
+    } catch (e) {
+       console.warn(`[DOH_DIAGNOSTIC] DoH lookup itself failed: ${e.message}`);
     }
 
-    const predictions = await hfResponse.json();
-    console.log("[TRACE] HF Raw Response:", JSON.stringify(predictions));
+    modelLoop: for (const model of models) {
+      console.log(`[DEEP_ROUTING] Trying Model: ${model}`);
+      
+      for (const baseUrl of baseUrls) {
+        const url = `${baseUrl}/${model}`;
+        
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          console.log(`[PROBE] Attempt ${attempt} -> ${url}`);
+          
+          const hfHeaders = new Headers({
+            "Authorization": `Bearer ${hfToken}`,
+            "Content-Type": "application/octet-stream",
+            "Accept": "application/json"
+          });
 
-    // HF Response Format: [{"label": "PNEUMONIA", "score": 0.99}, ...]
-    // Sort to find top prediction
-    const topResult = predictions.sort((a: any, b: any) => b.score - a.score)[0];
+          try {
+            const hfResponse = await fetch(url, { method: "POST", headers: hfHeaders, body: imageBuffer });
+
+            if (hfResponse.ok) {
+              predictions = await hfResponse.json();
+              console.log(`[PROBE] SUCCESS at ${url}`);
+              break modelLoop;
+            } else {
+              const server = hfResponse.headers.get("server") || "unknown";
+              const errorText = await hfResponse.text();
+              lastError = `Status: ${hfResponse.status} | Server: ${server} | Msg: ${errorText.substring(0, 40)}`;
+              console.warn(`[PROBE] FAILED: ${lastError}`);
+            }
+          } catch (fetchErr) {
+            lastError = `Network/DNS Error: ${fetchErr instanceof Error ? fetchErr.message : String(fetchErr)}`;
+            console.warn(`[PROBE] CRASHED: ${lastError}`);
+          }
+
+          // Exponential backoff
+          await new Promise(r => setTimeout(r, attempt * 1000));
+        }
+      }
+    }
+
+    if (!predictions) {
+      throw new Error(`Strategic Blackout: All 3 domains and 2 models failed. Last error: ${lastError}`);
+    }
+
+    // 3. Process Result
+    const sorted = Array.isArray(predictions) ? predictions.sort((a, b) => b.score - a.score) : [];
+    const topResult = sorted[0];
+    if (!topResult) throw new Error("AI returned empty result set");
+
     const prediction = topResult.label.toUpperCase();
     const confidence = topResult.score;
 
-    // Map probabilities for DB
-    const probPneu = predictions.find((p: any) => p.label.toUpperCase() === 'PNEUMONIA')?.score ?? 0;
-    const probNorm = predictions.find((p: any) => p.label.toUpperCase() === 'NORMAL' || p.label.toUpperCase() === 'NOT PNEUMONIA')?.score ?? 0;
+    const probPneu = sorted.find((p: any) => p.label.toUpperCase().includes('PNEUMONIA'))?.score ?? 0;
+    const probNorm = sorted.find((p: any) => p.label.toUpperCase().includes('NORMAL') || p.label.toUpperCase().includes('NOT'))?.score ?? 0;
 
-    const reportText = `AI analysis (Hugging Face) suggests findings characteristic of ${prediction.toLowerCase()}. Confidence: ${(confidence * 100).toFixed(1)}%.`;
+    const reportText = `Analysis complete. Findings suggest ${prediction.toLowerCase()}. (Confidence: ${(confidence * 100).toFixed(1)}%)`;
 
     // 4. Update Database
     if (resultId) {
@@ -110,35 +146,23 @@ Deno.serve(async (req) => {
         .eq('id', resultId);
     }
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        prediction, 
-        confidence, 
-        report_text: reportText,
-        probs: predictions
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ success: true, prediction, confidence, report_text: reportText }), { 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
 
   } catch (err) {
-    console.error("[FATAL] Function crash:", err);
-    const errorMsg = `TECH_ERROR (HF_PROXY): ${err instanceof Error ? err.message : String(err)}`;
+    console.error("[FATAL]", err);
+    const errorMsg = `TECH_ERROR (DEEP_ROUTING_FAIL): ${err instanceof Error ? err.message : String(err)}`;
     
     if (resultId) {
-       await supabase
-        .from('patient_xray_results')
-        .update({
-          prediction: 'INDETERMINATE',
-          report_text: errorMsg,
-          engine_status: 'ERROR',
-        })
+       await supabase.from('patient_xray_results')
+        .update({ prediction: 'INDETERMINATE', report_text: errorMsg, engine_status: 'ERROR' })
         .eq('id', resultId);
     }
 
-    return new Response(
-      JSON.stringify({ success: false, error: errorMsg }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-    );
+    return new Response(JSON.stringify({ success: false, error: errorMsg }), { 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+      status: 200 
+    });
   }
 });
