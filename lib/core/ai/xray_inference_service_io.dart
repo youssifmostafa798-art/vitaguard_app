@@ -21,23 +21,21 @@ class _ModelConfig {
 
 /// On-device TFLite X-ray inference service.
 ///
-/// Architecture: On-device PRIMARY (< 150 ms target) with async Supabase
-/// background logging. The interpreter is lazily loaded and cached for the
-/// app lifetime — no reloading on every inference call.
+/// Uses a regular [Interpreter] (not IsolateInterpreter) because the heavy
+/// preprocessing already runs in a background isolate via [compute].
+/// The interpreter is lazily loaded and cached for the entire app session.
 class XrayInferenceService {
   XrayInferenceService._();
   static final XrayInferenceService instance = XrayInferenceService._();
 
-  // IsolateInterpreter wraps the underlying Interpreter and runs
-  // inference on a separate isolate automatically.
-  IsolateInterpreter? _interpreter;
+  Interpreter? _interpreter;
   bool _isInitializing = false;
 
   bool get isReady => _interpreter != null;
 
   final _supabase = Supabase.instance.client;
 
-  /// Ensures the TFLite interpreter is loaded. Safe to call multiple times.
+  /// Lazily loads and caches the TFLite interpreter. Safe to call multiple times.
   Future<void> ensureLoaded() async {
     if (_interpreter != null) return;
     if (_isInitializing) {
@@ -49,29 +47,40 @@ class XrayInferenceService {
 
     _isInitializing = true;
     try {
-      // Try GPU delegate first; fall back to CPU on failure.
+      Interpreter? interp;
+
+      // --- Attempt 1: GPU Delegate ---
       try {
-        final options = InterpreterOptions()..addDelegate(GpuDelegateV2());
-        final base = await Interpreter.fromAsset(
-          _ModelConfig.assetPath,
-          options: options,
-        );
-        _interpreter = await IsolateInterpreter.create(address: base.address);
-        _log.i('[TFLITE] Interpreter loaded with GPU delegate.');
+        final opts = InterpreterOptions()..addDelegate(GpuDelegateV2());
+        interp = await Interpreter.fromAsset(_ModelConfig.assetPath, options: opts);
+        _log.i('[TFLITE] Loaded with GPU delegate.');
       } catch (gpuErr) {
-        _log.w('[TFLITE] GPU delegate failed ($gpuErr). Falling back to CPU.');
-        final base = await Interpreter.fromAsset(_ModelConfig.assetPath);
-        _interpreter = await IsolateInterpreter.create(address: base.address);
-        _log.i('[TFLITE] Interpreter loaded on CPU.');
+        _log.w('[TFLITE] GPU delegate unavailable: $gpuErr');
+
+        // --- Attempt 2: CPU only ---
+        try {
+          interp = await Interpreter.fromAsset(_ModelConfig.assetPath);
+          _log.i('[TFLITE] Loaded on CPU.');
+        } catch (cpuErr) {
+          _log.e('[TFLITE] CPU load also failed: $cpuErr');
+          rethrow;
+        }
       }
+
+      _interpreter = interp;
+
+      // Log tensor shapes for diagnostics
+      final inShape = _interpreter!.getInputTensor(0).shape;
+      final outShape = _interpreter!.getOutputTensor(0).shape;
+      _log.i('[TFLITE] Input shape: $inShape | Output shape: $outShape');
     } finally {
       _isInitializing = false;
     }
   }
 
-  /// Main entry point: validate → preprocess → infer → log.
+  /// Main entry point: validate → preprocess → infer → async log.
   Future<XRayResult> analyze(File imageFile) async {
-    // --- 1. Validate image ---
+    // 1. Validate
     final validationError = await _validateImage(imageFile);
     if (validationError != null) {
       return XRayResult(
@@ -84,32 +93,63 @@ class XrayInferenceService {
     }
 
     try {
-      // --- 2. Ensure model is loaded ---
+      // 2. Load model
       await ensureLoaded();
       if (_interpreter == null) {
         throw StateError('TFLite interpreter failed to initialize.');
       }
 
-      // --- 3. Preprocess image in background isolate ---
+      // 3. Preprocess in background isolate — [1, 224, 224, 3] float32
       final sw = Stopwatch()..start();
       final inputTensor = await compute(_preprocessImage, imageFile.path);
       _log.d('[TFLITE] Preprocessing: ${sw.elapsedMilliseconds}ms');
 
-      // --- 4. Run inference ---
-      // Output shape: [1, 2] → [NORMAL, PNEUMONIA] probabilities
-      final output = List.filled(2, 0.0).reshape([1, 2]);
-      await _interpreter!.run(inputTensor, output);
-      sw.stop();
-      _log.i('[TFLITE] Inference complete in ${sw.elapsedMilliseconds}ms');
+      // 4. Detect output shape and allocate accordingly
+      final outShape = _interpreter!.getOutputTensor(0).shape;
+      _log.d('[TFLITE] Runtime output shape: $outShape');
 
-      final probNormal = (output[0][0] as double);
-      final probPneumonia = (output[0][1] as double);
+      double probNormal;
+      double probPneumonia;
+
+      if (outShape.length == 2 && outShape[1] == 2) {
+        // ── Softmax output: [1, 2] → [P(NORMAL), P(PNEUMONIA)] ──
+        final output = [List.filled(2, 0.0)];
+        _interpreter!.run(inputTensor, output);
+        sw.stop();
+        _log.i('[TFLITE] Inference (softmax[1,2]): ${sw.elapsedMilliseconds}ms | raw=$output');
+        probNormal = output[0][0];
+        probPneumonia = output[0][1];
+      } else if (outShape.length == 2 && outShape[1] == 1) {
+        // ── Sigmoid output: [1, 1] → probability of PNEUMONIA ──
+        final output = [List.filled(1, 0.0)];
+        _interpreter!.run(inputTensor, output);
+        sw.stop();
+        final sigmoid = output[0][0];
+        _log.i('[TFLITE] Inference (sigmoid[1,1]): ${sw.elapsedMilliseconds}ms | raw=$sigmoid');
+        probPneumonia = sigmoid;
+        probNormal = 1.0 - sigmoid;
+      } else {
+        // ── Unknown shape — try flat list ──
+        _log.w('[TFLITE] Unknown output shape $outShape, trying flat output...');
+        final flat = List.filled(outShape.reduce((a, b) => a * b), 0.0);
+        _interpreter!.run(inputTensor, flat);
+        sw.stop();
+        _log.i('[TFLITE] Flat inference: ${sw.elapsedMilliseconds}ms | raw=$flat');
+        if (flat.length >= 2) {
+          probNormal = flat[0];
+          probPneumonia = flat[1];
+        } else {
+          probPneumonia = flat[0];
+          probNormal = 1.0 - flat[0];
+        }
+      }
 
       final prediction = probPneumonia > probNormal ? 'PNEUMONIA' : 'NORMAL';
       final confidence = prediction == 'PNEUMONIA' ? probPneumonia : probNormal;
 
-      final reportText =
-          _buildReport(prediction, confidence, probNormal, probPneumonia);
+      _log.i('[TFLITE] Result: $prediction | conf=${(confidence*100).toStringAsFixed(1)}% | normal=${(probNormal*100).toStringAsFixed(1)}% | pneumonia=${(probPneumonia*100).toStringAsFixed(1)}%');
+
+      final reportText = _buildReport(prediction, confidence, probNormal, probPneumonia);
 
       final result = XRayResult(
         isValid: true,
@@ -121,19 +161,19 @@ class XrayInferenceService {
         probPneumonia: probPneumonia,
       );
 
-      // --- 5. Background upload & log (fire-and-forget) ---
+      // 5. Background Supabase log — never blocks the user
       _logToSupabase(imageFile, result).catchError(
         (e) => _log.w('[SUPABASE] Background log non-critical error: $e'),
       );
 
       return result;
-    } catch (e) {
-      _log.e('[TFLITE] Inference error: $e');
+    } catch (e, st) {
+      _log.e('[TFLITE] Inference error', error: e, stackTrace: st);
       return XRayResult(
         isValid: false,
         prediction: 'INDETERMINATE',
         confidence: null,
-        reportText: 'On-device analysis failed. Please retry.',
+        reportText: 'On-device analysis failed. Please retry. ($e)',
         imagePath: imageFile.path,
       );
     }
@@ -157,34 +197,25 @@ class XrayInferenceService {
           '(confidence: $confPct%). '
           'Radiological correlation and clinical assessment are recommended. '
           'P(Normal): $pNorm% | P(Pneumonia): $pPneu%.';
-    } else {
-      return 'AI analysis indicates no significant radiological findings '
-          'consistent with pneumonia (confidence: $confPct%). '
-          'Clinical correlation advised. '
-          'P(Normal): $pNorm% | P(Pneumonia): $pPneu%.';
     }
+    return 'AI analysis indicates no significant radiological findings '
+        'consistent with pneumonia (confidence: $confPct%). '
+        'Clinical correlation advised. '
+        'P(Normal): $pNorm% | P(Pneumonia): $pPneu%.';
   }
 
   Future<void> _logToSupabase(File imageFile, XRayResult result) async {
     final user = _supabase.auth.currentUser;
     if (user == null) return;
 
-    // Upload compressed image
     final bytes = await imageFile.readAsBytes();
-    final fileName =
-        '${user.id}/${DateTime.now().millisecondsSinceEpoch}.jpg';
-    await _supabase.storage
-        .from('xray-images')
-        .uploadBinary(
-          fileName,
-          bytes,
-          fileOptions: const FileOptions(
-            contentType: 'image/jpeg',
-            upsert: true,
-          ),
-        );
+    final fileName = '${user.id}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+    await _supabase.storage.from('xray-images').uploadBinary(
+      fileName,
+      bytes,
+      fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
+    );
 
-    // Log prediction to DB
     await _supabase.from('patient_xray_results').insert({
       'patient_id': user.id,
       'image_path': fileName,
@@ -199,7 +230,7 @@ class XrayInferenceService {
       'processed_at': DateTime.now().toIso8601String(),
     });
 
-    _log.i('[SUPABASE] Prediction logged successfully.');
+    _log.i('[SUPABASE] Prediction logged.');
   }
 
   Future<String?> _validateImage(File file) {
@@ -208,24 +239,23 @@ class XrayInferenceService {
 }
 
 // ---------------------------------------------------------------------------
-// Top-level isolate functions (must be top-level, not class methods)
+// Top-level isolate functions
 // ---------------------------------------------------------------------------
 
-/// Preprocessing pipeline: resize → normalize → reshape to [1, 224, 224, 3].
-/// Runs in background isolate via [compute] to keep UI at 60fps.
+/// Resize to 224×224 and normalize using EfficientNet preprocessing.
+/// Returns a [1, 224, 224, 3] nested list — the exact shape TFLite expects.
 List<List<List<List<double>>>> _preprocessImage(String path) {
   final bytes = File(path).readAsBytesSync();
   img.Image? decoded = img.decodeImage(bytes);
   if (decoded == null) throw StateError('Cannot decode image at $path');
 
-  // Resize to 224x224 (model input size)
   decoded = img.copyResize(
     decoded,
     width: _ModelConfig.inputSize,
     height: _ModelConfig.inputSize,
+    interpolation: img.Interpolation.linear,
   );
 
-  // Build [1, 224, 224, 3] float32 tensor with EfficientNet normalization
   return [
     List.generate(_ModelConfig.inputSize, (y) {
       return List.generate(_ModelConfig.inputSize, (x) {
@@ -240,20 +270,14 @@ List<List<List<List<double>>>> _preprocessImage(String path) {
   ];
 }
 
-/// Image quality validation gate — runs in background isolate.
+/// Validates file type, size, and image integrity.
 Future<String?> _validateImageIsolate(String path) async {
   final ext = path.toLowerCase();
-  if (!(ext.endsWith('.jpg') ||
-      ext.endsWith('.jpeg') ||
-      ext.endsWith('.png'))) {
+  if (!(ext.endsWith('.jpg') || ext.endsWith('.jpeg') || ext.endsWith('.png'))) {
     return 'Invalid file type. Please upload a JPEG or PNG image.';
   }
-
   final size = await File(path).length();
-  if (size > 10 * 1024 * 1024) {
-    return 'File too large. Maximum size is 10 MB.';
-  }
-
+  if (size > 10 * 1024 * 1024) return 'File too large. Maximum size is 10 MB.';
   try {
     final decoded = img.decodeImage(File(path).readAsBytesSync());
     if (decoded == null) return 'Invalid or corrupted image file.';
@@ -263,6 +287,5 @@ Future<String?> _validateImageIsolate(String path) async {
   } catch (_) {
     return 'Cannot read image file.';
   }
-
-  return null; // valid
+  return null;
 }
