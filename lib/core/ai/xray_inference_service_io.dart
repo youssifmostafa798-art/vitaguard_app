@@ -26,6 +26,19 @@ List<double> _twoClassProbs(double a, double b) {
   return [ea / sum, eb / sum];
 }
 
+List<double> _finiteMinMax(List<double> xs) {
+  var min = double.infinity;
+  var max = -double.infinity;
+  for (final v in xs) {
+    if (!v.isFinite) continue;
+    if (v < min) min = v;
+    if (v > max) max = v;
+  }
+  if (min == double.infinity) min = double.nan;
+  if (max == -double.infinity) max = double.nan;
+  return [min, max];
+}
+
 /// Model configuration — must match training pipeline exactly.
 class _ModelConfig {
   static const String assetPath = 'assets/models/model.tflite';
@@ -127,6 +140,33 @@ class XrayInferenceService {
       final sw = Stopwatch()..start();
       final inputTensor = await compute(_preprocessImage, imageFile.path);
       _log.d('[TFLITE] Preprocessing: ${sw.elapsedMilliseconds}ms');
+      _log.d('[TFLITE] Model version: ${_ModelConfig.modelVersion}');
+
+      // Lightweight input sanity stats (helps detect “all-black”, wrong decode, or stuck preprocess).
+      try {
+        final flatR = <double>[];
+        final flatG = <double>[];
+        final flatB = <double>[];
+        for (final row in inputTensor[0]) {
+          for (final px in row) {
+            flatR.add(px[0]);
+            flatG.add(px[1]);
+            flatB.add(px[2]);
+          }
+        }
+        double mean(List<double> xs) => xs.reduce((a, b) => a + b) / xs.length;
+        final rmm = _finiteMinMax(flatR);
+        final gmm = _finiteMinMax(flatG);
+        final bmm = _finiteMinMax(flatB);
+        _log.d(
+          '[TFLITE] Input stats (normalized): '
+          'R[min=${rmm[0].toStringAsFixed(3)}, max=${rmm[1].toStringAsFixed(3)}, mean=${mean(flatR).toStringAsFixed(3)}] '
+          'G[min=${gmm[0].toStringAsFixed(3)}, max=${gmm[1].toStringAsFixed(3)}, mean=${mean(flatG).toStringAsFixed(3)}] '
+          'B[min=${bmm[0].toStringAsFixed(3)}, max=${bmm[1].toStringAsFixed(3)}, mean=${mean(flatB).toStringAsFixed(3)}]',
+        );
+      } catch (_) {
+        // best-effort stats only
+      }
 
       // 4. Detect output shape and allocate accordingly
       final outShape = _interpreter!.getOutputTensor(0).shape;
@@ -164,8 +204,9 @@ class XrayInferenceService {
         sw.stop();
         _log.i('[TFLITE] Flat inference: ${sw.elapsedMilliseconds}ms | raw=$flat');
         if (flat.length >= 2) {
-          probNormal = flat[0];
-          probPneumonia = flat[1];
+          final probs = _twoClassProbs(flat[0], flat[1]);
+          probNormal = probs[0];
+          probPneumonia = probs[1];
         } else {
           probPneumonia = flat[0];
           probNormal = 1.0 - flat[0];
