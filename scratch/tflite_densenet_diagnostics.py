@@ -34,7 +34,7 @@ def softmax(x: np.ndarray) -> np.ndarray:
     return (e / np.sum(e)).astype(np.float32)
 
 
-def make_nhwc(h: int = 224, w: int = 224) -> np.ndarray:
+def make_nhwc(h: int = 320, w: int = 320) -> np.ndarray:
     """Empty float32 NHWC template."""
     return np.zeros((1, h, w, 3), dtype=np.float32)
 

@@ -10,20 +10,13 @@ import 'package:vitaguard_app/patient/data/patient_models.dart';
 
 final _log = Logger();
 
-/// Map two outputs to **probabilities** for UI: if values already look like probs, keep; else softmax(logits).
-List<double> _twoClassProbs(double a, double b) {
-  const eps = 1e-5;
-  if (a >= -eps && b >= -eps && a <= 1.0 + eps && b <= 1.0 + eps) {
-    final s = a + b;
-    if (s > 0.97 && s < 1.03) {
-      return [a, b];
-    }
-  }
-  final m = a > b ? a : b;
-  final ea = math.exp(a - m);
-  final eb = math.exp(b - m);
-  final sum = ea + eb;
-  return [ea / sum, eb / sum];
+/// Strictly apply softmax to logits. DenseNet exports raw logits, never probs.
+List<double> _toProbs(double logit0, double logit1) {
+  final m = math.max(logit0, logit1); // numerical stability
+  final e0 = math.exp(logit0 - m);
+  final e1 = math.exp(logit1 - m);
+  final s = e0 + e1;
+  return [e0 / s, e1 / s];
 }
 
 String _summarizeInputTensor(List<List<List<List<double>>>> t) {
@@ -72,9 +65,13 @@ String _summarizeInputTensor(List<List<List<List<double>>>> t) {
 /// Model configuration — must match training pipeline exactly.
 class _ModelConfig {
   static const String assetPath = 'assets/models/model.tflite';
-  static const int inputSize = 224;
+  static const int inputSize = 320;
   static const String modelVersion = 'v1.0.0-tflite';
-  static const bool debugTryPreprocessVariants = false;
+  static const bool debugTryPreprocessVariants = kDebugMode;
+
+  /// Tuned thresholds for 3:1 imbalanced training
+  static const double pneumoniaThreshold = 0.65;
+  static const double inconclusiveLow = 0.40;
 
   /// Torchvision DenseNet121 / Fastai-style: `pixel/255` then ImageNet mean/std (RGB).
   /// See `scripts/convert_to_onnx.py` (DenseNet121 backbone). Do not use EfficientNet [-1,1] here.
@@ -107,7 +104,11 @@ class XrayInferenceService {
   Future<void> ensureLoaded() async {
     if (_interpreter != null) return;
     if (_isInitializing) {
+      final deadline = DateTime.now().add(const Duration(seconds: 10));
       while (_isInitializing) {
+        if (DateTime.now().isAfter(deadline)) {
+          throw StateError('TFLite interpreter initialization timed out');
+        }
         await Future.delayed(const Duration(milliseconds: 50));
       }
       return;
@@ -137,10 +138,24 @@ class XrayInferenceService {
 
       _interpreter = interp;
 
+      // Resize input tensor to 320x320 if it differs from _ModelConfig.inputSize
+      final initialInShape = _interpreter!.getInputTensor(0).shape;
+      if (initialInShape[1] != _ModelConfig.inputSize || initialInShape[2] != _ModelConfig.inputSize) {
+        _log.i('[TFLITE] Resizing input tensor from $initialInShape to [1, ${_ModelConfig.inputSize}, ${_ModelConfig.inputSize}, 3]');
+        _interpreter!.resizeInputTensor(0, [1, _ModelConfig.inputSize, _ModelConfig.inputSize, 3]);
+        _interpreter!.allocateTensors();
+      }
+
       // Log tensor shapes for diagnostics
       final inShape = _interpreter!.getInputTensor(0).shape;
       final outShape = _interpreter!.getOutputTensor(0).shape;
       _log.i('[TFLITE] Input shape: $inShape | Output shape: $outShape');
+
+      // Verify HWC layout [1, H, W, 3]
+      assert(
+        inShape.length == 4 && inShape[3] == 3,
+        'Model expects HWC [1,H,W,3] but got $inShape. If this is [1,3,H,W], the preprocess logic needs to be updated to CHW.',
+      );
     } finally {
       _isInitializing = false;
     }
@@ -191,10 +206,10 @@ class XrayInferenceService {
         final z0 = output[0][0];
         final z1 = output[0][1];
         _log.i('[TFLITE] Inference [1,2] logits: ${sw.elapsedMilliseconds}ms | raw=[$z0, $z1]');
-        final probs = _twoClassProbs(z0, z1);
+        final probs = _toProbs(z0, z1);
         probNormal = probs[0];
         probPneumonia = probs[1];
-        _log.i('[TFLITE] Probs (after softmax if logits): normal=$probNormal | pneumonia=$probPneumonia');
+        _log.i('[TFLITE] Probs (after softmax): normal=$probNormal | pneumonia=$probPneumonia');
       } else if (outShape.length == 2 && outShape[1] == 1) {
         // ── Sigmoid output: [1, 1] → probability of PNEUMONIA ──
         final output = [List.filled(1, 0.0)];
@@ -212,7 +227,7 @@ class XrayInferenceService {
         sw.stop();
         _log.i('[TFLITE] Flat inference: ${sw.elapsedMilliseconds}ms | raw=$flat');
         if (flat.length >= 2) {
-          final probs = _twoClassProbs(flat[0], flat[1]);
+          final probs = _toProbs(flat[0], flat[1]);
           probNormal = probs[0];
           probPneumonia = probs[1];
         } else {
@@ -230,7 +245,7 @@ class XrayInferenceService {
             _interpreter!.run(entry.value, output);
             final z0 = output[0][0];
             final z1 = output[0][1];
-            final p = _twoClassProbs(z0, z1);
+            final p = _toProbs(z0, z1);
             _log.i('[TFLITE][VARIANT] ${entry.key}: logits=[$z0, $z1] probs=[${p[0]}, ${p[1]}]');
           }
         } catch (e) {
@@ -238,10 +253,23 @@ class XrayInferenceService {
         }
       }
 
-      final prediction = probPneumonia > probNormal ? 'PNEUMONIA' : 'NORMAL';
-      final confidence = prediction == 'PNEUMONIA' ? probPneumonia : probNormal;
+      // Tuned classification
+      String prediction;
+      if (probPneumonia >= _ModelConfig.pneumoniaThreshold) {
+        prediction = 'PNEUMONIA';
+      } else if (probPneumonia >= _ModelConfig.inconclusiveLow) {
+        prediction = 'INCONCLUSIVE';
+      } else {
+        prediction = 'NORMAL';
+      }
 
-      _log.i('[TFLITE] Result: $prediction | conf=${(confidence*100).toStringAsFixed(1)}% | normal=${(probNormal*100).toStringAsFixed(1)}% | pneumonia=${(probPneumonia*100).toStringAsFixed(1)}%');
+      final confidence = switch (prediction) {
+        'PNEUMONIA' => probPneumonia,
+        'NORMAL' => probNormal,
+        _ => 1.0 - (probPneumonia - _ModelConfig.inconclusiveLow).abs(),
+      };
+
+      _log.i('[TFLITE] Result: $prediction | conf=${(confidence * 100).toStringAsFixed(1)}% | normal=${(probNormal * 100).toStringAsFixed(1)}% | pneumonia=${(probPneumonia * 100).toStringAsFixed(1)}%');
 
       final reportText = _buildReport(prediction, confidence, probNormal, probPneumonia);
 
@@ -286,6 +314,13 @@ class XrayInferenceService {
     final confPct = (confidence * 100).toStringAsFixed(1);
     final pNorm = (probNormal * 100).toStringAsFixed(1);
     final pPneu = (probPneumonia * 100).toStringAsFixed(1);
+
+    if (prediction == 'INCONCLUSIVE') {
+      return 'AI analysis is inconclusive for this image (certainty: $confPct%). '
+          'The findings are borderline and require expert radiological review. '
+          'P(Normal): $pNorm% | P(Pneumonia): $pPneu%.';
+    }
+
     if (prediction == 'PNEUMONIA') {
       return 'AI analysis indicates findings consistent with pneumonia '
           '(confidence: $confPct%). '
@@ -321,7 +356,7 @@ class XrayInferenceService {
       'engine_status': 'STABLE',
       'inference_mode': 'on-device',
       'model_version': _ModelConfig.modelVersion,
-      'processed_at': DateTime.now().toIso8601String(),
+      'processed_at': DateTime.now().toUtc().toIso8601String(),
     });
 
     _log.i('[SUPABASE] Prediction logged.');
@@ -336,8 +371,8 @@ class XrayInferenceService {
 // Top-level isolate functions
 // ---------------------------------------------------------------------------
 
-/// Resize to 224×224 and normalize for torchvision DenseNet121 (ImageNet stats, RGB).
-/// Returns a [1, 224, 224, 3] nested list — the exact shape TFLite expects.
+/// Resize to _ModelConfig.inputSize and normalize for torchvision DenseNet121 (ImageNet stats, RGB).
+/// Returns a [1, S, S, 3] nested list — the exact shape TFLite expects.
 List<List<List<List<double>>>> _preprocessImage(String path) {
   final bytes = File(path).readAsBytesSync();
   img.Image? decoded = img.decodeImage(bytes);
