@@ -26,17 +26,47 @@ List<double> _twoClassProbs(double a, double b) {
   return [ea / sum, eb / sum];
 }
 
-List<double> _finiteMinMax(List<double> xs) {
-  var min = double.infinity;
-  var max = -double.infinity;
-  for (final v in xs) {
-    if (!v.isFinite) continue;
-    if (v < min) min = v;
-    if (v > max) max = v;
+String _summarizeInputTensor(List<List<List<List<double>>>> t) {
+  // t: [1][H][W][3]
+  try {
+    final h = t[0].length;
+    final w = t[0][0].length;
+    var n = 0;
+    var rSum = 0.0, gSum = 0.0, bSum = 0.0;
+    var rMin = double.infinity, gMin = double.infinity, bMin = double.infinity;
+    var rMax = -double.infinity, gMax = -double.infinity, bMax = -double.infinity;
+    var rgDiffSum = 0.0, rbDiffSum = 0.0, gbDiffSum = 0.0;
+
+    for (final row in t[0]) {
+      for (final px in row) {
+        final r = px[0], g = px[1], b = px[2];
+        n++;
+        rSum += r; gSum += g; bSum += b;
+        if (r < rMin) rMin = r;
+        if (g < gMin) gMin = g;
+        if (b < bMin) bMin = b;
+        if (r > rMax) rMax = r;
+        if (g > gMax) gMax = g;
+        if (b > bMax) bMax = b;
+        rgDiffSum += (r - g).abs();
+        rbDiffSum += (r - b).abs();
+        gbDiffSum += (g - b).abs();
+      }
+    }
+    final rMean = rSum / n;
+    final gMean = gSum / n;
+    final bMean = bSum / n;
+    final rg = rgDiffSum / n;
+    final rb = rbDiffSum / n;
+    final gb = gbDiffSum / n;
+    return '[TFLITE] Input stats (normalized) ${h}x$w: '
+        'R[min=${rMin.toStringAsFixed(3)}, max=${rMax.toStringAsFixed(3)}, mean=${rMean.toStringAsFixed(3)}] '
+        'G[min=${gMin.toStringAsFixed(3)}, max=${gMax.toStringAsFixed(3)}, mean=${gMean.toStringAsFixed(3)}] '
+        'B[min=${bMin.toStringAsFixed(3)}, max=${bMax.toStringAsFixed(3)}, mean=${bMean.toStringAsFixed(3)}] '
+        'avg|R-G|=${rg.toStringAsFixed(4)} avg|R-B|=${rb.toStringAsFixed(4)} avg|G-B|=${gb.toStringAsFixed(4)}';
+  } catch (_) {
+    return '[TFLITE] Input stats unavailable';
   }
-  if (min == double.infinity) min = double.nan;
-  if (max == -double.infinity) max = double.nan;
-  return [min, max];
 }
 
 /// Model configuration — must match training pipeline exactly.
@@ -44,6 +74,7 @@ class _ModelConfig {
   static const String assetPath = 'assets/models/model.tflite';
   static const int inputSize = 224;
   static const String modelVersion = 'v1.0.0-tflite';
+  static const bool debugTryPreprocessVariants = true;
 
   /// Torchvision DenseNet121 / Fastai-style: `pixel/255` then ImageNet mean/std (RGB).
   /// See `scripts/convert_to_onnx.py` (DenseNet121 backbone). Do not use EfficientNet [-1,1] here.
@@ -143,30 +174,7 @@ class XrayInferenceService {
       _log.d('[TFLITE] Model version: ${_ModelConfig.modelVersion}');
 
       // Lightweight input sanity stats (helps detect “all-black”, wrong decode, or stuck preprocess).
-      try {
-        final flatR = <double>[];
-        final flatG = <double>[];
-        final flatB = <double>[];
-        for (final row in inputTensor[0]) {
-          for (final px in row) {
-            flatR.add(px[0]);
-            flatG.add(px[1]);
-            flatB.add(px[2]);
-          }
-        }
-        double mean(List<double> xs) => xs.reduce((a, b) => a + b) / xs.length;
-        final rmm = _finiteMinMax(flatR);
-        final gmm = _finiteMinMax(flatG);
-        final bmm = _finiteMinMax(flatB);
-        _log.d(
-          '[TFLITE] Input stats (normalized): '
-          'R[min=${rmm[0].toStringAsFixed(3)}, max=${rmm[1].toStringAsFixed(3)}, mean=${mean(flatR).toStringAsFixed(3)}] '
-          'G[min=${gmm[0].toStringAsFixed(3)}, max=${gmm[1].toStringAsFixed(3)}, mean=${mean(flatG).toStringAsFixed(3)}] '
-          'B[min=${bmm[0].toStringAsFixed(3)}, max=${bmm[1].toStringAsFixed(3)}, mean=${mean(flatB).toStringAsFixed(3)}]',
-        );
-      } catch (_) {
-        // best-effort stats only
-      }
+      _log.i(_summarizeInputTensor(inputTensor));
 
       // 4. Detect output shape and allocate accordingly
       final outShape = _interpreter!.getOutputTensor(0).shape;
@@ -210,6 +218,23 @@ class XrayInferenceService {
         } else {
           probPneumonia = flat[0];
           probNormal = 1.0 - flat[0];
+        }
+      }
+
+      // Optional: probe a few common medical-image mismatches to identify expected training preprocess.
+      if (_ModelConfig.debugTryPreprocessVariants && outShape.length == 2 && outShape[1] == 2) {
+        try {
+          final variants = await compute(_preprocessVariantsForDebug, imageFile.path);
+          for (final entry in variants.entries) {
+            final output = [List.filled(2, 0.0)];
+            _interpreter!.run(entry.value, output);
+            final z0 = output[0][0];
+            final z1 = output[0][1];
+            final p = _twoClassProbs(z0, z1);
+            _log.i('[TFLITE][VARIANT] ${entry.key}: logits=[$z0, $z1] probs=[${p[0]}, ${p[1]}]');
+          }
+        } catch (e) {
+          _log.w('[TFLITE][VARIANT] Debug variants failed: $e');
         }
       }
 
@@ -337,6 +362,59 @@ List<List<List<List<double>>>> _preprocessImage(String path) {
       });
     }),
   ];
+}
+
+/// Debug-only: return a few plausible preprocessing variants to diagnose mismatch.
+Map<String, List<List<List<List<double>>>>> _preprocessVariantsForDebug(String path) {
+  final bytes = File(path).readAsBytesSync();
+  img.Image? decoded = img.decodeImage(bytes);
+  if (decoded == null) throw StateError('Cannot decode image at $path');
+
+  decoded = img.copyResize(
+    decoded,
+    width: _ModelConfig.inputSize,
+    height: _ModelConfig.inputSize,
+    interpolation: img.Interpolation.linear,
+  );
+
+  List<List<List<List<double>>>> build({
+    required bool grayscale3,
+    required bool invert,
+  }) {
+    return [
+      List.generate(_ModelConfig.inputSize, (y) {
+        return List.generate(_ModelConfig.inputSize, (x) {
+          final p = decoded!.getPixel(x, y);
+          double r = p.r.toDouble();
+          double g = p.g.toDouble();
+          double b = p.b.toDouble();
+          if (invert) {
+            r = 255.0 - r;
+            g = 255.0 - g;
+            b = 255.0 - b;
+          }
+          if (grayscale3) {
+            final gray = 0.299 * r + 0.587 * g + 0.114 * b;
+            r = gray;
+            g = gray;
+            b = gray;
+          }
+          return [
+            _ModelConfig.normalizeChannel(r, 0),
+            _ModelConfig.normalizeChannel(g, 1),
+            _ModelConfig.normalizeChannel(b, 2),
+          ];
+        });
+      }),
+    ];
+  }
+
+  return {
+    'RGB': build(grayscale3: false, invert: false),
+    'RGB_INVERT': build(grayscale3: false, invert: true),
+    'GRAYx3': build(grayscale3: true, invert: false),
+    'GRAYx3_INVERT': build(grayscale3: true, invert: true),
+  };
 }
 
 /// Validates file type, size, and image integrity.
