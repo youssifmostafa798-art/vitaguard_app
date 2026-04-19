@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
@@ -9,14 +10,37 @@ import 'package:vitaguard_app/patient/data/patient_models.dart';
 
 final _log = Logger();
 
+/// Map two outputs to **probabilities** for UI: if values already look like probs, keep; else softmax(logits).
+List<double> _twoClassProbs(double a, double b) {
+  const eps = 1e-5;
+  if (a >= -eps && b >= -eps && a <= 1.0 + eps && b <= 1.0 + eps) {
+    final s = a + b;
+    if (s > 0.97 && s < 1.03) {
+      return [a, b];
+    }
+  }
+  final m = a > b ? a : b;
+  final ea = math.exp(a - m);
+  final eb = math.exp(b - m);
+  final sum = ea + eb;
+  return [ea / sum, eb / sum];
+}
+
 /// Model configuration — must match training pipeline exactly.
 class _ModelConfig {
   static const String assetPath = 'assets/models/model.tflite';
   static const int inputSize = 224;
   static const String modelVersion = 'v1.0.0-tflite';
 
-  /// EfficientNet preprocessing: scale [0,255] → [-1, 1]
-  static double normalize(double pixel) => (pixel / 127.5) - 1.0;
+  /// Torchvision DenseNet121 / Fastai-style: `pixel/255` then ImageNet mean/std (RGB).
+  /// See `scripts/convert_to_onnx.py` (DenseNet121 backbone). Do not use EfficientNet [-1,1] here.
+  static const List<double> _imagenetMean = [0.485, 0.456, 0.406];
+  static const List<double> _imagenetStd = [0.229, 0.224, 0.225];
+
+  static double normalizeChannel(double channel0to255, int rgbIndex) {
+    final x = channel0to255 / 255.0;
+    return (x - _imagenetMean[rgbIndex]) / _imagenetStd[rgbIndex];
+  }
 }
 
 /// On-device TFLite X-ray inference service.
@@ -112,13 +136,17 @@ class XrayInferenceService {
       double probPneumonia;
 
       if (outShape.length == 2 && outShape[1] == 2) {
-        // ── Softmax output: [1, 2] → [P(NORMAL), P(PNEUMONIA)] ──
+        // ── Two-class head: exported as logits (CrossEntropy) in almost all TFLite DenseNet exports ──
         final output = [List.filled(2, 0.0)];
         _interpreter!.run(inputTensor, output);
         sw.stop();
-        _log.i('[TFLITE] Inference (softmax[1,2]): ${sw.elapsedMilliseconds}ms | raw=$output');
-        probNormal = output[0][0];
-        probPneumonia = output[0][1];
+        final z0 = output[0][0];
+        final z1 = output[0][1];
+        _log.i('[TFLITE] Inference [1,2] logits: ${sw.elapsedMilliseconds}ms | raw=[$z0, $z1]');
+        final probs = _twoClassProbs(z0, z1);
+        probNormal = probs[0];
+        probPneumonia = probs[1];
+        _log.i('[TFLITE] Probs (after softmax if logits): normal=$probNormal | pneumonia=$probPneumonia');
       } else if (outShape.length == 2 && outShape[1] == 1) {
         // ── Sigmoid output: [1, 1] → probability of PNEUMONIA ──
         final output = [List.filled(1, 0.0)];
@@ -242,7 +270,7 @@ class XrayInferenceService {
 // Top-level isolate functions
 // ---------------------------------------------------------------------------
 
-/// Resize to 224×224 and normalize using EfficientNet preprocessing.
+/// Resize to 224×224 and normalize for torchvision DenseNet121 (ImageNet stats, RGB, NHWC).
 /// Returns a [1, 224, 224, 3] nested list — the exact shape TFLite expects.
 List<List<List<List<double>>>> _preprocessImage(String path) {
   final bytes = File(path).readAsBytesSync();
@@ -261,9 +289,9 @@ List<List<List<List<double>>>> _preprocessImage(String path) {
       return List.generate(_ModelConfig.inputSize, (x) {
         final pixel = decoded!.getPixel(x, y);
         return [
-          _ModelConfig.normalize(pixel.r.toDouble()),
-          _ModelConfig.normalize(pixel.g.toDouble()),
-          _ModelConfig.normalize(pixel.b.toDouble()),
+          _ModelConfig.normalizeChannel(pixel.r.toDouble(), 0),
+          _ModelConfig.normalizeChannel(pixel.g.toDouble(), 1),
+          _ModelConfig.normalizeChannel(pixel.b.toDouble(), 2),
         ];
       });
     }),
