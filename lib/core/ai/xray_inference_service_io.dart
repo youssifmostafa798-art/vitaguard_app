@@ -74,7 +74,7 @@ class _ModelConfig {
   static const String assetPath = 'assets/models/model.tflite';
   static const int inputSize = 224;
   static const String modelVersion = 'v1.0.0-tflite';
-  static const bool debugTryPreprocessVariants = true;
+  static const bool debugTryPreprocessVariants = false;
 
   /// Torchvision DenseNet121 / Fastai-style: `pixel/255` then ImageNet mean/std (RGB).
   /// See `scripts/convert_to_onnx.py` (DenseNet121 backbone). Do not use EfficientNet [-1,1] here.
@@ -336,7 +336,7 @@ class XrayInferenceService {
 // Top-level isolate functions
 // ---------------------------------------------------------------------------
 
-/// Resize to 224×224 and normalize for DenseNet, using GRAY->3ch for stable X-ray semantics.
+/// Resize to 224×224 and normalize for torchvision DenseNet121 (ImageNet stats, RGB).
 /// Returns a [1, 224, 224, 3] nested list — the exact shape TFLite expects.
 List<List<List<List<double>>>> _preprocessImage(String path) {
   final bytes = File(path).readAsBytesSync();
@@ -354,15 +354,10 @@ List<List<List<List<double>>>> _preprocessImage(String path) {
     List.generate(_ModelConfig.inputSize, (y) {
       return List.generate(_ModelConfig.inputSize, (x) {
         final pixel = decoded!.getPixel(x, y);
-        // Chest X-rays are grayscale by nature; enforce gray->3ch to avoid
-        // inconsistent channel decoding across sources (camera/gallery/png/jpeg).
-        final gray = 0.299 * pixel.r.toDouble() +
-            0.587 * pixel.g.toDouble() +
-            0.114 * pixel.b.toDouble();
         return [
-          _ModelConfig.normalizeChannel(gray, 0),
-          _ModelConfig.normalizeChannel(gray, 1),
-          _ModelConfig.normalizeChannel(gray, 2),
+          _ModelConfig.normalizeChannel(pixel.r.toDouble(), 0),
+          _ModelConfig.normalizeChannel(pixel.g.toDouble(), 1),
+          _ModelConfig.normalizeChannel(pixel.b.toDouble(), 2),
         ];
       });
     }),
