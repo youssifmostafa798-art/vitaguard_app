@@ -9,7 +9,7 @@ import 'package:vitaguard_app/patient/main_patient.dart';
 import 'package:vitaguard_app/doctor/main_doctor.dart';
 import 'package:vitaguard_app/companion/main_companion.dart';
 import 'package:vitaguard_app/facility/main_facility.dart';
-import 'package:vitaguard_app/onbording/ui/onbording_screen/onboarding_screen.dart';
+import 'package:vitaguard_app/onbording/ui/screen/onboarding_screen.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
