@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vitaguard_app/components/custem_text.dart';
 
 // Import target screens
 import 'package:vitaguard_app/patient/main_patient.dart';
@@ -40,7 +41,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   // compa email (eng210113@nilehi.edu.eg) pass (123456789)
   @override
   void initState() {
-    emailCtrl.text = 'ahmedm16tafa@gmail.com';
+    emailCtrl.text = 'eng210113@nilehi.edu.eg';
     passCtrl.text = '123456789';
     super.initState();
   }
@@ -145,13 +146,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                                 ),
                               ),
                               SizedBox(width: 8.w),
-                              Text(
-                                "Remember me",
-                                style: TextStyle(
-                                  color: const Color(0xff0D3B66),
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13.sp,
-                                ),
+                              CustemText(
+                                text: "Remember me",
+                                color: Color(0xff0D3B66),
+                                weight: FontWeight.w600,
+                                size: 13.sp,
                               ),
                             ],
                           ),
@@ -162,12 +161,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
-                            child: Text(
-                              "Forget password?",
-                              style: TextStyle(
-                                color: const Color(0xff0D3B66),
-                                fontSize: 13.sp,
-                              ),
+                            child: CustemText(
+                              text: "Forget password?",
+                              color: Color(0xff0D3B66),
+                              weight: FontWeight.w600,
+                              size: 13.sp,
                             ),
                           ),
                         ],
@@ -187,7 +185,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         onPressed: () {
                           Navigator.pop(context);
                         },
-                        child: const Text("Need an account? Sign Up"),
+                        child: CustemText(
+                          text: "Need an account? Sign Up",
+                          color: Colors.grey.shade800,
+                          weight: FontWeight.normal,
+                          size: 13.sp,
+                        ),
                       ),
                     ],
                   ),
