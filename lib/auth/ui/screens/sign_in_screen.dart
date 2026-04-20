@@ -40,7 +40,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   // compa email (eng210113@nilehi.edu.eg) pass (123456789)
   @override
   void initState() {
-    emailCtrl.text = 'eng210091@nilehi.edu.eg';
+    emailCtrl.text = 'ahmedm16tafa@gmail.com';
     passCtrl.text = '123456789';
     super.initState();
   }
