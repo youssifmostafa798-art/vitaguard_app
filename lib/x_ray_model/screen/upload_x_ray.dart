@@ -6,9 +6,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
-import 'package:vitaguard_app/patient/x_ray_model/screen/ai_xray_result_screen.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/providers.dart';
+
+import 'ai_xray_result_screen.dart';
 
 class UploadXRay extends ConsumerStatefulWidget {
   const UploadXRay({super.key});

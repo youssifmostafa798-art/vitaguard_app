@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
-import 'package:vitaguard_app/patient/x_ray_model/screen/doctor_two_phase_models.dart';
+
+import '../screen/doctor_two_phase_models.dart';
 
 class Phase1DiagnosisPanel extends StatelessWidget {
   const Phase1DiagnosisPanel({
@@ -70,7 +71,9 @@ class Phase1DiagnosisPanel extends StatelessWidget {
           decoration: InputDecoration(
             labelText: 'Clinical notes',
             hintText: 'Required if no checklist item is selected',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
             alignLabelWithHint: true,
           ),
         ),

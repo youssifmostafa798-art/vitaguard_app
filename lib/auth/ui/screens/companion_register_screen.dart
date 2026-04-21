@@ -7,7 +7,6 @@ import 'package:vitaguard_app/auth/ui/widgets/signup_success_dialog.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
-import 'package:vitaguard_app/components/custom_logo.dart';
 import 'package:vitaguard_app/core/providers.dart';
 
 class CompanionRegisterScreen extends ConsumerStatefulWidget {
@@ -57,8 +56,7 @@ class _CompanionRegisterScreenState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SizedBox(height: 40.h),
-                      VitaGuardLogo(),
+
                       SizedBox(height: 40.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,

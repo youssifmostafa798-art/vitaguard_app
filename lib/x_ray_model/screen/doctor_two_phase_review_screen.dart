@@ -7,12 +7,12 @@ import 'package:gap/gap.dart';
 import 'package:vitaguard_app/core/providers.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/patient/data/patient_models.dart';
-import 'package:vitaguard_app/patient/x_ray_model/screen/doctor_two_phase_ai_view_data.dart';
-import 'package:vitaguard_app/patient/x_ray_model/screen/doctor_two_phase_models.dart';
-import 'package:vitaguard_app/patient/x_ray_model/screen/widgets/phase1_diagnosis_panel.dart';
-import 'package:vitaguard_app/patient/x_ray_model/screen/widgets/phase2_ai_review_panel.dart';
-import 'package:vitaguard_app/patient/x_ray_model/screen/widgets/raw_xray_viewer.dart';
-import 'package:vitaguard_app/patient/x_ray_model/screen/widgets/review_progress_header.dart';
+import '../widgets/phase1_diagnosis_panel.dart';
+import '../widgets/phase2_ai_review_panel.dart';
+import '../widgets/raw_xray_viewer.dart';
+import '../widgets/review_progress_header.dart';
+import 'doctor_two_phase_ai_view_data.dart';
+import 'doctor_two_phase_models.dart';
 
 /// Mandatory two-phase X-ray review: manual first (AI locked), then AI unlocks.
 ///
@@ -113,7 +113,9 @@ class _DoctorTwoPhaseReviewScreenState
     setState(() {
       _aiLoading = false;
       _aiResult = result;
-      _aiViewData = result != null ? AiReviewViewData.fromXRayResult(result) : null;
+      _aiViewData = result != null
+          ? AiReviewViewData.fromXRayResult(result)
+          : null;
     });
   }
 
@@ -189,7 +191,9 @@ class _DoctorTwoPhaseReviewScreenState
                 final t = reasonCtrl.text.trim();
                 if (t.isEmpty) {
                   ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(content: Text('Reason is required to override.')),
+                    const SnackBar(
+                      content: Text('Reason is required to override.'),
+                    ),
                   );
                   return;
                 }
@@ -267,12 +271,13 @@ class _DoctorTwoPhaseReviewScreenState
                 ),
               ),
             ] else if (_aiError != null) ...[
-              Icon(Icons.error_outline, color: Colors.red.shade700, size: 40.sp),
-              Gap(8.h),
-              Text(
-                _aiError!,
-                style: Theme.of(context).textTheme.bodyMedium,
+              Icon(
+                Icons.error_outline,
+                color: Colors.red.shade700,
+                size: 40.sp,
               ),
+              Gap(8.h),
+              Text(_aiError!, style: Theme.of(context).textTheme.bodyMedium),
               Gap(16.h),
               FilledButton.tonal(
                 onPressed: _runAiAnalysis,

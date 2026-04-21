@@ -5,8 +5,9 @@ import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
-import 'package:vitaguard_app/components/custom_logo.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
+
+import '../../../core/utils/simple_header.dart';
 
 class ProfessionalId extends StatefulWidget {
   final File? initialImage;
@@ -39,22 +40,22 @@ class _ProfessionalIdState extends State<ProfessionalId> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: SimpleHeader(title: " Professional Association ID"),
       body: SafeArea(
         child: AppBackground(
           child: Padding(
             padding: const EdgeInsets.all(25),
             child: Column(
               children: [
-                VitaGuardLogo(size: 100.h),
-                Gap(20.h),
-                Gap(16.h),
+                Gap(40.h),
+
                 CustemText(
                   text: "Upload Professional Association ID card.",
                   color: Color(0xff003F6B),
                   size: 18,
                   weight: FontWeight.bold,
                 ),
-                Gap(10.h),
+                Gap(20.h),
 
                 GestureDetector(
                   onTap: _pickImage,
@@ -83,7 +84,7 @@ class _ProfessionalIdState extends State<ProfessionalId> {
                   ),
                 ),
 
-                const Spacer(),
+                Gap(40.h),
 
                 Button(
                   title: "Confirm",

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
-import 'package:vitaguard_app/patient/x_ray_model/screen/widgets/heatmap_overlay_placeholder.dart';
+import 'package:vitaguard_app/x_ray_model/widgets/heatmap_overlay_placeholder.dart';
 
 /// Square clipped X-ray with optional heatmap overlay (no overlay widget when [showHeatmapOverlay] is false).
 class XRayImageWithOptionalHeatmap extends StatelessWidget {
@@ -62,17 +62,11 @@ class AiDiagnosisMetricRow extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: _MetricTile(
-            label: 'Confidence',
-            value: confidencePercentText,
-          ),
+          child: _MetricTile(label: 'Confidence', value: confidencePercentText),
         ),
         SizedBox(width: 10.w),
         Expanded(
-          child: _MetricTile(
-            label: 'Severity (derived)',
-            value: severityLabel,
-          ),
+          child: _MetricTile(label: 'Severity (derived)', value: severityLabel),
         ),
       ],
     );
@@ -99,7 +93,9 @@ class _MetricTile extends StatelessWidget {
         children: [
           Text(
             label,
-            style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+            style: textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
           SizedBox(height: 4.h),
           Text(
@@ -170,7 +166,9 @@ class AiDiagnosisSummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.4)),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,7 +188,7 @@ class AiDiagnosisSummaryCard extends StatelessWidget {
   }
 }
 
-/// Professional, calm error display using Amber tones. 
+/// Professional, calm error display using Amber tones.
 /// Replaces scary technical boxes with actionable guidance.
 class AiErrorDisplay extends StatelessWidget {
   const AiErrorDisplay({

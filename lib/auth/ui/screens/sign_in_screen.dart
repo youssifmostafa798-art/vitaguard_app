@@ -41,7 +41,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   // compa email (eng210113@nilehi.edu.eg) pass (123456789)
   @override
   void initState() {
-    emailCtrl.text = 'eng210113@nilehi.edu.eg';
+    emailCtrl.text = 'eng210091@nilehi.edu.eg';
     passCtrl.text = '123456789';
     super.initState();
   }
@@ -170,7 +170,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           ),
                         ],
                       ),
-                      SizedBox(height: 12.h),
+                      SizedBox(height: 20.h),
                       if (isLoading)
                         const CircularProgressIndicator()
                       else

@@ -36,7 +36,7 @@ class CreateAccountScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Gap(20.h),
+                Gap(40.h),
                 Text(
                   title,
                   style: TextStyle(
