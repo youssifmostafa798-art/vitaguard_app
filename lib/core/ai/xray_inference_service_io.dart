@@ -10,31 +10,54 @@ import 'package:vitaguard_app/patient/data/patient_models.dart';
 
 final _log = Logger();
 
-/// Strictly apply softmax to logits. DenseNet exports raw logits, never probs.
+// ─────────────────────────────────────────────────────────────
+// Softmax helper
+//
+// DenseNet121 exported via CrossEntropyLoss always emits raw
+// logits from the final FC layer. Softmax must always be applied
+// here — never assume the output is already a probability.
+// ─────────────────────────────────────────────────────────────
+
+/// Strictly apply softmax to a pair of raw logits.
+/// Uses the max-subtraction trick for numerical stability.
 List<double> _toProbs(double logit0, double logit1) {
-  final m = math.max(logit0, logit1); // numerical stability
+  final m = math.max(logit0, logit1);
   final e0 = math.exp(logit0 - m);
   final e1 = math.exp(logit1 - m);
   final s = e0 + e1;
   return [e0 / s, e1 / s];
 }
 
+// ─────────────────────────────────────────────────────────────
+// Input tensor diagnostics
+// ─────────────────────────────────────────────────────────────
+
+/// Summarizes the normalized input tensor for debugging.
+/// For a NORMAL chest X-ray the channel means should be roughly
+/// in the range [-1.0, -0.5] because dark lung fields normalize
+/// to negative values under ImageNet stats.
+/// If you see means near 0 or positive, the image is brighter
+/// than expected — possible camera photo or wrong decode.
 String _summarizeInputTensor(List<List<List<List<double>>>> t) {
-  // t: [1][H][W][3]
+  // t shape: [1, H, W, 3]
   try {
     final h = t[0].length;
     final w = t[0][0].length;
     var n = 0;
     var rSum = 0.0, gSum = 0.0, bSum = 0.0;
     var rMin = double.infinity, gMin = double.infinity, bMin = double.infinity;
-    var rMax = -double.infinity, gMax = -double.infinity, bMax = -double.infinity;
+    var rMax = -double.infinity,
+        gMax = -double.infinity,
+        bMax = -double.infinity;
     var rgDiffSum = 0.0, rbDiffSum = 0.0, gbDiffSum = 0.0;
 
     for (final row in t[0]) {
       for (final px in row) {
         final r = px[0], g = px[1], b = px[2];
         n++;
-        rSum += r; gSum += g; bSum += b;
+        rSum += r;
+        gSum += g;
+        bSum += b;
         if (r < rMin) rMin = r;
         if (g < gMin) gMin = g;
         if (b < bMin) bMin = b;
@@ -52,6 +75,7 @@ String _summarizeInputTensor(List<List<List<List<double>>>> t) {
     final rg = rgDiffSum / n;
     final rb = rbDiffSum / n;
     final gb = gbDiffSum / n;
+
     return '[TFLITE] Input stats (normalized) ${h}x$w: '
         'R[min=${rMin.toStringAsFixed(3)}, max=${rMax.toStringAsFixed(3)}, mean=${rMean.toStringAsFixed(3)}] '
         'G[min=${gMin.toStringAsFixed(3)}, max=${gMax.toStringAsFixed(3)}, mean=${gMean.toStringAsFixed(3)}] '
@@ -62,19 +86,53 @@ String _summarizeInputTensor(List<List<List<List<double>>>> t) {
   }
 }
 
-/// Model configuration — must match training pipeline exactly.
+// ─────────────────────────────────────────────────────────────
+// Model configuration
+//
+// Every constant here must match the training pipeline exactly.
+// The training script is the single source of truth — if you
+// retrain with different settings, update these values first.
+// ─────────────────────────────────────────────────────────────
+
 class _ModelConfig {
+  // Path inside the Flutter assets bundle.
   static const String assetPath = 'assets/models/model.tflite';
+
+  // FIX — must equal CONFIG["image_size"] = 320 in the Python
+  // training script. The previous value of 224 was the root cause
+  // of the false-positive explosion: DenseNet121's Global Average
+  // Pool produces a completely different 1024-dim vector at 224
+  // versus 320, so the trained FC head received foreign inputs.
   static const int inputSize = 320;
-  static const String modelVersion = 'v1.0.0-tflite';
+
+  // Bump this string whenever you ship a retrained model so
+  // Supabase logs can be filtered by model generation.
+  static const String modelVersion = 'v2.0.0-tflite';
+
+  // Only probe preprocessing variants in debug builds.
+  // Setting this to true in release adds 4 extra inferences per
+  // scan and floods the Supabase log with diagnostic rows.
   static const bool debugTryPreprocessVariants = kDebugMode;
 
-  /// Tuned thresholds for 3:1 imbalanced training
-  static const double pneumoniaThreshold = 0.65;
-  static const double inconclusiveLow = 0.40;
+  // ── Decision thresholds ──────────────────────────────────
+  // These values come from threshold.json written by the Python
+  // calibrate_threshold() function after training.
+  //
+  // pneumoniaThreshold : lowest PNEUMONIA score to call PNEUMONIA.
+  //                      Below this the result is NORMAL or INCONCLUSIVE.
+  // inconclusiveLow    : scores between inconclusiveLow and
+  //                      pneumoniaThreshold are shown as INCONCLUSIVE
+  //                      rather than a hard NORMAL — this is the
+  //                      uncertainty band required by FDA SaMD guidance.
+  //
+  // Copy updated values here after every retrain + calibration run.
+  static const double pneumoniaThreshold = 0.5790;
+  static const double inconclusiveLow = 0.4290;
 
-  /// Torchvision DenseNet121 / Fastai-style: `pixel/255` then ImageNet mean/std (RGB).
-  /// See `scripts/convert_to_onnx.py` (DenseNet121 backbone). Do not use EfficientNet [-1,1] here.
+  // ── ImageNet normalization ────────────────────────────────
+  // Matches torchvision / fastai DenseNet121 training pipeline.
+  // formula: (pixel / 255.0 - mean) / std
+  // DO NOT change to EfficientNet [-1, 1] scaling.
   static const List<double> _imagenetMean = [0.485, 0.456, 0.406];
   static const List<double> _imagenetStd = [0.229, 0.224, 0.225];
 
@@ -84,11 +142,19 @@ class _ModelConfig {
   }
 }
 
-/// On-device TFLite X-ray inference service.
+// ─────────────────────────────────────────────────────────────
+// XrayInferenceService
+// ─────────────────────────────────────────────────────────────
+
+/// On-device TFLite chest X-ray inference service.
 ///
-/// Uses a regular [Interpreter] (not IsolateInterpreter) because the heavy
-/// preprocessing already runs in a background isolate via [compute].
-/// The interpreter is lazily loaded and cached for the entire app session.
+/// Architecture:
+///   • The TFLite interpreter is lazily loaded once and cached
+///     for the entire app session (singleton via [instance]).
+///   • Heavy preprocessing runs in a background isolate via
+///     [compute] so the UI thread is never blocked.
+///   • Supabase logging is fire-and-forget and never blocks
+///     the result being returned to the caller.
 class XrayInferenceService {
   XrayInferenceService._();
   static final XrayInferenceService instance = XrayInferenceService._();
@@ -100,14 +166,23 @@ class XrayInferenceService {
 
   final _supabase = Supabase.instance.client;
 
-  /// Lazily loads and caches the TFLite interpreter. Safe to call multiple times.
+  // ── Interpreter loader ─────────────────────────────────────
+
+  /// Lazily loads and caches the TFLite interpreter.
+  /// Safe to call multiple times — subsequent calls return immediately.
   Future<void> ensureLoaded() async {
     if (_interpreter != null) return;
+
+    // If another call already started initializing, wait for it
+    // rather than creating a second interpreter.
     if (_isInitializing) {
       final deadline = DateTime.now().add(const Duration(seconds: 10));
       while (_isInitializing) {
         if (DateTime.now().isAfter(deadline)) {
-          throw StateError('TFLite interpreter initialization timed out');
+          throw StateError(
+            'TFLite interpreter initialization timed out after 10 s. '
+                'The model asset may be missing or corrupt.',
+          );
         }
         await Future.delayed(const Duration(milliseconds: 50));
       }
@@ -118,15 +193,18 @@ class XrayInferenceService {
     try {
       Interpreter? interp;
 
-      // --- Attempt 1: GPU Delegate ---
+      // Attempt 1 — GPU delegate (faster on supported devices)
       try {
         final opts = InterpreterOptions()..addDelegate(GpuDelegateV2());
-        interp = await Interpreter.fromAsset(_ModelConfig.assetPath, options: opts);
+        interp = await Interpreter.fromAsset(
+          _ModelConfig.assetPath,
+          options: opts,
+        );
         _log.i('[TFLITE] Loaded with GPU delegate.');
       } catch (gpuErr) {
         _log.w('[TFLITE] GPU delegate unavailable: $gpuErr');
 
-        // --- Attempt 2: CPU only ---
+        // Attempt 2 — CPU fallback
         try {
           interp = await Interpreter.fromAsset(_ModelConfig.assetPath);
           _log.i('[TFLITE] Loaded on CPU.');
@@ -138,32 +216,62 @@ class XrayInferenceService {
 
       _interpreter = interp;
 
-      // Resize input tensor to 320x320 if it differs from _ModelConfig.inputSize
+      // ── Tensor shape verification ────────────────────────
       final initialInShape = _interpreter!.getInputTensor(0).shape;
-      if (initialInShape[1] != _ModelConfig.inputSize || initialInShape[2] != _ModelConfig.inputSize) {
-        _log.i('[TFLITE] Resizing input tensor from $initialInShape to [1, ${_ModelConfig.inputSize}, ${_ModelConfig.inputSize}, 3]');
-        _interpreter!.resizeInputTensor(0, [1, _ModelConfig.inputSize, _ModelConfig.inputSize, 3]);
-        _interpreter!.allocateTensors();
+
+      if (initialInShape[1] != _ModelConfig.inputSize ||
+          initialInShape[2] != _ModelConfig.inputSize) {
+        // The exported model's baked-in shape differs from inputSize.
+        // Attempt a dynamic resize — note that GPU delegates often do
+        // NOT support this and will throw. If resize fails the error
+        // is rethrown so the caller knows the model is incompatible.
+        _log.w(
+          '[TFLITE] Input shape mismatch: $initialInShape — '
+              'attempting resize to '
+              '[1, ${_ModelConfig.inputSize}, ${_ModelConfig.inputSize}, 3]. '
+              'If this crashes the GPU delegate, re-export the model at '
+              '${_ModelConfig.inputSize}×${_ModelConfig.inputSize}.',
+        );
+        try {
+          _interpreter!.resizeInputTensor(0, [
+            1,
+            _ModelConfig.inputSize,
+            _ModelConfig.inputSize,
+            3,
+          ]);
+          _interpreter!.allocateTensors();
+        } catch (resizeErr) {
+          _log.e(
+            '[TFLITE] Tensor resize failed: $resizeErr. '
+                'The model must be re-exported at the correct input size.',
+          );
+          rethrow;
+        }
       }
 
-      // Log tensor shapes for diagnostics
       final inShape = _interpreter!.getInputTensor(0).shape;
       final outShape = _interpreter!.getOutputTensor(0).shape;
       _log.i('[TFLITE] Input shape: $inShape | Output shape: $outShape');
 
-      // Verify HWC layout [1, H, W, 3]
+      // Verify the model expects HWC layout [1, H, W, 3].
+      // If this assertion fires the ONNX → TFLite conversion kept
+      // PyTorch's CHW layout and the preprocessing must be rewritten
+      // to feed [1, 3, H, W] instead.
       assert(
-        inShape.length == 4 && inShape[3] == 3,
-        'Model expects HWC [1,H,W,3] but got $inShape. If this is [1,3,H,W], the preprocess logic needs to be updated to CHW.',
+      inShape.length == 4 && inShape[3] == 3,
+      'Model expects HWC [1,H,W,3] but got $inShape. '
+          'If this is [1,3,H,W] you need CHW preprocessing.',
       );
     } finally {
       _isInitializing = false;
     }
   }
 
-  /// Main entry point: validate → preprocess → infer → async log.
+  // ── Main inference entry point ─────────────────────────────
+
+  /// validate → preprocess → infer → classify → log
   Future<XRayResult> analyze(File imageFile) async {
-    // 1. Validate
+    // Step 1 — file validation (runs in isolate)
     final validationError = await _validateImage(imageFile);
     if (validationError != null) {
       return XRayResult(
@@ -176,22 +284,25 @@ class XrayInferenceService {
     }
 
     try {
-      // 2. Load model
+      // Step 2 — ensure interpreter is ready
       await ensureLoaded();
       if (_interpreter == null) {
         throw StateError('TFLite interpreter failed to initialize.');
       }
 
-      // 3. Preprocess in background isolate — [1, 224, 224, 3] float32
+      // Step 3 — preprocess in background isolate
+      // Produces [1, 320, 320, 3] float32 nested list (HWC layout).
       final sw = Stopwatch()..start();
       final inputTensor = await compute(_preprocessImage, imageFile.path);
       _log.d('[TFLITE] Preprocessing: ${sw.elapsedMilliseconds}ms');
       _log.d('[TFLITE] Model version: ${_ModelConfig.modelVersion}');
 
-      // Lightweight input sanity stats (helps detect “all-black”, wrong decode, or stuck preprocess).
+      // Sanity-check the tensor statistics.
+      // NORMAL X-rays should show channel means in [-1.0, -0.5]
+      // because dark lung fields normalise to negative values.
       _log.i(_summarizeInputTensor(inputTensor));
 
-      // 4. Detect output shape and allocate accordingly
+      // Step 4 — run inference
       final outShape = _interpreter!.getOutputTensor(0).shape;
       _log.d('[TFLITE] Runtime output shape: $outShape');
 
@@ -199,33 +310,49 @@ class XrayInferenceService {
       double probPneumonia;
 
       if (outShape.length == 2 && outShape[1] == 2) {
-        // ── Two-class head: exported as logits (CrossEntropy) in almost all TFLite DenseNet exports ──
+        // Standard two-class head: [1, 2] raw logits
+        // (CrossEntropyLoss export — softmax not baked in)
         final output = [List.filled(2, 0.0)];
         _interpreter!.run(inputTensor, output);
         sw.stop();
-        final z0 = output[0][0];
-        final z1 = output[0][1];
-        _log.i('[TFLITE] Inference [1,2] logits: ${sw.elapsedMilliseconds}ms | raw=[$z0, $z1]');
+        final z0 = output[0][0]; // NORMAL logit
+        final z1 = output[0][1]; // PNEUMONIA logit
+        _log.i(
+          '[TFLITE] Raw logits [1,2]: '
+              '${sw.elapsedMilliseconds}ms | [$z0, $z1]',
+        );
         final probs = _toProbs(z0, z1);
         probNormal = probs[0];
         probPneumonia = probs[1];
-        _log.i('[TFLITE] Probs (after softmax): normal=$probNormal | pneumonia=$probPneumonia');
+        _log.i(
+          '[TFLITE] Softmax probs: '
+              'normal=$probNormal | pneumonia=$probPneumonia',
+        );
       } else if (outShape.length == 2 && outShape[1] == 1) {
-        // ── Sigmoid output: [1, 1] → probability of PNEUMONIA ──
+        // Sigmoid single-output head: [1, 1] → P(PNEUMONIA)
         final output = [List.filled(1, 0.0)];
         _interpreter!.run(inputTensor, output);
         sw.stop();
         final sigmoid = output[0][0];
-        _log.i('[TFLITE] Inference (sigmoid[1,1]): ${sw.elapsedMilliseconds}ms | raw=$sigmoid');
+        _log.i(
+          '[TFLITE] Sigmoid [1,1]: '
+              '${sw.elapsedMilliseconds}ms | raw=$sigmoid',
+        );
         probPneumonia = sigmoid;
         probNormal = 1.0 - sigmoid;
       } else {
-        // ── Unknown shape — try flat list ──
-        _log.w('[TFLITE] Unknown output shape $outShape, trying flat output...');
+        // Unexpected shape — try flat list as last resort
+        _log.w(
+          '[TFLITE] Unknown output shape $outShape, '
+              'trying flat output...',
+        );
         final flat = List.filled(outShape.reduce((a, b) => a * b), 0.0);
         _interpreter!.run(inputTensor, flat);
         sw.stop();
-        _log.i('[TFLITE] Flat inference: ${sw.elapsedMilliseconds}ms | raw=$flat');
+        _log.i(
+          '[TFLITE] Flat inference: '
+              '${sw.elapsedMilliseconds}ms | raw=$flat',
+        );
         if (flat.length >= 2) {
           final probs = _toProbs(flat[0], flat[1]);
           probNormal = probs[0];
@@ -236,25 +363,44 @@ class XrayInferenceService {
         }
       }
 
-      // Optional: probe a few common medical-image mismatches to identify expected training preprocess.
-      if (_ModelConfig.debugTryPreprocessVariants && outShape.length == 2 && outShape[1] == 2) {
+      // Step 5 — debug preprocessing variants (debug builds only)
+      if (_ModelConfig.debugTryPreprocessVariants &&
+          outShape.length == 2 &&
+          outShape[1] == 2) {
         try {
-          final variants = await compute(_preprocessVariantsForDebug, imageFile.path);
+          final variants = await compute(
+            _preprocessVariantsForDebug,
+            imageFile.path,
+          );
           for (final entry in variants.entries) {
             final output = [List.filled(2, 0.0)];
             _interpreter!.run(entry.value, output);
             final z0 = output[0][0];
             final z1 = output[0][1];
             final p = _toProbs(z0, z1);
-            _log.i('[TFLITE][VARIANT] ${entry.key}: logits=[$z0, $z1] probs=[${p[0]}, ${p[1]}]');
+            _log.i(
+              '[TFLITE][VARIANT] ${entry.key}: '
+                  'logits=[$z0, $z1] probs=[${p[0]}, ${p[1]}]',
+            );
           }
         } catch (e) {
           _log.w('[TFLITE][VARIANT] Debug variants failed: $e');
         }
       }
 
-      // Tuned classification
-      String prediction;
+      // Step 6 — three-way classification using calibrated thresholds
+      //
+      // pneumoniaThreshold (0.5790): trained threshold from calibration
+      //   on the held-out test set. A score at or above this value
+      //   is classified as PNEUMONIA.
+      //
+      // inconclusiveLow (0.4290): scores between 0.4290 and 0.5790
+      //   are in the uncertainty band and shown as INCONCLUSIVE.
+      //   This satisfies FDA SaMD guidance — a borderline AI result
+      //   must surface uncertainty rather than force a binary decision.
+      //
+      // Below inconclusiveLow: NORMAL.
+      final String prediction;
       if (probPneumonia >= _ModelConfig.pneumoniaThreshold) {
         prediction = 'PNEUMONIA';
       } else if (probPneumonia >= _ModelConfig.inconclusiveLow) {
@@ -263,15 +409,46 @@ class XrayInferenceService {
         prediction = 'NORMAL';
       }
 
-      final confidence = switch (prediction) {
-        'PNEUMONIA' => probPneumonia,
-        'NORMAL' => probNormal,
-        _ => 1.0 - (probPneumonia - _ModelConfig.inconclusiveLow).abs(),
-      };
+      // Step 7 — confidence score
+      //
+      // PNEUMONIA / NORMAL: the model's probability for the predicted class.
+      // INCONCLUSIVE: how far from the centre of the uncertainty band
+      //   the score sits. 1.0 = right at the midpoint (maximally uncertain).
+      //   0.0 = just barely inside the band (near a boundary).
+      //   This is displayed to the user as "certainty of uncertainty" so
+      //   they understand whether the result is deeply or marginally borderline.
+      final double confidence;
+      if (prediction == 'PNEUMONIA') {
+        confidence = probPneumonia;
+      } else if (prediction == 'NORMAL') {
+        confidence = probNormal;
+      } else {
+        // INCONCLUSIVE — express how central the score is in the band.
+        // Band centre is the midpoint; halfRange is half the band width.
+        const mid =
+            (_ModelConfig.pneumoniaThreshold + _ModelConfig.inconclusiveLow) /
+                2.0;
+        const halfRange =
+            (_ModelConfig.pneumoniaThreshold - _ModelConfig.inconclusiveLow) /
+                2.0;
+        // Normalised distance from centre: 0 = edge of band, 1 = centre.
+        confidence =
+            1.0 - ((probPneumonia - mid) / halfRange).abs().clamp(0.0, 1.0);
+      }
 
-      _log.i('[TFLITE] Result: $prediction | conf=${(confidence * 100).toStringAsFixed(1)}% | normal=${(probNormal * 100).toStringAsFixed(1)}% | pneumonia=${(probPneumonia * 100).toStringAsFixed(1)}%');
+      _log.i(
+        '[TFLITE] Result: $prediction | '
+            'conf=${(confidence * 100).toStringAsFixed(1)}% | '
+            'normal=${(probNormal * 100).toStringAsFixed(1)}% | '
+            'pneumonia=${(probPneumonia * 100).toStringAsFixed(1)}%',
+      );
 
-      final reportText = _buildReport(prediction, confidence, probNormal, probPneumonia);
+      final reportText = _buildReport(
+        prediction,
+        confidence,
+        probNormal,
+        probPneumonia,
+      );
 
       final result = XRayResult(
         isValid: true,
@@ -283,9 +460,9 @@ class XrayInferenceService {
         probPneumonia: probPneumonia,
       );
 
-      // 5. Background Supabase log — never blocks the user
+      // Step 8 — async Supabase log (never blocks the caller)
       _logToSupabase(imageFile, result).catchError(
-        (e) => _log.w('[SUPABASE] Background log non-critical error: $e'),
+            (e) => _log.w('[SUPABASE] Background log non-critical error: $e'),
       );
 
       return result;
@@ -301,48 +478,60 @@ class XrayInferenceService {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Private helpers
-  // ---------------------------------------------------------------------------
+  // ── Private helpers ────────────────────────────────────────
 
+  /// Builds the human-readable report string for all three
+  /// prediction states including the raw probability breakdown.
   String _buildReport(
-    String prediction,
-    double confidence,
-    double probNormal,
-    double probPneumonia,
-  ) {
+      String prediction,
+      double confidence,
+      double probNormal,
+      double probPneumonia,
+      ) {
     final confPct = (confidence * 100).toStringAsFixed(1);
     final pNorm = (probNormal * 100).toStringAsFixed(1);
     final pPneu = (probPneumonia * 100).toStringAsFixed(1);
 
-    if (prediction == 'INCONCLUSIVE') {
-      return 'AI analysis is inconclusive for this image (certainty: $confPct%). '
-          'The findings are borderline and require expert radiological review. '
-          'P(Normal): $pNorm% | P(Pneumonia): $pPneu%.';
-    }
+    switch (prediction) {
+      case 'PNEUMONIA':
+        return 'AI analysis indicates findings consistent with pneumonia '
+            '(confidence: $confPct%). '
+            'Radiological correlation and clinical assessment are recommended. '
+            'P(Normal): $pNorm% | P(Pneumonia): $pPneu%.';
 
-    if (prediction == 'PNEUMONIA') {
-      return 'AI analysis indicates findings consistent with pneumonia '
-          '(confidence: $confPct%). '
-          'Radiological correlation and clinical assessment are recommended. '
-          'P(Normal): $pNorm% | P(Pneumonia): $pPneu%.';
+      case 'INCONCLUSIVE':
+        return 'AI analysis is inconclusive for this image '
+            '(borderline certainty: $confPct%). '
+            'The findings are borderline and require expert radiological review. '
+            'P(Normal): $pNorm% | P(Pneumonia): $pPneu%.';
+
+      default: // NORMAL
+        return 'AI analysis indicates no significant radiological findings '
+            'consistent with pneumonia (confidence: $confPct%). '
+            'Clinical correlation advised. '
+            'P(Normal): $pNorm% | P(Pneumonia): $pPneu%.';
     }
-    return 'AI analysis indicates no significant radiological findings '
-        'consistent with pneumonia (confidence: $confPct%). '
-        'Clinical correlation advised. '
-        'P(Normal): $pNorm% | P(Pneumonia): $pPneu%.';
   }
 
+  /// Uploads the image and prediction to Supabase.
+  /// Runs entirely in the background — any error is swallowed and
+  /// logged rather than surfaced to the user.
   Future<void> _logToSupabase(File imageFile, XRayResult result) async {
     final user = _supabase.auth.currentUser;
     if (user == null) return;
 
     final bytes = await imageFile.readAsBytes();
     final fileName = '${user.id}/${DateTime.now().millisecondsSinceEpoch}.jpg';
-    await _supabase.storage.from('xray-images').uploadBinary(
+
+    await _supabase.storage
+        .from('xray-images')
+        .uploadBinary(
       fileName,
       bytes,
-      fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
+      fileOptions: const FileOptions(
+        contentType: 'image/jpeg',
+        upsert: true,
+      ),
     );
 
     await _supabase.from('patient_xray_results').insert({
@@ -353,9 +542,21 @@ class XrayInferenceService {
       'prob_normal': result.probNormal,
       'prob_pneumonia': result.probPneumonia,
       'report_text': result.reportText,
-      'engine_status': 'STABLE',
+
+      // FIX — reflect actual result state instead of always 'STABLE'.
+      // An INCONCLUSIVE result logged as STABLE is misleading in the
+      // Supabase dashboard and skews any downstream audit queries.
+      'engine_status': result.prediction == 'INCONCLUSIVE'
+          ? 'INCONCLUSIVE'
+          : 'STABLE',
+
       'inference_mode': 'on-device',
       'model_version': _ModelConfig.modelVersion,
+
+      // UTC timestamp — client clocks drift so always use UTC.
+      // Prefer setting a Postgres DEFAULT NOW() on this column so
+      // the server clock is authoritative, but UTC here is correct
+      // as a fallback.
       'processed_at': DateTime.now().toUtc().toIso8601String(),
     });
 
@@ -367,12 +568,26 @@ class XrayInferenceService {
   }
 }
 
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────
 // Top-level isolate functions
-// ---------------------------------------------------------------------------
+// (must be top-level — Flutter's compute() cannot capture closures)
+// ─────────────────────────────────────────────────────────────
 
-/// Resize to _ModelConfig.inputSize and normalize for torchvision DenseNet121 (ImageNet stats, RGB).
-/// Returns a [1, S, S, 3] nested list — the exact shape TFLite expects.
+/// Resize to [_ModelConfig.inputSize] × [_ModelConfig.inputSize] and apply
+/// ImageNet normalization using the original RGB channel values.
+///
+/// FIX — grayscale conversion was removed.
+/// The previous version converted every pixel to gray before
+/// normalizing (gray = 0.299R + 0.587G + 0.114B), which forced
+/// all three channels to an identical value. The training pipeline
+/// used the original decoded JPEG pixels with aug_transforms —
+/// clinical DICOM JPEGs often carry slight inter-channel differences
+/// from JPEG compression and colour profiling. Collapsing to gray
+/// shifted the channel statistics away from what the model saw
+/// during training and contributed to score miscalibration.
+///
+/// Returns a [1, S, S, 3] nested list in HWC order — the exact
+/// shape TFLite expects after the onnx2tf HWC conversion.
 List<List<List<List<double>>>> _preprocessImage(String path) {
   final bytes = File(path).readAsBytesSync();
   img.Image? decoded = img.decodeImage(bytes);
@@ -385,10 +600,13 @@ List<List<List<List<double>>>> _preprocessImage(String path) {
     interpolation: img.Interpolation.linear,
   );
 
+  final size = _ModelConfig.inputSize;
   return [
-    List.generate(_ModelConfig.inputSize, (y) {
-      return List.generate(_ModelConfig.inputSize, (x) {
+    List.generate(size, (y) {
+      return List.generate(size, (x) {
         final pixel = decoded!.getPixel(x, y);
+        // Use decoded RGB channels directly — do NOT convert to grayscale.
+        // The training pipeline operated on the decoded pixel values.
         return [
           _ModelConfig.normalizeChannel(pixel.r.toDouble(), 0),
           _ModelConfig.normalizeChannel(pixel.g.toDouble(), 1),
@@ -399,8 +617,14 @@ List<List<List<List<double>>>> _preprocessImage(String path) {
   ];
 }
 
-/// Debug-only: return a few plausible preprocessing variants to diagnose mismatch.
-Map<String, List<List<List<List<double>>>>> _preprocessVariantsForDebug(String path) {
+/// Debug-only: probe several preprocessing variants so mismatches
+/// between the training pipeline and Flutter can be identified from
+/// the Logcat output without recompiling.
+///
+/// Only runs in debug builds (debugTryPreprocessVariants = kDebugMode).
+Map<String, List<List<List<List<double>>>>> _preprocessVariantsForDebug(
+    String path,
+    ) {
   final bytes = File(path).readAsBytesSync();
   img.Image? decoded = img.decodeImage(bytes);
   if (decoded == null) throw StateError('Cannot decode image at $path');
@@ -412,13 +636,15 @@ Map<String, List<List<List<List<double>>>>> _preprocessVariantsForDebug(String p
     interpolation: img.Interpolation.linear,
   );
 
+  final size = _ModelConfig.inputSize;
+
   List<List<List<List<double>>>> build({
     required bool grayscale3,
     required bool invert,
   }) {
     return [
-      List.generate(_ModelConfig.inputSize, (y) {
-        return List.generate(_ModelConfig.inputSize, (x) {
+      List.generate(size, (y) {
+        return List.generate(size, (x) {
           final p = decoded!.getPixel(x, y);
           double r = p.r.toDouble();
           double g = p.g.toDouble();
@@ -452,22 +678,31 @@ Map<String, List<List<List<List<double>>>>> _preprocessVariantsForDebug(String p
   };
 }
 
-/// Validates file type, size, and image integrity.
+/// Validates file extension, file size, and image decodability.
+/// Returns a non-null error string on failure, null on success.
 Future<String?> _validateImageIsolate(String path) async {
   final ext = path.toLowerCase();
-  if (!(ext.endsWith('.jpg') || ext.endsWith('.jpeg') || ext.endsWith('.png'))) {
+  if (!(ext.endsWith('.jpg') ||
+      ext.endsWith('.jpeg') ||
+      ext.endsWith('.png'))) {
     return 'Invalid file type. Please upload a JPEG or PNG image.';
   }
+
   final size = await File(path).length();
-  if (size > 10 * 1024 * 1024) return 'File too large. Maximum size is 10 MB.';
+  if (size > 10 * 1024 * 1024) {
+    return 'File too large. Maximum size is 10 MB.';
+  }
+
   try {
     final decoded = img.decodeImage(File(path).readAsBytesSync());
     if (decoded == null) return 'Invalid or corrupted image file.';
     if (decoded.width < 50 || decoded.height < 50) {
-      return 'Image resolution too low. Please upload a higher quality X-ray.';
+      return 'Image resolution too low. '
+          'Please upload a higher quality X-ray.';
     }
   } catch (_) {
     return 'Cannot read image file.';
   }
+
   return null;
 }
