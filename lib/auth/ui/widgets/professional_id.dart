@@ -44,7 +44,7 @@ class _ProfessionalIdState extends State<ProfessionalId> {
       body: SafeArea(
         child: AppBackground(
           child: Padding(
-            padding: const EdgeInsets.all(25),
+            padding:  EdgeInsets.all(25.h),
             child: Column(
               children: [
                 Gap(40.h),

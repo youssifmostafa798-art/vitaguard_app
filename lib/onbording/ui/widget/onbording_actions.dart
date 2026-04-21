@@ -1,4 +1,4 @@
-//actions
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -15,6 +15,7 @@ class OnboardingActions extends StatelessWidget {
     required this.isLast,
   });
 
+  //  OnboardingActions
   @override
   Widget build(BuildContext context) {
     return Padding(

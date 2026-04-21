@@ -15,6 +15,7 @@ class OnboardingModel {
 }
 
 final List<OnboardingModel> onboardingList = [
+  //pic onbording 1
   OnboardingModel(
     image: 'assets/PNG/doctor-patient 1.png',
     title: 'Welcome \nTo VitaGuard',
@@ -23,6 +24,8 @@ final List<OnboardingModel> onboardingList = [
 
     isLast: false,
   ),
+
+  //pic onbording 2
   OnboardingModel(
     image: 'assets/PNG/medical-record 2.png',
     title: 'Monitor Your\nSymptoms Easily',
@@ -31,6 +34,8 @@ final List<OnboardingModel> onboardingList = [
 
     isLast: false,
   ),
+
+  //pic onbording 3
   OnboardingModel(
     image: 'assets/PNG/doctor_3.png',
     title: 'Stay Connected \nWith your Doctor',
@@ -39,6 +44,8 @@ final List<OnboardingModel> onboardingList = [
 
     isLast: false,
   ),
+
+  //pic onbording 4
   OnboardingModel(
     image: 'assets/PNG/youth_14.png',
     title: 'Support Your\nLoved Ones',
@@ -47,6 +54,8 @@ final List<OnboardingModel> onboardingList = [
 
     isLast: false,
   ),
+
+  //pic onbording 5
   OnboardingModel(
     image: 'assets/PNG/medical_5.png',
     title: 'For Healthcare\nFacilities',

@@ -27,26 +27,27 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   final passCtrl = TextEditingController();
   bool _rememberMe = false;
 
-  // @override
-  // void dispose() {
-  //  emailCtrl.dispose();
-  //  passCtrl.dispose();
-  //  super.dispose();
-  //}
-  //--------------------------------
-  // delete after end the app
-  // patient email (ahmedm16tafa) (eng210091@nilehi.edu.eg) -  pass (123456789)
-  // facility email (youssifkenk) - pass (123456789)
-  // Dr email (youssifmostafa798) pass (1234567890)
-  // compa email (eng210113@nilehi.edu.eg) pass (123456789)
-  @override
-  void initState() {
-    emailCtrl.text = 'eng210091@nilehi.edu.eg';
-    passCtrl.text = '123456789';
-    super.initState();
-  }
+   @override
+   void dispose() {
+   emailCtrl.dispose();
+   passCtrl.dispose();
+   super.dispose();
+   }
+   //--------------------------------
+// delete after end the app
+// patient email (ahmedm16tafa) (eng210091@nilehi.edu.eg) -  pass (123456789)
+// facility email (youssifkenk) - pass (123456789)
+// Dr email (youssifmostafa798) pass (1234567890)
+// compa email (eng210113@nilehi.edu.eg) pass (123456789)
+//@override
+//void initState() {
+  // emailCtrl.text = 'eng210091@nilehi.edu.eg';
+//  passCtrl.text = '123456789';
+//  super.initState();
+//}
+//-------------------------------
 
-  //-------------------------------
+
   void _handleSignIn() async {
     final auth = ref.read(authProvider);
     final email = emailCtrl.text.trim();
