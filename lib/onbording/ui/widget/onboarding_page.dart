@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
-
 import 'package:vitaguard_app/onbording/model/onboarding_data.dart';
 
 class OnboardingPage extends StatelessWidget {
@@ -33,6 +32,7 @@ class OnboardingPage extends StatelessWidget {
               Gap(20.h),
               Image.asset(model.image),
               Gap(20.h),
+
               Text(
                 model.description,
                 textAlign: TextAlign.center,
