@@ -3,8 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
-import 'package:vitaguard_app/patient/x_ray_model/screen/doctor_two_phase_ai_view_data.dart';
-import 'package:vitaguard_app/patient/x_ray_model/screen/widgets/ai_diagnosis_display_widgets.dart';
+
+import '../screen/doctor_two_phase_ai_view_data.dart';
+import 'ai_diagnosis_display_widgets.dart';
 
 class Phase2AiReviewPanel extends StatelessWidget {
   const Phase2AiReviewPanel({
@@ -65,10 +66,7 @@ class Phase2AiReviewPanel extends StatelessWidget {
         SizedBox(height: 12.h),
         AiDiagnosisFindingsSection(labels: aiData.labels),
         SizedBox(height: 12.h),
-        AiDiagnosisSummaryCard(
-          title: 'AI summary',
-          body: aiData.summary,
-        ),
+        AiDiagnosisSummaryCard(title: 'AI summary', body: aiData.summary),
         SizedBox(height: 20.h),
         Row(
           children: [

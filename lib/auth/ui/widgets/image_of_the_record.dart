@@ -6,6 +6,9 @@ import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/components/custom_logo.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+import '../../../core/utils/simple_header.dart';
 
 class ImageOfTheRecord extends StatefulWidget {
   final File? initialImage;
@@ -38,14 +41,15 @@ class _ImageOfTheRecordState extends State<ImageOfTheRecord> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
+      appBar:   SimpleHeader(title: "Facility Record Image"),
       body: SafeArea(
         child: AppBackground(
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                const VitaGuardLogo(size: 20),
-                const Gap(50),
+                Gap(40.h),
 
                 const CustemText(
                   text: "Upload Facility Record Image",
@@ -53,7 +57,7 @@ class _ImageOfTheRecordState extends State<ImageOfTheRecord> {
                   color: Color(0xff003F6B),
                   weight: FontWeight.bold,
                 ),
-                const Gap(10),
+                 Gap(20.h),
 
                 GestureDetector(
                   onTap: _pickImage,
@@ -82,7 +86,7 @@ class _ImageOfTheRecordState extends State<ImageOfTheRecord> {
                   ),
                 ),
 
-                const Spacer(),
+                Gap(40.h),
 
                 Button(
                   title: "Confirm",

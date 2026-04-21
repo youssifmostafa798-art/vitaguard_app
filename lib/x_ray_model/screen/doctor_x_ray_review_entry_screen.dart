@@ -7,7 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
-import 'package:vitaguard_app/patient/x_ray_model/screen/doctor_two_phase_review_screen.dart';
+
+import 'doctor_two_phase_review_screen.dart';
 
 /// Doctor-tab host: pick an X-ray, then run the mandatory two-phase review flow.
 ///
@@ -21,7 +22,8 @@ class DoctorXRayReviewEntryScreen extends StatefulWidget {
       _DoctorXRayReviewEntryScreenState();
 }
 
-class _DoctorXRayReviewEntryScreenState extends State<DoctorXRayReviewEntryScreen> {
+class _DoctorXRayReviewEntryScreenState
+    extends State<DoctorXRayReviewEntryScreen> {
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
 
@@ -115,7 +117,10 @@ class _DoctorXRayReviewEntryScreenState extends State<DoctorXRayReviewEntryScree
                     Gap(12.h),
                     Text(
                       'Tap to select X-ray',
-                      style: TextStyle(fontSize: 15.sp, color: Colors.grey.shade700),
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        color: Colors.grey.shade700,
+                      ),
                     ),
                   ],
                 ),

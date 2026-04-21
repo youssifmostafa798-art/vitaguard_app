@@ -10,6 +10,8 @@ import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/patient/data/patient_repository.dart';
 import 'package:vitaguard_app/patient/data/patient_models.dart';
 
+import '../../../core/utils/simple_header.dart';
+
 class MedicalHistoryScreen extends StatefulWidget {
   const MedicalHistoryScreen({super.key});
 
@@ -111,6 +113,8 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
     }
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
+      appBar:   SimpleHeader(title: "Medical history"),
       body: SafeArea(
         child: AppBackground(
           child: Padding(
@@ -118,8 +122,8 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  VitaGuardLogo(size: 100),
-                  Gap(20.h),
+
+                  Gap(40.h),
                   _box(
                     hint: "Chronic diseases",
                     controller: _chronicController,

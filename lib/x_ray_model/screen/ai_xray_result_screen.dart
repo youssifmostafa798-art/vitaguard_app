@@ -8,9 +8,10 @@ import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/patient/data/patient_models.dart';
-import 'package:vitaguard_app/patient/x_ray_model/screen/doctor_two_phase_ai_view_data.dart';
-import 'package:vitaguard_app/patient/x_ray_model/screen/widgets/ai_diagnosis_display_widgets.dart';
-import 'package:vitaguard_app/patient/x_ray_model/screen/widgets/ai_layer_toggle.dart';
+
+import '../widgets/ai_diagnosis_display_widgets.dart';
+import '../widgets/ai_layer_toggle.dart';
+import 'doctor_two_phase_ai_view_data.dart';
 
 /// AI X-Ray Diagnosis: raw image always visible; AI overlays and text only when the user enables **AI Layer**.
 class AiXRayResultScreen extends ConsumerStatefulWidget {
@@ -36,7 +37,9 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
   @override
   Widget build(BuildContext context) {
     // Compute view data regardless of toggle — the report should always be visible.
-    final AiReviewViewData aiData = AiReviewViewData.fromXRayResult(widget.result);
+    final AiReviewViewData aiData = AiReviewViewData.fromXRayResult(
+      widget.result,
+    );
 
     final isError = widget.result.isValid == false;
 
@@ -65,7 +68,7 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                     // Only show the badge if the AI layer is ON
                     if (_aiLayerOn) const AiAnalysisAssistantBadge(),
                     Gap(16.h),
-                    
+
                     if (aiData.isError)
                       AiErrorDisplay(
                         message: aiData.summary,
@@ -95,9 +98,9 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                         body: aiData.differentialDiagnosis,
                       ),
                     ],
-                    
+
                     Gap(16.h),
-                    
+
                     // The disclaimer and report issue link are ALWAYS at the bottom
                     Container(
                       padding: EdgeInsets.all(12.r),
@@ -106,16 +109,21 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                             .withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(8.r),
                         border: Border.all(
-                          color: (aiData.isError ? Colors.amber : AppColors.error)
-                              .withValues(alpha: 0.2),
+                          color:
+                              (aiData.isError ? Colors.amber : AppColors.error)
+                                  .withValues(alpha: 0.2),
                         ),
                       ),
                       child: Row(
                         children: [
                           Icon(
-                            aiData.isError ? Icons.info_outline : Icons.warning_amber_rounded,
+                            aiData.isError
+                                ? Icons.info_outline
+                                : Icons.warning_amber_rounded,
                             size: 18.sp,
-                            color: aiData.isError ? Colors.amber.shade700 : AppColors.error,
+                            color: aiData.isError
+                                ? Colors.amber.shade700
+                                : AppColors.error,
                           ),
                           Gap(8.w),
                           Expanded(
@@ -123,7 +131,8 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                               aiData.isError
                                   ? 'The report is currently incomplete. Clinical judgment is required.'
                                   : 'PRELIMINARY REPORT: Clinical correlation required. Not a final diagnosis.',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
                                     color: aiData.isError
                                         ? Colors.amber.shade900
                                         : AppColors.error,
@@ -134,14 +143,18 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                         ],
                       ),
                     ),
-                    
+
                     if (aiData.isError) ...[
                       Gap(12.h),
                       Center(
                         child: TextButton(
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Error reported. Thank you for your feedback.')),
+                              const SnackBar(
+                                content: Text(
+                                  'Error reported. Thank you for your feedback.',
+                                ),
+                              ),
                             );
                           },
                           child: Text(
