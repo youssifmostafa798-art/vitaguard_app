@@ -4,7 +4,6 @@ import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
-import 'package:vitaguard_app/components/custom_logo.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -41,8 +40,7 @@ class _ImageOfTheRecordState extends State<ImageOfTheRecord> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
-      appBar:   SimpleHeader(title: "Facility Record Image"),
+      appBar: SimpleHeader(title: "Facility Record Image"),
       body: SafeArea(
         child: AppBackground(
           child: Padding(
@@ -57,7 +55,7 @@ class _ImageOfTheRecordState extends State<ImageOfTheRecord> {
                   color: Color(0xff003F6B),
                   weight: FontWeight.bold,
                 ),
-                 Gap(20.h),
+                Gap(20.h),
 
                 GestureDetector(
                   onTap: _pickImage,

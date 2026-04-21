@@ -5,7 +5,6 @@ import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
-import 'package:vitaguard_app/components/custom_logo.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/patient/data/patient_repository.dart';
 import 'package:vitaguard_app/patient/data/patient_models.dart';
@@ -114,7 +113,7 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      appBar:   SimpleHeader(title: "Medical history"),
+      appBar: SimpleHeader(title: "Medical history"),
       body: SafeArea(
         child: AppBackground(
           child: Padding(
@@ -122,7 +121,6 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-
                   Gap(40.h),
                   _box(
                     hint: "Chronic diseases",
