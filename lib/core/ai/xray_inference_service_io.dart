@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:logger/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
