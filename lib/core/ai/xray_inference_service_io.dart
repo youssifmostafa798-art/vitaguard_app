@@ -3,12 +3,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
-import 'package:logger/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:vitaguard_app/patient/data/patient_models.dart';
-
-final _log = Logger();
 
 // ─────────────────────────────────────────────────────────────
 // Softmax helper
@@ -26,103 +23,6 @@ List<double> _toProbs(double logit0, double logit1) {
   final e1 = math.exp(logit1 - m);
   final s = e0 + e1;
   return [e0 / s, e1 / s];
-}
-
-// ─────────────────────────────────────────────────────────────
-// Input tensor diagnostics
-// ─────────────────────────────────────────────────────────────
-
-/// Summarizes the raw input tensor for debugging.
-/// The updated TFLite asset now owns ImageNet normalization inside
-/// the graph itself, so Flutter must feed raw RGB pixel values in
-/// the range [0, 255] after resize.
-String _summarizeInputTensor(List<List<List<List<double>>>> t) {
-  // t shape: [1, H, W, 3]
-  try {
-    final h = t[0].length;
-    final w = t[0][0].length;
-    final expectedLen = _ModelConfig.inputSize * _ModelConfig.inputSize * 3;
-    final actualLen = h * w * 3;
-    var n = 0;
-    var rSum = 0.0, gSum = 0.0, bSum = 0.0;
-    var rMin = double.infinity, gMin = double.infinity, bMin = double.infinity;
-    var rMax = -double.infinity,
-        gMax = -double.infinity,
-        bMax = -double.infinity;
-    var rgDiffSum = 0.0, rbDiffSum = 0.0, gbDiffSum = 0.0;
-
-    for (final row in t[0]) {
-      for (final px in row) {
-        final r = px[0], g = px[1], b = px[2];
-        n++;
-        rSum += r;
-        gSum += g;
-        bSum += b;
-        if (r < rMin) rMin = r;
-        if (g < gMin) gMin = g;
-        if (b < bMin) bMin = b;
-        if (r > rMax) rMax = r;
-        if (g > gMax) gMax = g;
-        if (b > bMax) bMax = b;
-        rgDiffSum += (r - g).abs();
-        rbDiffSum += (r - b).abs();
-        gbDiffSum += (g - b).abs();
-      }
-    }
-    final rMean = rSum / n;
-    final gMean = gSum / n;
-    final bMean = bSum / n;
-    final rg = rgDiffSum / n;
-    final rb = rbDiffSum / n;
-    final gb = gbDiffSum / n;
-    final sampleValues = <String>[];
-    for (var i = 0; i < math.min(3, h); i++) {
-      for (var j = 0; j < math.min(3, w); j++) {
-        final px = t[0][i][j];
-        sampleValues.add(
-          '[$i,$j]=(${px[0].toStringAsFixed(1)},'
-          '${px[1].toStringAsFixed(1)},${px[2].toStringAsFixed(1)})',
-        );
-      }
-    }
-
-    final warning = StringBuffer();
-    final maxVal = math.max(rMax, math.max(gMax, bMax));
-    if (maxVal <= 1.0) {
-      warning.write(
-        ' [WARNING values look normalized to 0..1; remove Dart-side /255 '
-        'or other normalization because the graph already does it]',
-      );
-    } else if (maxVal > 255.0) {
-      warning.write(
-        ' [WARNING values exceed 255; check pixel extraction / buffer layout]',
-      );
-    } else {
-      warning.write(' [OK raw pixel range looks correct]');
-    }
-
-    return '[TFLITE] Input stats (raw RGB 0..255) ${h}x$w: '
-        'bufferLen=$actualLen expectedLen=$expectedLen '
-        'R[min=${rMin.toStringAsFixed(3)}, max=${rMax.toStringAsFixed(3)}, mean=${rMean.toStringAsFixed(3)}] '
-        'G[min=${gMin.toStringAsFixed(3)}, max=${gMax.toStringAsFixed(3)}, mean=${gMean.toStringAsFixed(3)}] '
-        'B[min=${bMin.toStringAsFixed(3)}, max=${bMax.toStringAsFixed(3)}, mean=${bMean.toStringAsFixed(3)}] '
-        'avg|R-G|=${rg.toStringAsFixed(4)} avg|R-B|=${rb.toStringAsFixed(4)} avg|G-B|=${gb.toStringAsFixed(4)} '
-        'samples=${sampleValues.join(", ")}$warning';
-  } catch (_) {
-    return '[TFLITE] Input stats unavailable';
-  }
-}
-
-String _summarizeTwoClassOutput(double v0, double v1) {
-  final sum = v0 + v1;
-  final looksSoftmaxed = v0 >= 0.0 && v1 >= 0.0 && (sum - 1.0).abs() < 0.01;
-  if (looksSoftmaxed) {
-    return '[TFLITE] Output sanity: values look like probabilities already '
-        '(sum~1, all positive). If the graph already includes softmax, do not '
-        'apply softmax again in Dart.';
-  }
-  return '[TFLITE] Output sanity: values look like raw logits; apply softmax '
-      'exactly once in Dart.';
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -160,8 +60,8 @@ class _ModelConfig {
   //                      uncertainty band required by FDA SaMD guidance.
   //
   // Copy updated values here after every retrain + calibration run.
-  static const double pneumoniaThreshold = 0.5471;
-  static const double inconclusiveLow = 0.3971;
+  static const double pneumoniaThreshold = 0.65;
+  static const double inconclusiveLow = 0.35;
 
   // The updated TFLite graph now performs ImageNet preprocessing
   // internally using:
@@ -225,10 +125,6 @@ class XrayInferenceService {
 
     _isInitializing = true;
     try {
-      _log.i(
-        '[TFLITE] Loading model asset: ${_ModelConfig.assetPath} | '
-        'version=${_ModelConfig.modelVersion}',
-      );
       Interpreter? interp;
 
       // Attempt 1 — GPU delegate (faster on supported devices)
@@ -238,16 +134,11 @@ class XrayInferenceService {
           _ModelConfig.assetPath,
           options: opts,
         );
-        _log.i('[TFLITE] Loaded with GPU delegate.');
-      } catch (gpuErr) {
-        _log.w('[TFLITE] GPU delegate unavailable: $gpuErr');
-
+      } catch (_) {
         // Attempt 2 — CPU fallback
         try {
           interp = await Interpreter.fromAsset(_ModelConfig.assetPath);
-          _log.i('[TFLITE] Loaded on CPU.');
-        } catch (cpuErr) {
-          _log.e('[TFLITE] CPU load also failed: $cpuErr');
+        } catch (_) {
           rethrow;
         }
       }
@@ -263,13 +154,6 @@ class XrayInferenceService {
         // Attempt a dynamic resize — note that GPU delegates often do
         // NOT support this and will throw. If resize fails the error
         // is rethrown so the caller knows the model is incompatible.
-        _log.w(
-          '[TFLITE] Input shape mismatch: $initialInShape — '
-              'attempting resize to '
-              '[1, ${_ModelConfig.inputSize}, ${_ModelConfig.inputSize}, 3]. '
-              'If this crashes the GPU delegate, re-export the model at '
-              '${_ModelConfig.inputSize}×${_ModelConfig.inputSize}.',
-        );
         try {
           _interpreter!.resizeInputTensor(0, [
             1,
@@ -278,18 +162,12 @@ class XrayInferenceService {
             3,
           ]);
           _interpreter!.allocateTensors();
-        } catch (resizeErr) {
-          _log.e(
-            '[TFLITE] Tensor resize failed: $resizeErr. '
-                'The model must be re-exported at the correct input size.',
-          );
+        } catch (_) {
           rethrow;
         }
       }
 
       final inShape = _interpreter!.getInputTensor(0).shape;
-      final outShape = _interpreter!.getOutputTensor(0).shape;
-      _log.i('[TFLITE] Input shape: $inShape | Output shape: $outShape');
 
       // The baked preprocessing wrapper expects NHWC [1, H, W, 3].
       // Reject CHW/NCHW models explicitly so Flutter never feeds the
@@ -337,22 +215,10 @@ class XrayInferenceService {
       // Produces [1, 320, 320, 3] float32 nested list (HWC layout)
       // containing raw RGB values in [0, 255]. The TFLite graph now
       // applies the ImageNet wrapper internally.
-      final sw = Stopwatch()..start();
       final inputTensor = await compute(_preprocessImage, imageFile.path);
-      _log.d('[TFLITE] Preprocessing: ${sw.elapsedMilliseconds}ms');
-      _log.d(
-        '[TFLITE] Model asset: ${_ModelConfig.assetPath} | '
-        'version=${_ModelConfig.modelVersion}',
-      );
-
-      // Sanity-check the raw tensor statistics before the model's
-      // built-in preprocessing wrapper executes. For raw pixels we
-      // expect min/max near 0..255 rather than already-normalized values.
-      _log.i(_summarizeInputTensor(inputTensor));
 
       // Step 4 — run inference
       final outShape = _interpreter!.getOutputTensor(0).shape;
-      _log.d('[TFLITE] Runtime output shape: $outShape');
 
       double probNormal;
       double probPneumonia;
@@ -363,46 +229,22 @@ class XrayInferenceService {
         // Exported class order is fixed: [NORMAL, PNEUMONIA].
         final output = [List.filled(2, 0.0)];
         _interpreter!.run(inputTensor, output);
-        sw.stop();
         final z0 = output[0][0]; // NORMAL logit
         final z1 = output[0][1]; // PNEUMONIA logit
-        _log.i(
-          '[TFLITE] Raw logits [1,2] (NORMAL, PNEUMONIA): '
-              '${sw.elapsedMilliseconds}ms | [$z0, $z1]',
-        );
-        _log.i(_summarizeTwoClassOutput(z0, z1));
         final probs = _toProbs(z0, z1);
         probNormal = probs[0];
         probPneumonia = probs[1];
-        _log.i(
-          '[TFLITE] Softmax probs (single pass): '
-              'normal=$probNormal | pneumonia=$probPneumonia',
-        );
       } else if (outShape.length == 2 && outShape[1] == 1) {
         // Sigmoid single-output head: [1, 1] → P(PNEUMONIA)
         final output = [List.filled(1, 0.0)];
         _interpreter!.run(inputTensor, output);
-        sw.stop();
         final sigmoid = output[0][0];
-        _log.i(
-          '[TFLITE] Sigmoid [1,1]: '
-              '${sw.elapsedMilliseconds}ms | raw=$sigmoid',
-        );
         probPneumonia = sigmoid;
         probNormal = 1.0 - sigmoid;
       } else {
         // Unexpected shape — try flat list as last resort
-        _log.w(
-          '[TFLITE] Unknown output shape $outShape, '
-              'trying flat output...',
-        );
         final flat = List.filled(outShape.reduce((a, b) => a * b), 0.0);
         _interpreter!.run(inputTensor, flat);
-        sw.stop();
-        _log.i(
-          '[TFLITE] Flat inference: '
-              '${sw.elapsedMilliseconds}ms | raw=$flat',
-        );
         if (flat.length >= 2) {
           final probs = _toProbs(flat[0], flat[1]);
           probNormal = probs[0];
@@ -415,11 +257,11 @@ class XrayInferenceService {
 
       // Step 5 — three-way classification using calibrated thresholds
       //
-      // pneumoniaThreshold (0.5471): trained threshold from calibration
+      // pneumoniaThreshold (0.65): trained threshold from calibration
       //   on the held-out test set. A score at or above this value
       //   is classified as PNEUMONIA.
       //
-      // inconclusiveLow (0.3971): scores between 0.3971 and 0.5471
+      // inconclusiveLow (0.35): scores between 0.35 and 0.65
       //   are in the uncertainty band and shown as INCONCLUSIVE.
       //   This satisfies FDA SaMD guidance — a borderline AI result
       //   must surface uncertainty rather than force a binary decision.
@@ -461,13 +303,6 @@ class XrayInferenceService {
             1.0 - ((probPneumonia - mid) / halfRange).abs().clamp(0.0, 1.0);
       }
 
-      _log.i(
-        '[TFLITE] Result: $prediction | '
-            'conf=${(confidence * 100).toStringAsFixed(1)}% | '
-            'normal=${(probNormal * 100).toStringAsFixed(1)}% | '
-            'pneumonia=${(probPneumonia * 100).toStringAsFixed(1)}%',
-      );
-
       final reportText = _buildReport(
         prediction,
         confidence,
@@ -486,13 +321,10 @@ class XrayInferenceService {
       );
 
       // Step 7 — async Supabase log (never blocks the caller)
-      _logToSupabase(imageFile, result).catchError(
-            (e) => _log.w('[SUPABASE] Background log non-critical error: $e'),
-      );
+      _logToSupabase(imageFile, result).catchError((_) {});
 
       return result;
-    } catch (e, st) {
-      _log.e('[TFLITE] Inference error', error: e, stackTrace: st);
+    } catch (e) {
       return XRayResult(
         isValid: false,
         prediction: 'INDETERMINATE',
@@ -584,8 +416,6 @@ class XrayInferenceService {
       // as a fallback.
       'processed_at': DateTime.now().toUtc().toIso8601String(),
     });
-
-    _log.i('[SUPABASE] Prediction logged.');
   }
 
   Future<String?> _validateImage(File file) {
