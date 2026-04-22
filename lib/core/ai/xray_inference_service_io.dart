@@ -32,12 +32,10 @@ List<double> _toProbs(double logit0, double logit1) {
 // Input tensor diagnostics
 // ─────────────────────────────────────────────────────────────
 
-/// Summarizes the normalized input tensor for debugging.
-/// For a NORMAL chest X-ray the channel means should be roughly
-/// in the range [-1.0, -0.5] because dark lung fields normalize
-/// to negative values under ImageNet stats.
-/// If you see means near 0 or positive, the image is brighter
-/// than expected — possible camera photo or wrong decode.
+/// Summarizes the raw input tensor for debugging.
+/// The updated TFLite asset now owns ImageNet normalization inside
+/// the graph itself, so Flutter must feed raw RGB pixel values in
+/// the range [0, 255] after resize.
 String _summarizeInputTensor(List<List<List<List<double>>>> t) {
   // t shape: [1, H, W, 3]
   try {
@@ -76,7 +74,7 @@ String _summarizeInputTensor(List<List<List<List<double>>>> t) {
     final rb = rbDiffSum / n;
     final gb = gbDiffSum / n;
 
-    return '[TFLITE] Input stats (normalized) ${h}x$w: '
+    return '[TFLITE] Input stats (raw RGB 0..255) ${h}x$w: '
         'R[min=${rMin.toStringAsFixed(3)}, max=${rMax.toStringAsFixed(3)}, mean=${rMean.toStringAsFixed(3)}] '
         'G[min=${gMin.toStringAsFixed(3)}, max=${gMax.toStringAsFixed(3)}, mean=${gMean.toStringAsFixed(3)}] '
         'B[min=${bMin.toStringAsFixed(3)}, max=${bMax.toStringAsFixed(3)}, mean=${bMean.toStringAsFixed(3)}] '
@@ -129,17 +127,11 @@ class _ModelConfig {
   static const double pneumoniaThreshold = 0.5790;
   static const double inconclusiveLow = 0.4290;
 
-  // ── ImageNet normalization ────────────────────────────────
-  // Matches torchvision / fastai DenseNet121 training pipeline.
-  // formula: (pixel / 255.0 - mean) / std
-  // DO NOT change to EfficientNet [-1, 1] scaling.
-  static const List<double> _imagenetMean = [0.485, 0.456, 0.406];
-  static const List<double> _imagenetStd = [0.229, 0.224, 0.225];
-
-  static double normalizeChannel(double channel0to255, int rgbIndex) {
-    final x = channel0to255 / 255.0;
-    return (x - _imagenetMean[rgbIndex]) / _imagenetStd[rgbIndex];
-  }
+  // The updated TFLite graph now performs ImageNet preprocessing
+  // internally using:
+  //   x -> x * (1 / 255) -> x - mean -> x * (1 / std)
+  // Flutter must therefore pass raw RGB values after resize and
+  // must not apply manual normalization a second time.
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -291,15 +283,16 @@ class XrayInferenceService {
       }
 
       // Step 3 — preprocess in background isolate
-      // Produces [1, 320, 320, 3] float32 nested list (HWC layout).
+      // Produces [1, 320, 320, 3] float32 nested list (HWC layout)
+      // containing raw RGB values in [0, 255]. The TFLite graph now
+      // applies the ImageNet wrapper internally.
       final sw = Stopwatch()..start();
       final inputTensor = await compute(_preprocessImage, imageFile.path);
       _log.d('[TFLITE] Preprocessing: ${sw.elapsedMilliseconds}ms');
       _log.d('[TFLITE] Model version: ${_ModelConfig.modelVersion}');
 
-      // Sanity-check the tensor statistics.
-      // NORMAL X-rays should show channel means in [-1.0, -0.5]
-      // because dark lung fields normalise to negative values.
+      // Sanity-check the raw tensor statistics before the model's
+      // built-in preprocessing wrapper executes.
       _log.i(_summarizeInputTensor(inputTensor));
 
       // Step 4 — run inference
@@ -573,21 +566,15 @@ class XrayInferenceService {
 // (must be top-level — Flutter's compute() cannot capture closures)
 // ─────────────────────────────────────────────────────────────
 
-/// Resize to [_ModelConfig.inputSize] × [_ModelConfig.inputSize] and apply
-/// ImageNet normalization using the original RGB channel values.
+/// Resize to [_ModelConfig.inputSize] × [_ModelConfig.inputSize] and return
+/// raw RGB pixel values.
 ///
-/// FIX — grayscale conversion was removed.
-/// The previous version converted every pixel to gray before
-/// normalizing (gray = 0.299R + 0.587G + 0.114B), which forced
-/// all three channels to an identical value. The training pipeline
-/// used the original decoded JPEG pixels with aug_transforms —
-/// clinical DICOM JPEGs often carry slight inter-channel differences
-/// from JPEG compression and colour profiling. Collapsing to gray
-/// shifted the channel statistics away from what the model saw
-/// during training and contributed to score miscalibration.
+/// The updated TFLite graph now contains the ImageNet wrapper:
+///   x -> x / 255 -> x - mean -> x / std
+/// so Flutter must not normalize again here.
 ///
-/// Returns a [1, S, S, 3] nested list in HWC order — the exact
-/// shape TFLite expects after the onnx2tf HWC conversion.
+/// Returns a [1, S, S, 3] nested list in HWC order containing raw
+/// decoded RGB channel values as float32-compatible doubles.
 List<List<List<List<double>>>> _preprocessImage(String path) {
   final bytes = File(path).readAsBytesSync();
   img.Image? decoded = img.decodeImage(bytes);
@@ -605,21 +592,21 @@ List<List<List<List<double>>>> _preprocessImage(String path) {
     List.generate(size, (y) {
       return List.generate(size, (x) {
         final pixel = decoded!.getPixel(x, y);
-        // Use decoded RGB channels directly — do NOT convert to grayscale.
-        // The training pipeline operated on the decoded pixel values.
+        // Feed raw decoded RGB values; the TFLite graph now applies
+        // ImageNet normalization internally.
         return [
-          _ModelConfig.normalizeChannel(pixel.r.toDouble(), 0),
-          _ModelConfig.normalizeChannel(pixel.g.toDouble(), 1),
-          _ModelConfig.normalizeChannel(pixel.b.toDouble(), 2),
+          pixel.r.toDouble(),
+          pixel.g.toDouble(),
+          pixel.b.toDouble(),
         ];
       });
     }),
   ];
 }
 
-/// Debug-only: probe several preprocessing variants so mismatches
-/// between the training pipeline and Flutter can be identified from
-/// the Logcat output without recompiling.
+/// Debug-only: probe several raw-input variants so mismatches between
+/// the training pipeline and Flutter can be identified from the
+/// Logcat output without recompiling.
 ///
 /// Only runs in debug builds (debugTryPreprocessVariants = kDebugMode).
 Map<String, List<List<List<List<double>>>>> _preprocessVariantsForDebug(
@@ -660,11 +647,7 @@ Map<String, List<List<List<List<double>>>>> _preprocessVariantsForDebug(
             g = gray;
             b = gray;
           }
-          return [
-            _ModelConfig.normalizeChannel(r, 0),
-            _ModelConfig.normalizeChannel(g, 1),
-            _ModelConfig.normalizeChannel(b, 2),
-          ];
+          return [r, g, b];
         });
       }),
     ];
