@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:logger/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -107,11 +106,6 @@ class _ModelConfig {
   // Supabase logs can be filtered by model generation.
   static const String modelVersion = 'v2.0.0-tflite';
 
-  // Only probe preprocessing variants in debug builds.
-  // Setting this to true in release adds 4 extra inferences per
-  // scan and floods the Supabase log with diagnostic rows.
-  static const bool debugTryPreprocessVariants = kDebugMode;
-
   // ── Decision thresholds ──────────────────────────────────
   // These values come from threshold.json written by the Python
   // calibrate_threshold() function after training.
@@ -130,8 +124,14 @@ class _ModelConfig {
   // The updated TFLite graph now performs ImageNet preprocessing
   // internally using:
   //   x -> x * (1 / 255) -> x - mean -> x * (1 / std)
-  // Flutter must therefore pass raw RGB values after resize and
-  // must not apply manual normalization a second time.
+  // Flutter must therefore pass raw RGB values after resize in
+  // NHWC layout [1, 320, 320, 3] and must not:
+  //   - divide by 255
+  //   - subtract mean
+  //   - divide by std
+  //   - convert to grayscale
+  //   - invert colors
+  //   - transpose to NCHW / CHW
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -245,15 +245,20 @@ class XrayInferenceService {
       final outShape = _interpreter!.getOutputTensor(0).shape;
       _log.i('[TFLITE] Input shape: $inShape | Output shape: $outShape');
 
-      // Verify the model expects HWC layout [1, H, W, 3].
-      // If this assertion fires the ONNX → TFLite conversion kept
-      // PyTorch's CHW layout and the preprocessing must be rewritten
-      // to feed [1, 3, H, W] instead.
-      assert(
-      inShape.length == 4 && inShape[3] == 3,
-      'Model expects HWC [1,H,W,3] but got $inShape. '
-          'If this is [1,3,H,W] you need CHW preprocessing.',
-      );
+      // The baked preprocessing wrapper expects NHWC [1, H, W, 3].
+      // Reject CHW/NCHW models explicitly so Flutter never feeds the
+      // graph with the wrong memory layout.
+      if (inShape.length != 4) {
+        throw StateError(
+          'Model input must be 4D NHWC [1,H,W,3], but got $inShape.',
+        );
+      }
+      if (inShape[3] != 3) {
+        throw StateError(
+          'Model input must be channel-last NHWC [1,H,W,3], but got '
+          '$inShape. CHW/NCHW models are unsupported by this pipeline.',
+        );
+      }
     } finally {
       _isInitializing = false;
     }
@@ -292,7 +297,8 @@ class XrayInferenceService {
       _log.d('[TFLITE] Model version: ${_ModelConfig.modelVersion}');
 
       // Sanity-check the raw tensor statistics before the model's
-      // built-in preprocessing wrapper executes.
+      // built-in preprocessing wrapper executes. For raw pixels we
+      // expect min/max near 0..255 rather than already-normalized values.
       _log.i(_summarizeInputTensor(inputTensor));
 
       // Step 4 — run inference
@@ -304,21 +310,22 @@ class XrayInferenceService {
 
       if (outShape.length == 2 && outShape[1] == 2) {
         // Standard two-class head: [1, 2] raw logits
-        // (CrossEntropyLoss export — softmax not baked in)
+        // (CrossEntropyLoss export — softmax not baked in).
+        // Exported class order is fixed: [NORMAL, PNEUMONIA].
         final output = [List.filled(2, 0.0)];
         _interpreter!.run(inputTensor, output);
         sw.stop();
         final z0 = output[0][0]; // NORMAL logit
         final z1 = output[0][1]; // PNEUMONIA logit
         _log.i(
-          '[TFLITE] Raw logits [1,2]: '
+          '[TFLITE] Raw logits [1,2] (NORMAL, PNEUMONIA): '
               '${sw.elapsedMilliseconds}ms | [$z0, $z1]',
         );
         final probs = _toProbs(z0, z1);
         probNormal = probs[0];
         probPneumonia = probs[1];
         _log.i(
-          '[TFLITE] Softmax probs: '
+          '[TFLITE] Softmax probs (single pass): '
               'normal=$probNormal | pneumonia=$probPneumonia',
         );
       } else if (outShape.length == 2 && outShape[1] == 1) {
@@ -356,32 +363,7 @@ class XrayInferenceService {
         }
       }
 
-      // Step 5 — debug preprocessing variants (debug builds only)
-      if (_ModelConfig.debugTryPreprocessVariants &&
-          outShape.length == 2 &&
-          outShape[1] == 2) {
-        try {
-          final variants = await compute(
-            _preprocessVariantsForDebug,
-            imageFile.path,
-          );
-          for (final entry in variants.entries) {
-            final output = [List.filled(2, 0.0)];
-            _interpreter!.run(entry.value, output);
-            final z0 = output[0][0];
-            final z1 = output[0][1];
-            final p = _toProbs(z0, z1);
-            _log.i(
-              '[TFLITE][VARIANT] ${entry.key}: '
-                  'logits=[$z0, $z1] probs=[${p[0]}, ${p[1]}]',
-            );
-          }
-        } catch (e) {
-          _log.w('[TFLITE][VARIANT] Debug variants failed: $e');
-        }
-      }
-
-      // Step 6 — three-way classification using calibrated thresholds
+      // Step 5 — three-way classification using calibrated thresholds
       //
       // pneumoniaThreshold (0.5471): trained threshold from calibration
       //   on the held-out test set. A score at or above this value
@@ -402,7 +384,7 @@ class XrayInferenceService {
         prediction = 'NORMAL';
       }
 
-      // Step 7 — confidence score
+      // Step 6 — confidence score
       //
       // PNEUMONIA / NORMAL: the model's probability for the predicted class.
       // INCONCLUSIVE: how far from the centre of the uncertainty band
@@ -453,7 +435,7 @@ class XrayInferenceService {
         probPneumonia: probPneumonia,
       );
 
-      // Step 8 — async Supabase log (never blocks the caller)
+      // Step 7 — async Supabase log (never blocks the caller)
       _logToSupabase(imageFile, result).catchError(
             (e) => _log.w('[SUPABASE] Background log non-critical error: $e'),
       );
@@ -571,7 +553,8 @@ class XrayInferenceService {
 ///
 /// The updated TFLite graph now contains the ImageNet wrapper:
 ///   x -> x / 255 -> x - mean -> x / std
-/// so Flutter must not normalize again here.
+/// so Flutter must not normalize again here, convert to grayscale,
+/// invert colors, or transpose to NCHW / CHW.
 ///
 /// Returns a [1, S, S, 3] nested list in HWC order containing raw
 /// decoded RGB channel values as float32-compatible doubles.
@@ -592,8 +575,8 @@ List<List<List<List<double>>>> _preprocessImage(String path) {
     List.generate(size, (y) {
       return List.generate(size, (x) {
         final pixel = decoded!.getPixel(x, y);
-        // Feed raw decoded RGB values; the TFLite graph now applies
-        // ImageNet normalization internally.
+        // Feed raw decoded RGB values only. The TFLite graph applies
+        // /255 + ImageNet normalization internally.
         return [
           pixel.r.toDouble(),
           pixel.g.toDouble(),
@@ -602,63 +585,6 @@ List<List<List<List<double>>>> _preprocessImage(String path) {
       });
     }),
   ];
-}
-
-/// Debug-only: probe several raw-input variants so mismatches between
-/// the training pipeline and Flutter can be identified from the
-/// Logcat output without recompiling.
-///
-/// Only runs in debug builds (debugTryPreprocessVariants = kDebugMode).
-Map<String, List<List<List<List<double>>>>> _preprocessVariantsForDebug(
-    String path,
-    ) {
-  final bytes = File(path).readAsBytesSync();
-  img.Image? decoded = img.decodeImage(bytes);
-  if (decoded == null) throw StateError('Cannot decode image at $path');
-
-  decoded = img.copyResize(
-    decoded,
-    width: _ModelConfig.inputSize,
-    height: _ModelConfig.inputSize,
-    interpolation: img.Interpolation.linear,
-  );
-
-  final size = _ModelConfig.inputSize;
-
-  List<List<List<List<double>>>> build({
-    required bool grayscale3,
-    required bool invert,
-  }) {
-    return [
-      List.generate(size, (y) {
-        return List.generate(size, (x) {
-          final p = decoded!.getPixel(x, y);
-          double r = p.r.toDouble();
-          double g = p.g.toDouble();
-          double b = p.b.toDouble();
-          if (invert) {
-            r = 255.0 - r;
-            g = 255.0 - g;
-            b = 255.0 - b;
-          }
-          if (grayscale3) {
-            final gray = 0.299 * r + 0.587 * g + 0.114 * b;
-            r = gray;
-            g = gray;
-            b = gray;
-          }
-          return [r, g, b];
-        });
-      }),
-    ];
-  }
-
-  return {
-    'RGB': build(grayscale3: false, invert: false),
-    'RGB_INVERT': build(grayscale3: false, invert: true),
-    'GRAYx3': build(grayscale3: true, invert: false),
-    'GRAYx3_INVERT': build(grayscale3: true, invert: true),
-  };
 }
 
 /// Validates file extension, file size, and image decodability.
