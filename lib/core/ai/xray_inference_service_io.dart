@@ -41,6 +41,8 @@ String _summarizeInputTensor(List<List<List<List<double>>>> t) {
   try {
     final h = t[0].length;
     final w = t[0][0].length;
+    final expectedLen = _ModelConfig.inputSize * _ModelConfig.inputSize * 3;
+    final actualLen = h * w * 3;
     var n = 0;
     var rSum = 0.0, gSum = 0.0, bSum = 0.0;
     var rMin = double.infinity, gMin = double.infinity, bMin = double.infinity;
@@ -73,15 +75,54 @@ String _summarizeInputTensor(List<List<List<List<double>>>> t) {
     final rg = rgDiffSum / n;
     final rb = rbDiffSum / n;
     final gb = gbDiffSum / n;
+    final sampleValues = <String>[];
+    for (var i = 0; i < math.min(3, h); i++) {
+      for (var j = 0; j < math.min(3, w); j++) {
+        final px = t[0][i][j];
+        sampleValues.add(
+          '[$i,$j]=(${px[0].toStringAsFixed(1)},'
+          '${px[1].toStringAsFixed(1)},${px[2].toStringAsFixed(1)})',
+        );
+      }
+    }
+
+    final warning = StringBuffer();
+    final maxVal = math.max(rMax, math.max(gMax, bMax));
+    if (maxVal <= 1.0) {
+      warning.write(
+        ' [WARNING values look normalized to 0..1; remove Dart-side /255 '
+        'or other normalization because the graph already does it]',
+      );
+    } else if (maxVal > 255.0) {
+      warning.write(
+        ' [WARNING values exceed 255; check pixel extraction / buffer layout]',
+      );
+    } else {
+      warning.write(' [OK raw pixel range looks correct]');
+    }
 
     return '[TFLITE] Input stats (raw RGB 0..255) ${h}x$w: '
+        'bufferLen=$actualLen expectedLen=$expectedLen '
         'R[min=${rMin.toStringAsFixed(3)}, max=${rMax.toStringAsFixed(3)}, mean=${rMean.toStringAsFixed(3)}] '
         'G[min=${gMin.toStringAsFixed(3)}, max=${gMax.toStringAsFixed(3)}, mean=${gMean.toStringAsFixed(3)}] '
         'B[min=${bMin.toStringAsFixed(3)}, max=${bMax.toStringAsFixed(3)}, mean=${bMean.toStringAsFixed(3)}] '
-        'avg|R-G|=${rg.toStringAsFixed(4)} avg|R-B|=${rb.toStringAsFixed(4)} avg|G-B|=${gb.toStringAsFixed(4)}';
+        'avg|R-G|=${rg.toStringAsFixed(4)} avg|R-B|=${rb.toStringAsFixed(4)} avg|G-B|=${gb.toStringAsFixed(4)} '
+        'samples=${sampleValues.join(", ")}$warning';
   } catch (_) {
     return '[TFLITE] Input stats unavailable';
   }
+}
+
+String _summarizeTwoClassOutput(double v0, double v1) {
+  final sum = v0 + v1;
+  final looksSoftmaxed = v0 >= 0.0 && v1 >= 0.0 && (sum - 1.0).abs() < 0.01;
+  if (looksSoftmaxed) {
+    return '[TFLITE] Output sanity: values look like probabilities already '
+        '(sum~1, all positive). If the graph already includes softmax, do not '
+        'apply softmax again in Dart.';
+  }
+  return '[TFLITE] Output sanity: values look like raw logits; apply softmax '
+      'exactly once in Dart.';
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -184,6 +225,10 @@ class XrayInferenceService {
 
     _isInitializing = true;
     try {
+      _log.i(
+        '[TFLITE] Loading model asset: ${_ModelConfig.assetPath} | '
+        'version=${_ModelConfig.modelVersion}',
+      );
       Interpreter? interp;
 
       // Attempt 1 — GPU delegate (faster on supported devices)
@@ -295,7 +340,10 @@ class XrayInferenceService {
       final sw = Stopwatch()..start();
       final inputTensor = await compute(_preprocessImage, imageFile.path);
       _log.d('[TFLITE] Preprocessing: ${sw.elapsedMilliseconds}ms');
-      _log.d('[TFLITE] Model version: ${_ModelConfig.modelVersion}');
+      _log.d(
+        '[TFLITE] Model asset: ${_ModelConfig.assetPath} | '
+        'version=${_ModelConfig.modelVersion}',
+      );
 
       // Sanity-check the raw tensor statistics before the model's
       // built-in preprocessing wrapper executes. For raw pixels we
@@ -322,6 +370,7 @@ class XrayInferenceService {
           '[TFLITE] Raw logits [1,2] (NORMAL, PNEUMONIA): '
               '${sw.elapsedMilliseconds}ms | [$z0, $z1]',
         );
+        _log.i(_summarizeTwoClassOutput(z0, z1));
         final probs = _toProbs(z0, z1);
         probNormal = probs[0];
         probPneumonia = probs[1];
