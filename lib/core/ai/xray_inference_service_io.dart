@@ -124,8 +124,8 @@ class _ModelConfig {
   //                      uncertainty band required by FDA SaMD guidance.
   //
   // Copy updated values here after every retrain + calibration run.
-  static const double pneumoniaThreshold = 0.3082;
-  static const double inconclusiveLow = 0.1582;
+  static const double pneumoniaThreshold = 0.5471;
+  static const double inconclusiveLow = 0.3971;
 
   // The updated TFLite graph now performs ImageNet preprocessing
   // internally using:
@@ -383,11 +383,11 @@ class XrayInferenceService {
 
       // Step 6 — three-way classification using calibrated thresholds
       //
-      // pneumoniaThreshold (0.3082): trained threshold from calibration
+      // pneumoniaThreshold (0.5471): trained threshold from calibration
       //   on the held-out test set. A score at or above this value
       //   is classified as PNEUMONIA.
       //
-      // inconclusiveLow (0.1582): scores between 0.1582 and 0.3082
+      // inconclusiveLow (0.3971): scores between 0.3971 and 0.5471
       //   are in the uncertainty band and shown as INCONCLUSIVE.
       //   This satisfies FDA SaMD guidance — a borderline AI result
       //   must surface uncertainty rather than force a binary decision.
