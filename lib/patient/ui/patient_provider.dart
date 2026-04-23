@@ -19,6 +19,9 @@ class PatientProvider with ChangeNotifier {
   String? _companionCode;
   String? get companionCode => _companionCode;
 
+  MedicalHistory? _medicalHistory;
+  MedicalHistory? get medicalHistory => _medicalHistory;
+
   Future<bool> submitDailyReport(DailyReport report) async {
     _isLoading = true;
     _error = null;
@@ -44,6 +47,7 @@ class PatientProvider with ChangeNotifier {
 
     try {
       await _repository.updateMedicalHistory(history);
+      _medicalHistory = history;
       _isLoading = false;
       notifyListeners();
       return true;
@@ -81,6 +85,22 @@ class PatientProvider with ChangeNotifier {
 
     try {
       _companionCode = await _repository.getCompanionCode();
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _error = _handleError(e);
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchMedicalHistory() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _medicalHistory = await _repository.getMedicalHistory();
       _isLoading = false;
       notifyListeners();
     } catch (e) {

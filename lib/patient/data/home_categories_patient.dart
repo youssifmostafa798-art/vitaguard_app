@@ -3,7 +3,7 @@ import 'package:vitaguard_app/models/category_model.dart';
 import 'package:vitaguard_app/patient/home/screen/companion_code.dart';
 import 'package:vitaguard_app/patient/home/screen/daily_report.dart';
 import 'package:vitaguard_app/patient/home/screen/guidance_videos.dart';
-import 'package:vitaguard_app/patient/home/screen/medical_history_update.dart';
+import 'package:vitaguard_app/patient/home/screen/medical_history_screen.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 List<CategoryModel> homeCategoriesPatient(
@@ -18,7 +18,7 @@ List<CategoryModel> homeCategoriesPatient(
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => MedicalHistoryUpdate(firstNamee: patientName),
+            builder: (_) => MedicalHistoryScreen(patientName: patientName),
           ),
         );
       },

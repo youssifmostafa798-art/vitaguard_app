@@ -4,14 +4,19 @@ import 'package:vitaguard_app/companion/data/home_categories_companion.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/patient/home/widget/category_item.dart';
 
-class CategoryGridCompanion extends StatelessWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vitaguard_app/core/providers.dart';
+
+class CategoryGridCompanion extends ConsumerWidget {
   final String companionName;
 
   const CategoryGridCompanion({super.key, required this.companionName});
   //edit
   @override
-  Widget build(BuildContext context) {
-    final categories = homeCategoriesCompanion(context, companionName);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final patientStatus = ref.watch(companionProvider).patientStatus;
+    final patientId = patientStatus != null && patientStatus is Map ? patientStatus['patient_id'] as String? : null;
+    final categories = homeCategoriesCompanion(context, companionName, patientId: patientId);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
