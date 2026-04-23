@@ -13,6 +13,39 @@ class MedicalHistory {
   final String? surgeries;
   final String? notes;
 
+  factory MedicalHistory.empty() {
+    return MedicalHistory(
+      allergies: '',
+      medications: '',
+      chronicDiseases: '',
+      surgeries: '',
+      notes: '',
+    );
+  }
+
+  bool get isEmpty =>
+      (allergies ?? '').trim().isEmpty &&
+      (medications ?? '').trim().isEmpty &&
+      (chronicDiseases ?? '').trim().isEmpty &&
+      (surgeries ?? '').trim().isEmpty &&
+      (notes ?? '').trim().isEmpty;
+
+  MedicalHistory copyWith({
+    String? allergies,
+    String? medications,
+    String? chronicDiseases,
+    String? surgeries,
+    String? notes,
+  }) {
+    return MedicalHistory(
+      allergies: allergies ?? this.allergies,
+      medications: medications ?? this.medications,
+      chronicDiseases: chronicDiseases ?? this.chronicDiseases,
+      surgeries: surgeries ?? this.surgeries,
+      notes: notes ?? this.notes,
+    );
+  }
+
   Map<String, dynamic> toMap() => {
     'allergies': allergies ?? "",
     'medications': medications ?? "",

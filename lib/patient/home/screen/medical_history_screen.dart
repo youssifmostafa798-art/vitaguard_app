@@ -9,14 +9,47 @@ import 'package:vitaguard_app/patient/home/screen/medical_history_view_model.dar
 import 'package:vitaguard_app/patient/home/widget/name_card.dart';
 
 class MedicalHistoryScreen extends StatefulWidget {
-  final String patientName;
-  final String? patientId;
-  
-  const MedicalHistoryScreen({
+  const MedicalHistoryScreen._({
     super.key,
-    required this.patientName,
+    this.patientName,
+    required this.mode,
     this.patientId,
+    this.initialHistory,
   });
+
+  final String? patientName;
+  final MedicalHistoryAccessMode mode;
+  final String? patientId;
+  final MedicalHistory? initialHistory;
+
+  const MedicalHistoryScreen.forPatient({
+    Key? key,
+    required String patientName,
+  }) : this._(
+         key: key,
+         patientName: patientName,
+         mode: MedicalHistoryAccessMode.patient,
+       );
+
+  const MedicalHistoryScreen.forCompanion({
+    Key? key,
+    required String patientName,
+    required String patientId,
+  }) : this._(
+         key: key,
+         patientName: patientName,
+         mode: MedicalHistoryAccessMode.companion,
+         patientId: patientId,
+       );
+
+  const MedicalHistoryScreen.forDraft({
+    Key? key,
+    MedicalHistory? initialHistory,
+  }) : this._(
+         key: key,
+         mode: MedicalHistoryAccessMode.draft,
+         initialHistory: initialHistory,
+       );
 
   @override
   State<MedicalHistoryScreen> createState() => _MedicalHistoryScreenState();
@@ -34,15 +67,30 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
   @override
   void initState() {
     super.initState();
-    _viewModel = MedicalHistoryViewModel(overridePatientId: widget.patientId);
-    
+    switch (widget.mode) {
+      case MedicalHistoryAccessMode.patient:
+        _viewModel = MedicalHistoryViewModel.forPatient();
+        break;
+      case MedicalHistoryAccessMode.companion:
+        _viewModel = MedicalHistoryViewModel.forCompanion(
+          patientId: widget.patientId!,
+        );
+        break;
+      case MedicalHistoryAccessMode.draft:
+        _viewModel = MedicalHistoryViewModel.forDraft(
+          initialHistory: widget.initialHistory,
+        );
+        break;
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _viewModel.fetchHistory();
-      if (_viewModel.history != null && mounted) {
+      if (!mounted) return;
+
+      if (_viewModel.history != null) {
+        _syncControllers(_viewModel.history!);
+      } else {
         setState(() {
-          diabetes.text = _viewModel.history!.chronicDiseases ?? '';
-          metformin.text = _viewModel.history!.medications ?? '';
-          dustmites.text = _viewModel.history!.allergies ?? '';
           _isInitialized = true;
         });
       }
@@ -58,12 +106,49 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
     super.dispose();
   }
 
-  bool get _isNewRecord {
-    if (_viewModel.history == null) return true;
-    final h = _viewModel.history!;
-    return (h.chronicDiseases ?? '').isEmpty && 
-           (h.medications ?? '').isEmpty && 
-           (h.allergies ?? '').isEmpty;
+  void _syncControllers(MedicalHistory history) {
+    setState(() {
+      diabetes.text = history.chronicDiseases ?? '';
+      metformin.text = history.medications ?? '';
+      dustmites.text = history.allergies ?? '';
+      _isInitialized = true;
+    });
+  }
+
+  String get _buttonTitle {
+    if (_viewModel.isDraftMode) {
+      return 'CONFIRM';
+    }
+    return _viewModel.isCreateMode ? 'CREATE' : 'SAVE';
+  }
+
+  Future<void> _handleSubmit() async {
+    final currentHistory = _viewModel.history ?? MedicalHistory.empty();
+    final updatedHistory = currentHistory.copyWith(
+      chronicDiseases: diabetes.text.trim(),
+      medications: metformin.text.trim(),
+      allergies: dustmites.text.trim(),
+    );
+
+    final success = await _viewModel.saveHistory(updatedHistory);
+    if (!mounted) return;
+
+    if (_viewModel.isDraftMode) {
+      if (success) {
+        Navigator.pop(context, updatedHistory);
+      }
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? 'Medical history saved successfully!'
+              : (_viewModel.error ?? 'Failed to update medical history'),
+        ),
+      ),
+    );
   }
 
   @override
@@ -84,7 +169,8 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
                     children: [
                       const Gap(30),
 
-                      NameCard(firstName: widget.patientName),
+                      if ((widget.patientName ?? '').isNotEmpty)
+                        NameCard(firstName: widget.patientName!),
 
                       const Gap(30),
 
@@ -92,6 +178,7 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
                         title: "Chronic Diseases",
                         hint: "No data available",
                         controller: diabetes,
+                        readOnly: _viewModel.isReadOnly,
                       ),
 
                       const Gap(20),
@@ -100,6 +187,7 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
                         title: "Medications",
                         hint: "No data available",
                         controller: metformin,
+                        readOnly: _viewModel.isReadOnly,
                       ),
 
                       const Gap(20),
@@ -108,40 +196,29 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
                         title: "Allergies",
                         hint: "No data available",
                         controller: dustmites,
+                        readOnly: _viewModel.isReadOnly,
                       ),
 
                       const Gap(30),
 
                       if (_viewModel.isLoading || !_isInitialized)
                         const Center(child: CircularProgressIndicator())
-                      else
+                      else if (!_viewModel.isReadOnly)
                         Button(
-                          title: _isNewRecord ? "CREATE" : "SAVE",
-                          onTap: () async {
-                            final history = MedicalHistory(
-                              chronicDiseases: diabetes.text,
-                              medications: metformin.text,
-                              allergies: dustmites.text,
-                              surgeries: "",
-                              notes: "",
-                            );
-
-                            final success = await _viewModel.saveHistory(history);
-
-                            if (success && context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Medical history saved successfully!'),
-                                ),
-                              );
-                            } else if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(_viewModel.error ?? 'Failed to update medical history'),
-                                ),
-                              );
-                            }
-                          },
+                          title: _buttonTitle,
+                          onTap: _handleSubmit,
+                        ),
+                      if ((_viewModel.error ?? '').isNotEmpty) ...[
+                        const Gap(16),
+                        Text(
+                          _viewModel.error!,
+                          style: const TextStyle(color: Colors.redAccent),
+                        ),
+                      ],
+                      if (_viewModel.isReadOnly)
+                        const Text(
+                          'Companions can view medical history but cannot edit it.',
+                          style: TextStyle(color: Color(0xff0D3B66)),
                         ),
                         
                       const Gap(30),

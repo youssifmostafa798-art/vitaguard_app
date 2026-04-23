@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:vitaguard_app/companion/data/companion_models.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 
 class CompanionRepository {
@@ -19,7 +20,7 @@ class CompanionRepository {
     }
   }
 
-  Future<dynamic> getPatientStatus() async {
+  Future<LinkedPatientStatus> getPatientStatus() async {
     final companionData = await _client
         .from('companions')
         .select()
@@ -43,12 +44,12 @@ class CompanionRepository {
     if (patientData.isNotEmpty) {
       final row = Map<String, dynamic>.from(patientData.first as Map);
       final profile = row['profiles'] as Map?;
-      return {
+      return LinkedPatientStatus.fromMap({
         'patient_id': row['id'],
         'name': profile?['name'] ?? 'Unknown',
         'age': row['age'],
         'gender': row['gender'],
-      };
+      });
     }
 
     throw StateError('No linked patient found.');

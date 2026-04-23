@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vitaguard_app/auth/ui/screens/create_account_screen.dart';
-import 'package:vitaguard_app/auth/ui/widgets/patients_medical_history.dart';
 import 'package:vitaguard_app/auth/ui/widgets/signup_success_dialog.dart';
 import 'package:vitaguard_app/core/providers.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/patient/data/patient_models.dart';
 import 'package:vitaguard_app/patient/data/patient_repository.dart';
+import 'package:vitaguard_app/patient/home/screen/medical_history_screen.dart';
 
 class PatientRegisterScreen extends ConsumerStatefulWidget {
   const PatientRegisterScreen({super.key});
@@ -52,8 +53,16 @@ class _PatientRegisterScreenState extends ConsumerState<PatientRegisterScreen> {
       if (_draftHistory != null && await auth.isAuthenticated()) {
         try {
           await PatientRepository().updateMedicalHistory(_draftHistory!);
-        } catch (_) {
-          // ignore draft history failures
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Account created, but medical history could not be saved: ${ErrorMapper.map(e)}',
+                ),
+              ),
+            );
+          }
         }
       }
 
@@ -119,7 +128,11 @@ class _PatientRegisterScreenState extends ConsumerState<PatientRegisterScreen> {
           'onTap': () async {
             final result = await Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => MedicalHistoryScreen()),
+              MaterialPageRoute(
+                builder: (_) => MedicalHistoryScreen.forDraft(
+                  initialHistory: _draftHistory,
+                ),
+              ),
             );
             if (result is MedicalHistory) {
               setState(() {

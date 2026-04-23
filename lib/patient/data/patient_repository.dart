@@ -41,9 +41,17 @@ class PatientRepository {
   }
 
   Future<void> updateMedicalHistory(MedicalHistory history) async {
+    final patientId = await ensureCurrentPatientRecord();
+    await updateMedicalHistoryForPatient(history, patientId: patientId);
+  }
+
+  Future<void> updateMedicalHistoryForPatient(
+    MedicalHistory history, {
+    required String patientId,
+  }) async {
     final data = history.toMap();
     await _client.from('patient_medical_history').upsert({
-      'patient_id': _uid,
+      'patient_id': patientId,
       'allergies': data['allergies'],
       'medications': data['medications'],
       'chronic_diseases': data['chronicDiseases'],
@@ -54,10 +62,17 @@ class PatientRepository {
   }
 
   Future<MedicalHistory> getMedicalHistory() async {
+    final patientId = await ensureCurrentPatientRecord();
+    return getMedicalHistoryForPatient(patientId: patientId);
+  }
+
+  Future<MedicalHistory> getMedicalHistoryForPatient({
+    required String patientId,
+  }) async {
     final data = await _client
         .from('patient_medical_history')
         .select()
-        .eq('patient_id', _uid)
+        .eq('patient_id', patientId)
         .limit(1);
 
     if (data.isNotEmpty) {
@@ -66,13 +81,60 @@ class PatientRepository {
       );
     }
 
-    return MedicalHistory(
-      chronicDiseases: '',
-      medications: '',
-      allergies: '',
-      surgeries: '',
-      notes: '',
-    );
+    return MedicalHistory.empty();
+  }
+
+  Future<String> ensureCurrentPatientRecord() async {
+    final patientId = _uid;
+
+    final existingPatient = await _client
+        .from('patients')
+        .select('id')
+        .eq('id', patientId)
+        .limit(1);
+    if (existingPatient.isNotEmpty) {
+      return patientId;
+    }
+
+    final user = _supabase.currentUser;
+    final metadata = user?.userMetadata ?? const <String, dynamic>{};
+
+    final existingProfile = await _client
+        .from('profiles')
+        .select('id')
+        .eq('id', patientId)
+        .limit(1);
+    if (existingProfile.isEmpty) {
+      await _client.from('profiles').insert({
+        'id': patientId,
+        'role': 'patient',
+        'name': metadata['name'],
+        'email': user?.email,
+        'phone': metadata['phone'],
+      });
+    }
+
+    await _client.from('patients').upsert({
+      'id': patientId,
+      'gender': (metadata['gender'] as String?)?.trim().isNotEmpty == true
+          ? metadata['gender']
+          : 'male',
+      'age': int.tryParse(metadata['age']?.toString() ?? '') ?? 20,
+      'companion_code': metadata['companion_code'] as String?,
+    });
+
+    final repairedPatient = await _client
+        .from('patients')
+        .select('id')
+        .eq('id', patientId)
+        .limit(1);
+    if (repairedPatient.isEmpty) {
+      throw StateError(
+        'Your patient profile is still being set up. Please sign out and sign back in, then try again.',
+      );
+    }
+
+    return patientId;
   }
 
   Future<XRayResult> analyzeXRay(File imageFile) async {

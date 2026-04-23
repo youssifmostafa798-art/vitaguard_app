@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vitaguard_app/companion/data/companion_models.dart';
 import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/companion/data/companion_repository.dart';
 
@@ -7,12 +8,12 @@ class CompanionProvider with ChangeNotifier {
 
   bool _isLoading = false;
   String? _error;
-  dynamic _patientStatus;
+  LinkedPatientStatus? _patientStatus;
   String? _companionCode;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
-  dynamic get patientStatus => _patientStatus;
+  LinkedPatientStatus? get patientStatus => _patientStatus;
   String? get companionCode => _companionCode;
 
   Future<bool> linkPatient(String code) async {

@@ -8,15 +8,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vitaguard_app/core/providers.dart';
 
 class CategoryGridCompanion extends ConsumerWidget {
-  final String companionName;
+  const CategoryGridCompanion({super.key});
 
-  const CategoryGridCompanion({super.key, required this.companionName});
-  //edit
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final patientStatus = ref.watch(companionProvider).patientStatus;
-    final patientId = patientStatus != null && patientStatus is Map ? patientStatus['patient_id'] as String? : null;
-    final categories = homeCategoriesCompanion(context, companionName, patientId: patientId);
+    final companionState = ref.watch(companionProvider);
+    final categories = homeCategoriesCompanion(
+      context,
+      patientStatus: companionState.patientStatus,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -31,6 +31,16 @@ class CategoryGridCompanion extends ConsumerWidget {
         ),
 
         const Gap(15),
+
+        if (companionState.error != null && companionState.patientStatus == null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(
+              companionState.error!,
+              style: const TextStyle(color: Colors.redAccent),
+              textAlign: TextAlign.center,
+            ),
+          ),
 
         /// Grid
         GridView.builder(

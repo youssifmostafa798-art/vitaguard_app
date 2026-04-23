@@ -18,7 +18,8 @@ List<CategoryModel> homeCategoriesPatient(
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => MedicalHistoryScreen(patientName: patientName),
+            builder: (_) =>
+                MedicalHistoryScreen.forPatient(patientName: patientName),
           ),
         );
       },
