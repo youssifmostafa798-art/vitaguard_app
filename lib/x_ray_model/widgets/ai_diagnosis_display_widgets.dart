@@ -7,30 +7,66 @@ import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/x_ray_model/widgets/heatmap_overlay_placeholder.dart';
 import 'package:vitaguard_app/x_ray_model/widgets/ai_layer_toggle.dart';
 
-/// Square clipped X-ray with optional heatmap overlay. Heatmap is anchored to center.
 class XRayImageWithOptionalHeatmap extends StatelessWidget {
   const XRayImageWithOptionalHeatmap({
     super.key,
     required this.imageFile,
     required this.showHeatmapOverlay,
+    required this.wlMode,
+    required this.transformationController,
   });
 
   final File imageFile;
   final bool showHeatmapOverlay;
+  final int wlMode;
+  final TransformationController transformationController;
 
   @override
   Widget build(BuildContext context) {
+    ColorFilter filter;
+    switch (wlMode) {
+      case 1: // High Contrast
+        filter = const ColorFilter.matrix([
+          1.5, 0, 0, 0, -50,
+          0, 1.5, 0, 0, -50,
+          0, 0, 1.5, 0, -50,
+          0, 0, 0, 1, 0,
+        ]);
+        break;
+      case 2: // Inverted
+        filter = const ColorFilter.matrix([
+          -1, 0, 0, 0, 255,
+          0, -1, 0, 0, 255,
+          0, 0, -1, 0, 255,
+          0, 0, 0, 1, 0,
+        ]);
+        break;
+      case 0:
+      default:
+        filter = const ColorFilter.matrix([
+          1, 0, 0, 0, 0,
+          0, 1, 0, 0, 0,
+          0, 0, 1, 0, 0,
+          0, 0, 0, 1, 0,
+        ]);
+        break;
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(16.r),
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Positioned.fill(
-              child: Image.file(
+      child: InteractiveViewer(
+        transformationController: transformationController,
+        minScale: 1.0,
+        maxScale: 5.0,
+        panEnabled: true,
+        child: ColorFiltered(
+          colorFilter: filter,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Image.file(
                 imageFile,
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) => ColoredBox(
                   color: Colors.grey.shade300,
                   child: Center(
@@ -38,15 +74,12 @@ class XRayImageWithOptionalHeatmap extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
-            if (showHeatmapOverlay)
-              const Positioned.fill(
-                child: Align(
-                  alignment: Alignment.center,
+              if (showHeatmapOverlay)
+                const Positioned.fill(
                   child: HeatmapOverlayPlaceholder(),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -58,10 +91,16 @@ class ClinicalToolbar extends StatelessWidget {
     super.key,
     required this.aiLayerOn,
     required this.onAiLayerChanged,
+    required this.onZoomReset,
+    required this.onWlToggled,
+    required this.wlMode,
   });
 
   final bool aiLayerOn;
   final ValueChanged<bool> onAiLayerChanged;
+  final VoidCallback onZoomReset;
+  final VoidCallback onWlToggled;
+  final int wlMode;
 
   @override
   Widget build(BuildContext context) {
@@ -81,9 +120,25 @@ class ClinicalToolbar extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _ToolbarButton(icon: Icons.zoom_in, label: 'Zoom'),
-          _ToolbarButton(icon: Icons.contrast, label: 'W/L'),
-          _ToolbarButton(icon: Icons.straighten, label: 'Measure'),
+          _ToolbarButton(
+            icon: Icons.zoom_out_map,
+            label: 'Reset',
+            onTap: onZoomReset,
+          ),
+          _ToolbarButton(
+            icon: Icons.contrast,
+            label: wlMode == 0 ? 'W/L: Norm' : (wlMode == 1 ? 'W/L: High' : 'W/L: Inv'),
+            onTap: onWlToggled,
+          ),
+          _ToolbarButton(
+            icon: Icons.straighten,
+            label: 'Measure',
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Measurement tool coming soon')),
+              );
+            },
+          ),
           Gap(12.w),
           Container(width: 1, height: 24.h, color: Colors.grey.shade300),
           Gap(12.w),
@@ -98,24 +153,33 @@ class ClinicalToolbar extends StatelessWidget {
 }
 
 class _ToolbarButton extends StatelessWidget {
-  const _ToolbarButton({required this.icon, required this.label});
+  const _ToolbarButton({
+    required this.icon,
+    required this.label,
+    this.onTap,
+  });
   final IconData icon;
   final String label;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 6.w),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18.sp, color: AppColors.textSecondary),
-          Gap(2.h),
-          Text(
-            label,
-            style: TextStyle(fontSize: 10.sp, color: AppColors.textSecondary),
-          ),
-        ],
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8.r),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18.sp, color: AppColors.textSecondary),
+            Gap(2.h),
+            Text(
+              label,
+              style: TextStyle(fontSize: 10.sp, color: AppColors.textSecondary),
+            ),
+          ],
+        ),
       ),
     );
   }

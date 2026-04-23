@@ -32,6 +32,14 @@ class AiXRayResultScreen extends ConsumerStatefulWidget {
 class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
   /// Default ON — show summary and analysis immediately.
   bool _aiLayerOn = true;
+  int _wlMode = 0;
+  final TransformationController _transformationController = TransformationController();
+
+  @override
+  void dispose() {
+    _transformationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,12 +68,19 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                       imageFile: widget.imageFile,
                       showHeatmapOverlay:
                           _aiLayerOn && aiData.useHeatmapPlaceholder,
+                      wlMode: _wlMode,
+                      transformationController: _transformationController,
                     ),
                     Gap(16.h),
                     Center(
                       child: ClinicalToolbar(
                         aiLayerOn: _aiLayerOn,
                         onAiLayerChanged: (v) => setState(() => _aiLayerOn = v),
+                        wlMode: _wlMode,
+                        onWlToggled: () => setState(() => _wlMode = (_wlMode + 1) % 3),
+                        onZoomReset: () {
+                          _transformationController.value = Matrix4.identity();
+                        },
                       ),
                     ),
                     Gap(24.h),
