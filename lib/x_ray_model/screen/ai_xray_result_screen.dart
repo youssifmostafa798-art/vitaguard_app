@@ -70,6 +70,8 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                           _aiLayerOn && aiData.useHeatmapPlaceholder,
                       wlMode: _wlMode,
                       transformationController: _transformationController,
+                      heatmapEmphasis: aiData.heatmapEmphasis,
+                      heatmapLabel: aiData.heatmapLabel,
                     ),
                     Gap(16.h),
                     Center(

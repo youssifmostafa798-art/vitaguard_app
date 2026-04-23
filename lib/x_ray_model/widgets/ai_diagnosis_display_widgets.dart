@@ -14,12 +14,16 @@ class XRayImageWithOptionalHeatmap extends StatelessWidget {
     required this.showHeatmapOverlay,
     required this.wlMode,
     required this.transformationController,
+    this.heatmapEmphasis = 0.8,
+    this.heatmapLabel,
   });
 
   final File imageFile;
   final bool showHeatmapOverlay;
   final int wlMode;
   final TransformationController transformationController;
+  final double heatmapEmphasis;
+  final String? heatmapLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -75,8 +79,45 @@ class XRayImageWithOptionalHeatmap extends StatelessWidget {
                 ),
               ),
               if (showHeatmapOverlay)
-                const Positioned.fill(
-                  child: HeatmapOverlayPlaceholder(),
+                Positioned.fill(
+                  child: HeatmapOverlayPlaceholder(emphasis: heatmapEmphasis),
+                ),
+              if (showHeatmapOverlay && (heatmapLabel ?? '').isNotEmpty)
+                Positioned(
+                  top: 12.h,
+                  left: 12.w,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10.w,
+                      vertical: 6.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.58),
+                      borderRadius: BorderRadius.circular(999.r),
+                      border: Border.all(
+                        color: Colors.orangeAccent.withValues(alpha: 0.55),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.auto_awesome,
+                          size: 14.sp,
+                          color: Colors.orangeAccent,
+                        ),
+                        Gap(6.w),
+                        Text(
+                          heatmapLabel!,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
             ],
           ),

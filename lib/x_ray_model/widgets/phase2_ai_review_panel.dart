@@ -72,6 +72,8 @@ class _Phase2AiReviewPanelState extends State<Phase2AiReviewPanel> {
           showHeatmapOverlay: widget.aiData.useHeatmapPlaceholder,
           wlMode: 0,
           transformationController: _transformationController,
+          heatmapEmphasis: widget.aiData.heatmapEmphasis,
+          heatmapLabel: widget.aiData.heatmapLabel,
         ),
         SizedBox(height: 14.h),
         AiDiagnosisMetricRow(

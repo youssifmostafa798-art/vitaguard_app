@@ -12,6 +12,8 @@ class AiReviewViewData {
     required this.labels,
     required this.summary,
     required this.useHeatmapPlaceholder,
+    required this.heatmapEmphasis,
+    required this.heatmapLabel,
     required this.probPneuDouble,
     required this.probNormDouble,
     required this.isNormal,
@@ -35,6 +37,8 @@ class AiReviewViewData {
 
   /// When true, UI shows a synthetic overlay; replace with real tensor when available.
   final bool useHeatmapPlaceholder;
+  final double heatmapEmphasis;
+  final String? heatmapLabel;
 
   static AiReviewViewData fromXRayResult(XRayResult result) {
     if (!result.isValid) {
@@ -63,6 +67,8 @@ class AiReviewViewData {
         summary: friendlyMessage,
         friendlyErrorAdvice: advice,
         useHeatmapPlaceholder: false,
+        heatmapEmphasis: 0.0,
+        heatmapLabel: null,
         probPneuDouble: 0.0,
         probNormDouble: 0.0,
         isNormal: false,
@@ -94,6 +100,8 @@ class AiReviewViewData {
             ? 'A technical engine error occurred. Please report this specific message to the engineering team.'
             : 'The image may be clear enough for a doctor, but the AI engine requires a retry.',
         useHeatmapPlaceholder: false,
+        heatmapEmphasis: 0.0,
+        heatmapLabel: null,
         probPneuDouble: 0.0,
         probNormDouble: 0.0,
         isNormal: false,
@@ -139,6 +147,8 @@ class AiReviewViewData {
       labels: labels,
       summary: summary,
       useHeatmapPlaceholder: isPneumonia, // Only show heatmap if it's pneumonia as requested
+      heatmapEmphasis: isPneumonia ? conf.clamp(0.45, 0.95) : 0.0,
+      heatmapLabel: isPneumonia ? 'AI focus: pneumonia-like cloudy opacities' : null,
       probPneuDouble: pPneu,
       probNormDouble: pNorm,
       isNormal: !isPneumonia,
