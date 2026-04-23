@@ -7,7 +7,7 @@ import 'package:vitaguard_app/core/utils/app_colors.dart';
 import '../screen/doctor_two_phase_ai_view_data.dart';
 import 'ai_diagnosis_display_widgets.dart';
 
-class Phase2AiReviewPanel extends StatelessWidget {
+class Phase2AiReviewPanel extends StatefulWidget {
   const Phase2AiReviewPanel({
     super.key,
     required this.imageFile,
@@ -24,6 +24,19 @@ class Phase2AiReviewPanel extends StatelessWidget {
   final VoidCallback onConfirmAi;
   final VoidCallback onOverrideAi;
   final bool decisionBusy;
+
+  @override
+  State<Phase2AiReviewPanel> createState() => _Phase2AiReviewPanelState();
+}
+
+class _Phase2AiReviewPanelState extends State<Phase2AiReviewPanel> {
+  final TransformationController _transformationController = TransformationController();
+
+  @override
+  void dispose() {
+    _transformationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +56,7 @@ class Phase2AiReviewPanel extends StatelessWidget {
         SizedBox(height: 14.h),
         AiDiagnosisSummaryCard(
           title: 'Phase 1 — your review',
-          body: phase1Summary,
+          body: widget.phase1Summary,
         ),
         SizedBox(height: 12.h),
         Text(
@@ -55,31 +68,33 @@ class Phase2AiReviewPanel extends StatelessWidget {
         ),
         SizedBox(height: 10.h),
         XRayImageWithOptionalHeatmap(
-          imageFile: imageFile,
-          showHeatmapOverlay: aiData.useHeatmapPlaceholder,
+          imageFile: widget.imageFile,
+          showHeatmapOverlay: widget.aiData.useHeatmapPlaceholder,
+          wlMode: 0,
+          transformationController: _transformationController,
         ),
         SizedBox(height: 14.h),
         AiDiagnosisMetricRow(
-          confidencePercentText: aiData.confidencePercentText,
-          severityLabel: aiData.severityLabel,
+          confidencePercentText: widget.aiData.confidencePercentText,
+          severityLabel: widget.aiData.severityLabel,
         ),
         SizedBox(height: 12.h),
-        AiDiagnosisFindingsSection(labels: aiData.labels),
+        AiDiagnosisFindingsSection(labels: widget.aiData.labels),
         SizedBox(height: 12.h),
-        AiDiagnosisSummaryCard(title: 'AI summary', body: aiData.summary),
+        AiDiagnosisSummaryCard(title: 'AI summary', body: widget.aiData.summary),
         SizedBox(height: 20.h),
         Row(
           children: [
             Expanded(
               child: OutlinedButton(
-                onPressed: decisionBusy ? null : onOverrideAi,
+                onPressed: widget.decisionBusy ? null : widget.onOverrideAi,
                 child: const Text('Override AI'),
               ),
             ),
             SizedBox(width: 12.w),
             Expanded(
               child: FilledButton(
-                onPressed: decisionBusy ? null : onConfirmAi,
+                onPressed: widget.decisionBusy ? null : widget.onConfirmAi,
                 child: const Text('Confirm AI'),
               ),
             ),
