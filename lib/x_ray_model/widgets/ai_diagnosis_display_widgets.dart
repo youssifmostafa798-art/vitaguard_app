@@ -105,7 +105,6 @@ class ClinicalToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24.r),
@@ -117,36 +116,43 @@ class ClinicalToolbar extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _ToolbarButton(
-            icon: Icons.zoom_out_map,
-            label: 'Reset',
-            onTap: onZoomReset,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24.r),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _ToolbarButton(
+                icon: Icons.zoom_out_map,
+                label: 'Reset',
+                onTap: onZoomReset,
+              ),
+              _ToolbarButton(
+                icon: Icons.contrast,
+                label: wlMode == 0 ? 'W/L: Norm' : (wlMode == 1 ? 'W/L: High' : 'W/L: Inv'),
+                onTap: onWlToggled,
+              ),
+              _ToolbarButton(
+                icon: Icons.straighten,
+                label: 'Measure',
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Measurement tool coming soon')),
+                  );
+                },
+              ),
+              Gap(12.w),
+              Container(width: 1, height: 24.h, color: Colors.grey.shade300),
+              Gap(12.w),
+              AiLayerToggle(
+                aiLayerOn: aiLayerOn,
+                onChanged: onAiLayerChanged,
+              ),
+            ],
           ),
-          _ToolbarButton(
-            icon: Icons.contrast,
-            label: wlMode == 0 ? 'W/L: Norm' : (wlMode == 1 ? 'W/L: High' : 'W/L: Inv'),
-            onTap: onWlToggled,
-          ),
-          _ToolbarButton(
-            icon: Icons.straighten,
-            label: 'Measure',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Measurement tool coming soon')),
-              );
-            },
-          ),
-          Gap(12.w),
-          Container(width: 1, height: 24.h, color: Colors.grey.shade300),
-          Gap(12.w),
-          AiLayerToggle(
-            aiLayerOn: aiLayerOn,
-            onChanged: onAiLayerChanged,
-          ),
-        ],
+        ),
       ),
     );
   }
