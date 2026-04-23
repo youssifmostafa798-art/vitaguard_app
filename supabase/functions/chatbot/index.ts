@@ -80,20 +80,22 @@ async function processRequest(supabase: any, conversationId: string, assistantMe
       .select("role, content")
       .eq("conversation_id", conversationId)
       .eq("status", "complete")
+      .neq("id", userMessageId) // Exclude current message so it's not double-fed
       .order("created_at", { ascending: true })
       .limit(10);
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ 
       model: GEMINI_MODEL,
-      systemInstruction: `You are VitaGuard AI.
+      systemInstruction: `You are a clinical AI assistant for VitaGuard.
 STRICT FORMATTING RULES:
 1. USE STANDARD MARKDOWN ONLY.
 2. For bolding, use **text** WITHOUT internal spaces (e.g., do NOT use ** text **).
 3. Use * for bullet points (e.g., * Item).
 4. Hide all your internal thinking or tags (<thought>).
 5. Never show technical debugging info.
-6. Provide expert healthcare answers and wellness tips.`,
+6. Provide expert healthcare answers and wellness tips.
+7. NEVER repeat, paraphrase, or echo the user's input. Respond concisely with only new, relevant information.`,
     });
 
     const chat = model.startChat({

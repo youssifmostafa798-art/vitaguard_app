@@ -10,7 +10,6 @@ import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/patient/data/patient_models.dart';
 
 import '../widgets/ai_diagnosis_display_widgets.dart';
-import '../widgets/ai_layer_toggle.dart';
 import 'doctor_two_phase_ai_view_data.dart';
 
 /// AI X-Ray Diagnosis: raw image always visible; AI overlays and text only when the user enables **AI Layer**.
@@ -41,8 +40,6 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
       widget.result,
     );
 
-    final isError = widget.result.isValid == false;
-
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: SimpleHeader(
@@ -64,10 +61,14 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                       showHeatmapOverlay:
                           _aiLayerOn && aiData.useHeatmapPlaceholder,
                     ),
-                    Gap(8.h),
-                    // Only show the badge if the AI layer is ON
-                    if (_aiLayerOn) const AiAnalysisAssistantBadge(),
                     Gap(16.h),
+                    Center(
+                      child: ClinicalToolbar(
+                        aiLayerOn: _aiLayerOn,
+                        onAiLayerChanged: (v) => setState(() => _aiLayerOn = v),
+                      ),
+                    ),
+                    Gap(24.h),
 
                     if (aiData.isError)
                       AiErrorDisplay(
@@ -81,9 +82,19 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                         onUploadNew: () => Navigator.pop(context),
                       )
                     else ...[
+                      DiagnosisBannerCard(
+                        isNormal: aiData.isNormal,
+                        title: aiData.diagnosisTitle,
+                      ),
+                      Gap(12.h),
                       AiDiagnosisMetricRow(
                         confidencePercentText: aiData.confidencePercentText,
                         severityLabel: aiData.severityLabel,
+                      ),
+                      Gap(12.h),
+                      ProbabilityBarChart(
+                        probNormal: aiData.probNormDouble,
+                        probPneumonia: aiData.probPneuDouble,
                       ),
                       Gap(12.h),
                       AiDiagnosisFindingsSection(labels: aiData.labels),
@@ -92,14 +103,11 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                         title: 'AI Summary',
                         body: aiData.summary,
                       ),
-                      Gap(12.h),
-                      AiDiagnosisSummaryCard(
-                        title: 'Differential Diagnosis',
-                        body: aiData.differentialDiagnosis,
-                      ),
+                      Gap(24.h),
+                      const ActionCTARow(),
                     ],
 
-                    Gap(16.h),
+                    Gap(24.h),
 
                     // The disclaimer and report issue link are ALWAYS at the bottom
                     Container(
@@ -171,17 +179,6 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                   ],
                 ),
               ),
-              if (!isError)
-                Positioned(
-                  top: 8.h,
-                  right: 12.w,
-                  child: SafeArea(
-                    child: AiLayerToggle(
-                      aiLayerOn: _aiLayerOn,
-                      onChanged: (v) => setState(() => _aiLayerOn = v),
-                    ),
-                  ),
-                ),
             ],
           ),
         ),

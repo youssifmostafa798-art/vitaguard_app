@@ -11,8 +11,11 @@ class AiReviewViewData {
     required this.severityLabel,
     required this.labels,
     required this.summary,
-    required this.differentialDiagnosis,
     required this.useHeatmapPlaceholder,
+    required this.probPneuDouble,
+    required this.probNormDouble,
+    required this.isNormal,
+    required this.diagnosisTitle,
     this.isError = false,
     this.friendlyErrorAdvice,
   });
@@ -21,9 +24,14 @@ class AiReviewViewData {
   final String severityLabel;
   final List<String> labels;
   final String summary;
-  final String differentialDiagnosis;
   final bool isError;
   final String? friendlyErrorAdvice;
+
+  // New fields for the UI overhaul
+  final double probPneuDouble;
+  final double probNormDouble;
+  final bool isNormal;
+  final String diagnosisTitle;
 
   /// When true, UI shows a synthetic overlay; replace with real tensor when available.
   final bool useHeatmapPlaceholder;
@@ -55,14 +63,19 @@ class AiReviewViewData {
         summary: friendlyMessage,
         friendlyErrorAdvice: advice,
         useHeatmapPlaceholder: false,
-        differentialDiagnosis: 'Differential diagnosis unavailable.',
+        probPneuDouble: 0.0,
+        probNormDouble: 0.0,
+        isNormal: false,
+        diagnosisTitle: 'ERROR',
         isError: true,
       );
     }
 
+    final conf = result.confidence ?? 0;
     final confidenceText = result.confidence != null
-        ? '${(result.confidence! * 100).clamp(0, 99.9).toStringAsFixed(1)}%'
+        ? '${(conf * 100).clamp(0, 99.9).toStringAsFixed(1)}%'
         : 'N/A';
+    
     final reportText = result.reportText ?? '';
     final pred = (result.prediction ?? 'UNKNOWN').toUpperCase();
     final isPneumonia = pred.contains('PNEUMONIA');
@@ -81,12 +94,13 @@ class AiReviewViewData {
             ? 'A technical engine error occurred. Please report this specific message to the engineering team.'
             : 'The image may be clear enough for a doctor, but the AI engine requires a retry.',
         useHeatmapPlaceholder: false,
-        differentialDiagnosis: 'Incomplete study. Please correlate with clinical findings and laboratory data.',
+        probPneuDouble: 0.0,
+        probNormDouble: 0.0,
+        isNormal: false,
+        diagnosisTitle: 'INDETERMINATE',
         isError: true,
       );
     }
-
-    final conf = result.confidence ?? 0;
 
     final severity = !isPneumonia
         ? 'Low'
@@ -97,33 +111,38 @@ class AiReviewViewData {
         : 'Low';
 
     final labels = <String>[
-      'Primary prediction: $pred',
-      if (isPneumonia) 'Consistent with infectious / inflammatory pattern',
-      if (!isPneumonia) 'No strong pneumonia pattern detected',
+      if (isPneumonia) 'Consistent with infectious / inflammatory pattern'
+      else 'No strong pneumonia pattern detected',
+      if (!isPneumonia) 'Lung fields appear clear bilaterally',
     ];
 
-    final probPneu = result.probPneumonia != null 
-        ? (result.probPneumonia! * 100).toStringAsFixed(1) 
-        : (isPneumonia ? (conf * 100).toStringAsFixed(1) : '0.0');
-    final probNorm = result.probNormal != null 
-        ? (result.probNormal! * 100).toStringAsFixed(1) 
-        : (!isPneumonia ? (conf * 100).toStringAsFixed(1) : '0.0');
+    // Ensure probabilities sum to 1.0 (or close to it)
+    double pPneu = result.probPneumonia ?? (isPneumonia ? conf : (1.0 - conf));
+    double pNorm = result.probNormal ?? (!isPneumonia ? conf : (1.0 - conf));
 
-    final differential = 'Pneumonia: $probPneu% | Normal: $probNorm%';
+    // Normalize if they don't exactly sum to 1.0, to prevent UI glitches
+    final sum = pPneu + pNorm;
+    if (sum > 0.0) {
+      pPneu = pPneu / sum;
+      pNorm = pNorm / sum;
+    }
 
     final summary =
         result.reportText ??
         (isPneumonia
-            ? 'AI suggests findings consistent with pneumonia ($probPneu% probability). Clinical correlation is required.'
-            : 'AI suggests lung fields without a strong pneumonia signal ($probNorm% probability of normal study).');
+            ? 'AI suggests findings consistent with pneumonia (confidence: ${(conf * 100).toStringAsFixed(1)}%). Clinical correlation advised.'
+            : 'No significant radiological findings consistent with pneumonia (confidence: ${(conf * 100).toStringAsFixed(1)}%). Clinical correlation advised.');
 
     return AiReviewViewData(
       confidencePercentText: confidenceText,
       severityLabel: severity,
       labels: labels,
       summary: summary,
-      useHeatmapPlaceholder: true,
-      differentialDiagnosis: differential,
+      useHeatmapPlaceholder: isPneumonia, // Only show heatmap if it's pneumonia as requested
+      probPneuDouble: pPneu,
+      probNormDouble: pNorm,
+      isNormal: !isPneumonia,
+      diagnosisTitle: !isPneumonia ? 'Normal' : 'Pneumonia',
       isError: false,
     );
   }
