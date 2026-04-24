@@ -149,14 +149,14 @@ class _HardwareScreenState extends State<HardwareScreen> {
             SafeArea(
               child: AppBackground(
                 child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(), // Important for RefreshIndicator
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: EdgeInsets.symmetric(
                     horizontal: _horizontalPadding.w,
                     vertical: 18.h,
                   ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                     Text(
                       'DEVICE LIVE STATUS',
                       style: textTheme.labelMedium?.copyWith(
