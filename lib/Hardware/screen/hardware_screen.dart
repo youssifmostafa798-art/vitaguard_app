@@ -313,8 +313,9 @@ class _HardwareScreenState extends State<HardwareScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _HeartRateRing extends StatelessWidget {

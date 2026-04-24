@@ -8,7 +8,7 @@ import 'package:vitaguard_app/patient/chat/screen/chat_list_patient.dart';
 
 import '../x_ray_model/screen/upload_x_ray.dart';
 
-class MainCompanion extends consumerStatefulWidget {
+class MainCompanion extends ConsumerStatefulWidget {
   final String name;
 
   const MainCompanion({super.key, required this.name});
