@@ -87,10 +87,14 @@ class _HardwareScreenState extends State<HardwareScreen> {
     final data = _latestVitals;
 
     // Display values — '--' until real hardware data arrives
-    final String bpm = data?['bpm']?.toString() ?? '--';
-    final String spo2 = data != null ? '${data['spo2'] ?? '--'}%' : '--';
-    final String temp = data != null
-        ? '${data['temperature'] ?? '--'}°C'
+    final String bpm = (data?['bpm'] != null && (data!['bpm'] as num) > 0)
+        ? data['bpm'].toString()
+        : '--';
+    final String spo2 = (data?['spo2'] != null && (data!['spo2'] as num) > 0)
+        ? '${data['spo2']}%'
+        : '--';
+    final String temp = (data?['temperature'] != null && (data!['temperature'] as num) > 0)
+        ? '${data['temperature']}°C'
         : '--';
 
     final String status;

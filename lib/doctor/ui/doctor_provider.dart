@@ -173,15 +173,21 @@ class DoctorProvider with ChangeNotifier {
 
     final index = _dailyReports.indexWhere((r) => r['id'] == patientId);
     if (index != -1) {
-      final pulse = (record['bpm'] as num?)?.toInt() ?? 0;
-      final ppm = (record['spo2'] as num?)?.toInt() ?? 0;
+      final rawBpm = (record['bpm'] as num?)?.toInt() ?? 0;
+      final pulse = rawBpm > 0 ? rawBpm : 0;
+      
+      final rawSpo2 = (record['spo2'] as num?)?.toInt() ?? 0;
+      final ppm = rawSpo2 > 0 ? rawSpo2 : 0;
+
+      final rawTemp = record['temperature'] as num?;
+      final tempDisplay = (rawTemp != null && rawTemp > 0) ? '${rawTemp}°C' : '--';
 
       // Update the existing report in memory
       _dailyReports[index] = {
         ..._dailyReports[index],
         'pulse': pulse,
         'ppm': ppm,
-        'temperature': '${record['temperature'] ?? '--'}°C',
+        'temperature': tempDisplay,
         'status': _deriveStatus(pulse, ppm),
       };
 
