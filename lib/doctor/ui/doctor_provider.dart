@@ -13,6 +13,7 @@ class DoctorProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   List<dynamic> _assignedPatients = [];
+  String _verificationStatus = 'pending';
   List<Map<String, dynamic>> _dailyReports = [];
   RealtimeChannel? _reportsChannel;
   final AlertEvaluationEngine _alertEngine = AlertEvaluationEngine();
