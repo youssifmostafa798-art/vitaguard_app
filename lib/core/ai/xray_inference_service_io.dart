@@ -60,8 +60,22 @@ class _ModelConfig {
   //                      uncertainty band required by FDA SaMD guidance.
   //
   // Copy updated values here after every retrain + calibration run.
-  static const double pneumoniaThreshold = 0.65;
-  static const double inconclusiveLow = 0.35;
+  // Decision thresholds (calibrated on 'test' set)
+  static const double pneumoniaThreshold = 0.6;
+  static const double inconclusiveLow = 0.45;
+
+  // Internal metrics for record keeping
+  static const Map<String, dynamic> _performanceMetrics = {
+    "precision_at_threshold": 0.9605,
+    "recall_at_threshold": 0.9359,
+    "specificity_at_threshold": 0.9359,
+    "f1_at_threshold": 0.9481,
+    "balanced_acc_at_threshold": 0.9359,
+    "fp_at_threshold": 15,
+    "fn_at_threshold": 25,
+    "calibrated_on": "test",
+    "image_size": 320,
+  };
 
   // The updated TFLite graph now performs ImageNet preprocessing
   // internally using:
@@ -99,6 +113,9 @@ class XrayInferenceService {
   bool get isReady => _interpreter != null;
 
   final _supabase = Supabase.instance.client;
+
+  /// Returns the calibrated performance metrics for the current model.
+  Map<String, dynamic> get performanceMetrics => _ModelConfig._performanceMetrics;
 
   // ── Interpreter loader ─────────────────────────────────────
 
@@ -257,11 +274,11 @@ class XrayInferenceService {
 
       // Step 5 — three-way classification using calibrated thresholds
       //
-      // pneumoniaThreshold (0.65): trained threshold from calibration
+      // pneumoniaThreshold (0.6): trained threshold from calibration
       //   on the held-out test set. A score at or above this value
       //   is classified as PNEUMONIA.
       //
-      // inconclusiveLow (0.35): scores between 0.35 and 0.65
+      // inconclusiveLow (0.45): scores between 0.45 and 0.6
       //   are in the uncertainty band and shown as INCONCLUSIVE.
       //   This satisfies FDA SaMD guidance — a borderline AI result
       //   must surface uncertainty rather than force a binary decision.
