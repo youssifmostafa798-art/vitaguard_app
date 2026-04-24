@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-
 import 'package:vitaguard_app/Hardware/screen/hardware_screen.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/core/providers.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
+
 
 enum DailyReportStatus { normal, warning, critical }
 
@@ -33,151 +35,28 @@ class DailyReportModel {
   });
 }
 
-final List<DailyReportModel> _mockDailyReports = [
-  const DailyReportModel(
-    id: 'p001',
-    patientName: 'Eleanor Vance',
-    date: 'OCT 24, 2023',
-    pulse: 104,
-    ppm: 22,
-    temperature: '101.4°F',
-    motionStatus: 'High',
-    status: DailyReportStatus.critical,
-    notes: 'Spiking fever; notify attending physician.',
-  ),
-  const DailyReportModel(
-    id: 'p002',
-    patientName: 'James Chen',
-    date: 'OCT 24, 2023',
-    pulse: 72,
-    ppm: 98,
-    temperature: '98.2°F',
-    motionStatus: 'Low',
-    status: DailyReportStatus.normal,
-    notes: 'Stable overnight; meds tolerated.',
-  ),
-  const DailyReportModel(
-    id: 'p003',
-    patientName: 'Maria Santos',
-    date: 'OCT 23, 2023',
-    pulse: 88,
-    ppm: 45,
-    temperature: '99.1°F',
-    motionStatus: 'Moderate',
-    status: DailyReportStatus.warning,
-    notes: 'Slight temp elevation; continue monitoring.',
-  ),
-  const DailyReportModel(
-    id: 'p004',
-    patientName: 'David Okonkwo',
-    date: 'OCT 23, 2023',
-    pulse: 95,
-    ppm: 30,
-    temperature: '100.2°F',
-    motionStatus: 'High',
-    status: DailyReportStatus.warning,
-    notes: 'Restless; reassess in 4 hours.',
-  ),
-  const DailyReportModel(
-    id: 'p005',
-    patientName: 'Sophie Müller',
-    date: 'OCT 22, 2023',
-    pulse: 68,
-    ppm: 99,
-    temperature: '97.9°F',
-    motionStatus: 'Low',
-    status: DailyReportStatus.normal,
-    notes: 'Discharge planning discussed with family.',
-  ),
-  const DailyReportModel(
-    id: 'p006',
-    patientName: 'Robert Kim',
-    date: 'OCT 22, 2023',
-    pulse: 112,
-    ppm: 18,
-    temperature: '102.0°F',
-    motionStatus: 'High',
-    status: DailyReportStatus.critical,
-    notes: 'Sepsis protocol initiated.',
-  ),
-  const DailyReportModel(
-    id: 'p007',
-    patientName: 'Aisha Rahman',
-    date: 'OCT 21, 2023',
-    pulse: 76,
-    ppm: 88,
-    temperature: '98.6°F',
-    motionStatus: 'Low',
-    status: DailyReportStatus.normal,
-    notes: 'Walking with assistance; no complaints.',
-  ),
-  const DailyReportModel(
-    id: 'p008',
-    patientName: 'Lucas Ferreira',
-    date: 'OCT 21, 2023',
-    pulse: 91,
-    ppm: 52,
-    temperature: '99.5°F',
-    motionStatus: 'Moderate',
-    status: DailyReportStatus.warning,
-    notes: 'O2 sat borderline on exertion.',
-  ),
-  const DailyReportModel(
-    id: 'p009',
-    patientName: 'Nina Petrov',
-    date: 'OCT 20, 2023',
-    pulse: 82,
-    ppm: 76,
-    temperature: '98.4°F',
-    motionStatus: 'Low',
-    status: DailyReportStatus.normal,
-    notes: 'Post-op day 2; wound clean.',
-  ),
-  const DailyReportModel(
-    id: 'p010',
-    patientName: 'Omar Hassan',
-    date: 'OCT 20, 2023',
-    pulse: 118,
-    ppm: 15,
-    temperature: '103.1°F',
-    motionStatus: 'High',
-    status: DailyReportStatus.critical,
-    notes: 'Cooling measures applied.',
-  ),
-  const DailyReportModel(
-    id: 'p011',
-    patientName: 'Emily Watson',
-    date: 'OCT 19, 2023',
-    pulse: 74,
-    ppm: 92,
-    temperature: '98.0°F',
-    motionStatus: 'Low',
-    status: DailyReportStatus.normal,
-    notes: 'Labs within expected range.',
-  ),
-  const DailyReportModel(
-    id: 'p012',
-    patientName: 'Carlos Vega',
-    date: 'OCT 19, 2023',
-    pulse: 86,
-    ppm: 61,
-    temperature: '99.0°F',
-    motionStatus: 'Moderate',
-    status: DailyReportStatus.warning,
-    notes: 'New cough reported this morning.',
-  ),
-];
 
-class DailyReports extends StatefulWidget {
+
+class DailyReports extends ConsumerStatefulWidget {
   const DailyReports({super.key});
 
   @override
-  State<DailyReports> createState() => _DailyReportsState();
+  ConsumerState<DailyReports> createState() => _DailyReportsState();
 }
 
-class _DailyReportsState extends State<DailyReports> {
+class _DailyReportsState extends ConsumerState<DailyReports> {
   final TextEditingController _searchController = TextEditingController();
   DailyReportStatus? _statusFilter;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(doctorProvider).fetchAllDailyReports().then((_) {
+        ref.read(doctorProvider).listenToLiveVitals();
+      });
+    });
+  }
 
   @override
   void dispose() {
@@ -185,21 +64,47 @@ class _DailyReportsState extends State<DailyReports> {
     super.dispose();
   }
 
-  List<DailyReportModel> get _filteredReports {
+  List<DailyReportModel> _getFilteredReports(List<Map<String, dynamic>> reports) {
     final q = _searchController.text.trim().toLowerCase();
-    Iterable<DailyReportModel> list = _mockDailyReports;
+    
+    final list = reports.map((e) {
+      final statusStr = e['status']?.toString().toLowerCase() ?? 'normal';
+      DailyReportStatus status;
+      if (statusStr == 'critical') {
+        status = DailyReportStatus.critical;
+      } else if (statusStr == 'warning') {
+        status = DailyReportStatus.warning;
+      } else {
+        status = DailyReportStatus.normal;
+      }
+
+      return DailyReportModel(
+        id: e['id']?.toString() ?? '',
+        patientName: e['patientName']?.toString() ?? 'Unknown',
+        date: e['date']?.toString() ?? '',
+        pulse: (e['pulse'] as num?)?.toInt() ?? 0,
+        ppm: (e['ppm'] as num?)?.toInt() ?? 0,
+        temperature: e['temperature']?.toString() ?? '--',
+        motionStatus: e['motionStatus']?.toString() ?? 'N/A',
+        status: status,
+        notes: e['notes']?.toString() ?? '',
+      );
+    });
+
+    Iterable<DailyReportModel> filtered = list;
     if (q.isNotEmpty) {
-      list = list.where((e) => e.patientName.toLowerCase().contains(q));
+      filtered = filtered.where((e) => e.patientName.toLowerCase().contains(q));
     }
     if (_statusFilter != null) {
-      list = list.where((e) => e.status == _statusFilter);
+      filtered = filtered.where((e) => e.status == _statusFilter);
     }
-    return list.toList();
+    return filtered.toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filteredReports;
+    final reports = ref.watch(doctorProvider).dailyReports;
+    final filtered = _getFilteredReports(reports);
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(

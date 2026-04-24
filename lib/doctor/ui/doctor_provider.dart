@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/doctor/data/doctor_repository.dart';
 
@@ -12,6 +13,7 @@ class DoctorProvider with ChangeNotifier {
   List<dynamic> _assignedPatients = [];
   String _verificationStatus = 'pending';
   List<Map<String, dynamic>> _dailyReports = [];
+  RealtimeChannel? _reportsChannel;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -142,6 +144,55 @@ class DoctorProvider with ChangeNotifier {
       _error = _handleError(e);
       notifyListeners();
     }
+  }
+
+  /// Starts a realtime subscription to update daily reports as new vitals arrive.
+  void listenToLiveVitals() {
+    if (_reportsChannel != null) return;
+    if (_dailyReports.isEmpty) return;
+
+    final ids = _dailyReports.map((e) => e['id'] as String).toList();
+    if (ids.isEmpty) return;
+
+    _reportsChannel = _repository.subscribeToAssignedPatientsVitals(
+      patientIds: ids,
+      onUpdate: (record) {
+        _syncReportWithLiveVitals(record);
+      },
+    );
+  }
+
+  void _syncReportWithLiveVitals(Map<String, dynamic> record) {
+    final patientId = record['patient_id'] as String?;
+    if (patientId == null) return;
+
+    final index = _dailyReports.indexWhere((r) => r['id'] == patientId);
+    if (index != -1) {
+      final pulse = (record['bpm'] as num?)?.toInt() ?? 0;
+      final ppm = (record['spo2'] as num?)?.toInt() ?? 0;
+
+      // Update the existing report in memory
+      _dailyReports[index] = {
+        ..._dailyReports[index],
+        'pulse': pulse,
+        'ppm': ppm,
+        'temperature': '${record['temperature'] ?? '--'}°C',
+        'status': _deriveStatus(pulse, ppm),
+      };
+      notifyListeners();
+    }
+  }
+
+  String _deriveStatus(int pulse, int ppm) {
+    if (pulse > 100 || pulse < 55 || ppm < 90) return 'critical';
+    if (pulse > 90 || pulse < 60 || ppm < 95) return 'warning';
+    return 'normal';
+  }
+
+  @override
+  void dispose() {
+    _reportsChannel?.unsubscribe();
+    super.dispose();
   }
 
   // ---------------------------------------------------------------------------

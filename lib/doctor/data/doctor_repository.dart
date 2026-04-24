@@ -213,6 +213,34 @@ class DoctorRepository {
     return results;
   }
 
+  /// Sets up a real-time subscription for all patients assigned to the current doctor.
+  /// Fires [onUpdate] whenever a new row is inserted in 'patient_live_vitals'
+  /// for any of the assigned patients.
+  RealtimeChannel subscribeToAssignedPatientsVitals({
+    required List<String> patientIds,
+    required void Function(Map<String, dynamic> newRecord) onUpdate,
+  }) {
+    final channelId = 'doctor_vitals_mon_${_uid.substring(0, 8)}';
+
+    return _client
+        .channel(channelId)
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'patient_live_vitals',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.inFilter,
+            column: 'patient_id',
+            value: patientIds,
+          ),
+          callback: (payload) {
+            onUpdate(payload.newRecord);
+          },
+        )
+        .subscribe();
+  }
+
+
   /// Returns all daily reports (newest-first) for a single patient.
   Future<List<Map<String, dynamic>>> getPatientDailyReports(
     String patientId,
