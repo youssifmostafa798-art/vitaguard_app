@@ -15,24 +15,21 @@ class MainCompanion extends StatefulWidget {
   State<MainCompanion> createState() => _MainCompanionState();
 }
 
-class _MainCompanionState extends State<MainCompanion> {
+class _MainCompanionState extends ConsumerState<MainCompanion> {
   int currentIndex = 0;
 
-  late final List<Widget> screens;
+    final patientStatus = ref.watch(companionProvider).patientStatus;
 
-  @override
-  void initState() {
-    super.initState();
-    screens = [
+    final List<Widget> screens = [
       CompanionHome(name: widget.name),
       ChatListPatient(),
       UploadXRay(),
-      HardwareScreen(),
+      HardwareScreen(
+        patientId: patientStatus?.patientId,
+        patientName: patientStatus?.name,
+      ),
     ];
-  }
 
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: currentIndex, children: screens),
       bottomNavigationBar: FlexibleNavBar(
