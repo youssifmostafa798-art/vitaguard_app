@@ -57,7 +57,7 @@ class _HardwareScreenState extends State<HardwareScreen> {
     _channel = Supabase.instance.client
         .channel('hw_vitals_$patientId')
         .onPostgresChanges(
-          event: PostgresChangeEvent.insert,
+          event: PostgresChangeEvent.all, // Listen for inserts and updates
           schema: 'public',
           table: 'patient_live_vitals',
           filter: PostgresChangeFilter(
@@ -67,11 +67,18 @@ class _HardwareScreenState extends State<HardwareScreen> {
           ),
           callback: (payload) {
             if (mounted) {
-              setState(() => _latestVitals = payload.newRecord);
+              setState(() {
+                _latestVitals = payload.newRecord;
+              });
             }
           },
         )
         .subscribe();
+  }
+
+  Future<void> _onRefresh() async {
+    _channel?.unsubscribe();
+    await _subscribeToVitals();
   }
 
   @override
@@ -135,16 +142,18 @@ class _HardwareScreenState extends State<HardwareScreen> {
           ),
         ),
       ),
-      body: Stack(
-        children: [
-          SafeArea(
-            child: AppBackground(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.symmetric(
-                  horizontal: _horizontalPadding.w,
-                  vertical: 18.h,
-                ),
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        child: Stack(
+          children: [
+            SafeArea(
+              child: AppBackground(
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(), // Important for RefreshIndicator
+                  padding: EdgeInsets.symmetric(
+                    horizontal: _horizontalPadding.w,
+                    vertical: 18.h,
+                  ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
