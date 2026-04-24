@@ -180,7 +180,7 @@ class DoctorProvider with ChangeNotifier {
       final ppm = rawSpo2 > 0 ? rawSpo2 : 0;
 
       final rawTemp = record['temperature'] as num?;
-      final tempDisplay = (rawTemp != null && rawTemp > 0) ? '${rawTemp}°C' : '--';
+      final tempDisplay = (rawTemp != null && rawTemp > 0) ? '$rawTemp°C' : '--';
 
       // Update the existing report in memory
       _dailyReports[index] = {

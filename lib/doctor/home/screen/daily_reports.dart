@@ -7,7 +7,6 @@ import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/providers.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
-import 'package:vitaguard_app/doctor/ui/doctor_provider.dart';
 
 enum DailyReportStatus { normal, warning, critical }
 
