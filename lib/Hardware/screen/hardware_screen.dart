@@ -86,16 +86,21 @@ class _HardwareScreenState extends State<HardwareScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final data = _latestVitals;
 
-    // Display values — '--' until real hardware data arrives
-    final String bpm = (data?['bpm'] != null && (data!['bpm'] as num) > 0)
-        ? data['bpm'].toString()
-        : '--';
-    final String spo2 = (data?['spo2'] != null && (data!['spo2'] as num) > 0)
-        ? '${data['spo2']}%'
-        : '--';
-    final String temp = (data?['temperature'] != null && (data!['temperature'] as num) > 0)
-        ? '${data['temperature']}°C'
-        : '--';
+    // Helper to parse vitals safely whether they come as String or num
+    double parseVital(dynamic value) {
+      if (value == null) return 0;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0;
+      return 0;
+    }
+
+    final double bpmVal = parseVital(data?['bpm']);
+    final double spo2Val = parseVital(data?['spo2']);
+    final double tempVal = parseVital(data?['temperature']);
+
+    final String bpm = bpmVal > 0 ? bpmVal.toInt().toString() : '--';
+    final String spo2 = spo2Val > 0 ? '${spo2Val.toInt()}%' : '--';
+    final String temp = tempVal > 0 ? '${tempVal.toStringAsFixed(1)}°C' : '--';
 
     final String status;
     final Color statusColor;
