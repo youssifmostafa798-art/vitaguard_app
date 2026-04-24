@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-
 import 'package:vitaguard_app/Hardware/screen/hardware_screen.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/core/providers.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
+import 'package:vitaguard_app/doctor/ui/doctor_provider.dart';
 
 enum DailyReportStatus { normal, warning, critical }
 
@@ -168,16 +170,26 @@ final List<DailyReportModel> _mockDailyReports = [
   ),
 ];
 
-class DailyReports extends StatefulWidget {
+class DailyReports extends ConsumerStatefulWidget {
   const DailyReports({super.key});
 
   @override
-  State<DailyReports> createState() => _DailyReportsState();
+  ConsumerState<DailyReports> createState() => _DailyReportsState();
 }
 
-class _DailyReportsState extends State<DailyReports> {
+class _DailyReportsState extends ConsumerState<DailyReports> {
   final TextEditingController _searchController = TextEditingController();
   DailyReportStatus? _statusFilter;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(doctorProvider).fetchAllDailyReports().then((_) {
+        ref.read(doctorProvider).listenToLiveVitals();
+      });
+    });
+  }
 
   @override
   void dispose() {
@@ -185,21 +197,47 @@ class _DailyReportsState extends State<DailyReports> {
     super.dispose();
   }
 
-  List<DailyReportModel> get _filteredReports {
+  List<DailyReportModel> _getFilteredReports(List<Map<String, dynamic>> reports) {
     final q = _searchController.text.trim().toLowerCase();
-    Iterable<DailyReportModel> list = _mockDailyReports;
+    
+    final list = reports.map((e) {
+      final statusStr = e['status']?.toString().toLowerCase() ?? 'normal';
+      DailyReportStatus status;
+      if (statusStr == 'critical') {
+        status = DailyReportStatus.critical;
+      } else if (statusStr == 'warning') {
+        status = DailyReportStatus.warning;
+      } else {
+        status = DailyReportStatus.normal;
+      }
+
+      return DailyReportModel(
+        id: e['id']?.toString() ?? '',
+        patientName: e['patientName']?.toString() ?? 'Unknown',
+        date: e['date']?.toString() ?? '',
+        pulse: (e['pulse'] as num?)?.toInt() ?? 0,
+        ppm: (e['ppm'] as num?)?.toInt() ?? 0,
+        temperature: e['temperature']?.toString() ?? '--',
+        motionStatus: e['motionStatus']?.toString() ?? 'N/A',
+        status: status,
+        notes: e['notes']?.toString() ?? '',
+      );
+    });
+
+    Iterable<DailyReportModel> filtered = list;
     if (q.isNotEmpty) {
-      list = list.where((e) => e.patientName.toLowerCase().contains(q));
+      filtered = filtered.where((e) => e.patientName.toLowerCase().contains(q));
     }
     if (_statusFilter != null) {
-      list = list.where((e) => e.status == _statusFilter);
+      filtered = filtered.where((e) => e.status == _statusFilter);
     }
-    return list.toList();
+    return filtered.toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filteredReports;
+    final reports = ref.watch(doctorProvider).dailyReports;
+    final filtered = _getFilteredReports(reports);
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
