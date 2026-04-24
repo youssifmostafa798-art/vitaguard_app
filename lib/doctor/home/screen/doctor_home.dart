@@ -8,6 +8,7 @@ import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/patient/home/widget/home_search.dart';
 import 'package:vitaguard_app/auth/ui/screens/role_screen.dart';
 import 'package:vitaguard_app/core/providers.dart';
+import 'package:vitaguard_app/doctor/home/widget/alert_banner.dart';
 
 class DoctorHomes extends ConsumerStatefulWidget {
   final String name;
@@ -49,6 +50,18 @@ class _DoctorHomesState extends ConsumerState<DoctorHomes> {
             padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: ListView(
               children: [
+                if (doctor.activeAlerts.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.only(top: 15.h),
+                    child: Column(
+                      children: doctor.activeAlerts.map((alert) {
+                        return AlertBanner(
+                          alert: alert,
+                          onDismiss: () => doctor.dismissAlert(alert.id),
+                        );
+                      }).toList(),
+                    ),
+                  ),
                 if (doctor.verificationStatus != 'approved')
                   Container(
                     margin: EdgeInsets.only(top: 10.h),

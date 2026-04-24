@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:vitaguard_app/doctor/data/vital_alert_model.dart';
 
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 
@@ -254,6 +255,27 @@ class DoctorRepository {
     return reports
         .map((e) => Map<String, dynamic>.from(e as Map))
         .toList();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Alert Logging (Medical Audit Trail)
+  // ---------------------------------------------------------------------------
+
+  /// Logs alerts to the 'medical_alerts_log' table in Supabase for audit purposes.
+  Future<void> logAlertsToCloud(List<VitalAlert> alerts, String patientId) async {
+    if (alerts.isEmpty) return;
+
+    final logs = alerts.map((alert) => {
+      'patient_id': patientId,
+      'doctor_id': _uid,
+      'metric_type': alert.metrics.join(','),
+      'severity': alert.severity.name,
+      'alert_message': alert.message,
+      'raw_values': alert.rawValues,
+      'triggered_at': alert.timestamp.toIso8601String(),
+    }).toList();
+
+    await _client.from('medical_alerts_log').insert(logs);
   }
 
   // ---------------------------------------------------------------------------
