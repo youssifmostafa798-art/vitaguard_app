@@ -15,7 +15,6 @@ class HardwareScreen extends legacy.ConsumerStatefulWidget {
     this.automaticallyImplyLeading = true,
   });
 
-  /// When set (e.g. doctor viewing a patient), vitals load for this id; otherwise uses the signed-in user.
   final String? patientId;
   final String? patientName;
   final bool automaticallyImplyLeading;
@@ -124,7 +123,7 @@ class _HardwareScreenState extends legacy.ConsumerState<HardwareScreen> with Tic
     final double spo2Val = parseVital(data?['spo2']);
     final double tempVal = parseVital(data?['temperature']);
 
-    // Senior Staff Implementation: React to sustained clinical alerts from the provider
+    // Staff Implementation: React to clinical alert state
     final alertState = ref.watch(vitalAlertProvider);
     
     final String bpm = bpmVal > 0 ? bpmVal.toInt().toString() : '--';
