@@ -1,11 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vitaguard_app/core/network/vital_alert_service.dart';
 import 'package:vitaguard_app/Hardware/screen/metric_card.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 
-class HardwareScreen extends StatefulWidget {
+class HardwareScreen extends ConsumerStatefulWidget {
   const HardwareScreen({
     super.key,
     this.patientId,
@@ -19,10 +18,10 @@ class HardwareScreen extends StatefulWidget {
   final bool automaticallyImplyLeading;
 
   @override
-  State<HardwareScreen> createState() => _HardwareScreenState();
+  ConsumerState<HardwareScreen> createState() => _HardwareScreenState();
 }
 
-class _HardwareScreenState extends State<HardwareScreen> with TickerProviderStateMixin {
+class _HardwareScreenState extends ConsumerState<HardwareScreen> with TickerProviderStateMixin {
   static const double _horizontalPadding = 24;
 
   Map<String, dynamic>? _latestVitals;
@@ -72,9 +71,19 @@ class _HardwareScreenState extends State<HardwareScreen> with TickerProviderStat
           ),
           callback: (payload) {
             if (mounted) {
+              final newRecord = payload.newRecord;
               setState(() {
-                _latestVitals = payload.newRecord;
+                _latestVitals = newRecord;
               });
+
+              // Staff Implementation: Pipe raw metrics into clinical alert service
+              final bpm = double.tryParse(newRecord['bpm']?.toString() ?? '0') ?? 0;
+              final spo2 = double.tryParse(newRecord['spo2']?.toString() ?? '0') ?? 0;
+              
+              ref.read(vitalAlertProvider.notifier).processMetrics(
+                spo2: spo2,
+                bpm: bpm,
+              );
             }
           },
         )
@@ -111,6 +120,9 @@ class _HardwareScreenState extends State<HardwareScreen> with TickerProviderStat
     final double spo2Val = parseVital(data?['spo2']);
     final double tempVal = parseVital(data?['temperature']);
 
+    // Senior Staff Implementation: React to sustained clinical alerts from the provider
+    final alertState = ref.watch(vitalAlertProvider);
+    
     final String bpm = bpmVal > 0 ? bpmVal.toInt().toString() : '--';
     final String spo2 = spo2Val > 0 ? '${spo2Val.toInt()}%' : '--';
     final String temp = tempVal > 0 ? '${tempVal.toStringAsFixed(1)}°C' : '--';
@@ -121,7 +133,9 @@ class _HardwareScreenState extends State<HardwareScreen> with TickerProviderStat
     final String signal;
     
     final deviceStatus = data?['device_status'] ?? 'Offline';
-    final bool isEmergency = deviceStatus.toString().contains('EMERGENCY');
+    
+    // An emergency is either a hardware-detected event or a sustained clinical violation
+    final bool isEmergency = deviceStatus.toString().contains('EMERGENCY') || alertState.isTriggered;
 
     if (data == null) {
       status = 'Offline';
@@ -183,7 +197,10 @@ class _HardwareScreenState extends State<HardwareScreen> with TickerProviderStat
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (isEmergency) ...[
-                            _EmergencyBanner(status: deviceStatus),
+                            _EmergencyBanner(
+                              status: deviceStatus,
+                              clinicalMessage: alertState.isTriggered ? alertState.message : null,
+                            ),
                             SizedBox(height: 20.h),
                           ],
                           Text(
@@ -365,7 +382,8 @@ class _HardwareScreenState extends State<HardwareScreen> with TickerProviderStat
 
 class _EmergencyBanner extends StatelessWidget {
   final String status;
-  const _EmergencyBanner({required this.status});
+  final String? clinicalMessage;
+  const _EmergencyBanner({required this.status, this.clinicalMessage});
 
   @override
   Widget build(BuildContext context) {
@@ -392,7 +410,7 @@ class _EmergencyBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'EMERGENCY DETECTED',
+                  clinicalMessage != null ? 'CLINICAL ALERT' : 'EMERGENCY DETECTED',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
@@ -401,9 +419,9 @@ class _EmergencyBanner extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  status == 'EMERGENCY_NO_PULSE' 
+                  clinicalMessage ?? (status == 'EMERGENCY_NO_PULSE' 
                     ? 'Check patient immediately - No Pulse Detected' 
-                    : 'Unusual vitals or fall detected',
+                    : 'Unusual vitals or fall detected'),
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.9),
                     fontSize: 12.sp,
