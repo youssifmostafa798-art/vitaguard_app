@@ -186,7 +186,7 @@ class _HardwareScreenState extends ConsumerState<HardwareScreen> with TickerProv
                   Container(
                     width: double.infinity,
                     height: double.infinity,
-                    color: AppColors.error.withOpacity(alertOpacity),
+                    color: AppColors.error.withValues(alpha: alertOpacity),
                   ),
                 SafeArea(
                   child: AppBackground(
@@ -226,7 +226,7 @@ class _HardwareScreenState extends ConsumerState<HardwareScreen> with TickerProv
                                   shape: BoxShape.circle,
                                   boxShadow: isEmergency ? [
                                     BoxShadow(
-                                      color: AppColors.error.withOpacity(0.5),
+                                      color: AppColors.error.withValues(alpha: 0.5),
                                       blurRadius: 10,
                                       spreadRadius: 2,
                                     )
@@ -282,7 +282,7 @@ class _HardwareScreenState extends ConsumerState<HardwareScreen> with TickerProv
                               borderRadius: BorderRadius.circular(20.r),
                               border: Border.all(
                                 color: isEmergency 
-                                  ? AppColors.error.withOpacity(0.3)
+                                  ? AppColors.error.withValues(alpha: 0.3)
                                   : colorScheme.outlineVariant.withValues(
                                       alpha: 0.26,
                                     ),
@@ -343,7 +343,7 @@ class _HardwareScreenState extends ConsumerState<HardwareScreen> with TickerProv
                                 Icons.wifi_tethering_rounded,
                                 size: 30.sp,
                                 color: isEmergency 
-                                  ? AppColors.error.withOpacity(0.5)
+                                  ? AppColors.error.withValues(alpha: 0.5)
                                   : AppColors.primary.withValues(alpha: 0.32),
                               ),
                             ],
@@ -398,7 +398,7 @@ class _EmergencyBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: AppColors.error.withOpacity(0.4),
+            color: AppColors.error.withValues(alpha: 0.4),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -426,7 +426,7 @@ class _EmergencyBanner extends StatelessWidget {
                     ? 'Check patient immediately - No Pulse Detected' 
                     : 'Unusual vitals or fall detected'),
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 12.sp,
                   ),
                 ),
@@ -464,7 +464,7 @@ class _HeartRateRing extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(
             color: isEmergency 
-              ? ringColor.withOpacity(0.3 + 0.4 * pulseValue)
+              ? ringColor.withValues(alpha: 0.3 + 0.4 * pulseValue)
               : ringColor, 
             width: 14.w + (isEmergency ? 4.w * pulseValue : 0),
           ),
