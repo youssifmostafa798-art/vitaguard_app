@@ -138,7 +138,7 @@ class _HardwareScreenState extends ConsumerState<HardwareScreen> with TickerProv
     final deviceStatus = data?['device_status'] ?? 'Offline';
     
     // An emergency is either a hardware-detected event or a sustained clinical violation
-    final bool isEmergency = deviceStatus.toString().contains('EMERGENCY') || alertState.isTriggered;
+    final bool isEmergency = deviceStatus.toString().contains('EMERGENCY') || alertState.state.isTriggered;
 
     if (data == null) {
       status = 'Offline';
@@ -202,7 +202,7 @@ class _HardwareScreenState extends ConsumerState<HardwareScreen> with TickerProv
                           if (isEmergency) ...[
                             _EmergencyBanner(
                               status: deviceStatus,
-                              clinicalMessage: alertState.isTriggered ? alertState.message : null,
+                              clinicalMessage: alertState.state.isTriggered ? alertState.state.message : null,
                             ),
                             SizedBox(height: 20.h),
                           ],
