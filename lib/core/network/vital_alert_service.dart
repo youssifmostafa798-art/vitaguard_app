@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:state_notifier/state_notifier.dart';
+import 'package:flutter_riverpod/legacy.dart' as legacy;
 
 /// Clinical Thresholds as defined by Medical Standards
 class ClinicalThresholds {
@@ -10,7 +9,6 @@ class ClinicalThresholds {
   
   // Timing
   static const Duration alertDelay = Duration(seconds: 30);
-  static const Duration evaluationInterval = Duration(seconds: 5);
 }
 
 enum VitalAlertType {
@@ -31,28 +29,15 @@ class VitalAlertState {
     this.startTime,
     this.isTriggered = false,
   });
-
-  VitalAlertState copyWith({
-    VitalAlertType? type,
-    String? message,
-    DateTime? startTime,
-    bool? isTriggered,
-  }) {
-    return VitalAlertState(
-      type: type ?? this.type,
-      message: message ?? this.message,
-      startTime: startTime ?? this.startTime,
-      isTriggered: isTriggered ?? this.isTriggered,
-    );
-  }
 }
 
 /// Senior Staff Engineer Implementation: VitalAlertService
 /// Responsible for stateful, time-based validation of clinical vitals.
-class VitalAlertService extends StateNotifier<VitalAlertState> {
-  VitalAlertService() : super(VitalAlertState());
+/// Refactored to ChangeNotifier to match project's legacy riverpod pattern.
+class VitalAlertService extends ChangeNotifier {
+  VitalAlertState _state = VitalAlertState();
+  VitalAlertState get state => _state;
 
-  Timer? _evalTimer;
   DateTime? _spO2ViolationStart;
   DateTime? _bpmViolationStart;
 
@@ -106,31 +91,34 @@ class VitalAlertService extends StateNotifier<VitalAlertState> {
 
     // Reset if conditions are no longer met
     if (_spO2ViolationStart == null && _bpmViolationStart == null) {
-      if (state.type != VitalAlertType.none) {
-        state = VitalAlertState();
+      if (_state.type != VitalAlertType.none) {
+        _state = VitalAlertState();
+        notifyListeners();
       }
     }
   }
 
   void _triggerAlert(VitalAlertType type, String message, DateTime start) {
     // Avoid redundant state updates if already triggered for same cause
-    if (state.type == type && state.isTriggered) return;
+    if (_state.type == type && _state.isTriggered) return;
 
-    state = VitalAlertState(
+    _state = VitalAlertState(
       type: type,
       message: message,
       startTime: start,
       isTriggered: true,
     );
+    notifyListeners();
   }
 
   void resetManual() {
     _spO2ViolationStart = null;
     _bpmViolationStart = null;
-    state = VitalAlertState();
+    _state = VitalAlertState();
+    notifyListeners();
   }
 }
 
-final vitalAlertProvider = StateNotifierProvider<VitalAlertService, VitalAlertState>((ref) {
+final vitalAlertProvider = legacy.ChangeNotifierProvider<VitalAlertService>((ref) {
   return VitalAlertService();
 });
