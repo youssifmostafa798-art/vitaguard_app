@@ -20,8 +20,7 @@ class HardwareScreen extends legacy.ConsumerStatefulWidget {
   final String? patientName;
   final bool automaticallyImplyLeading;
 
-  @override
-  ConsumerState<HardwareScreen> createState() => _HardwareScreenState();
+  legacy.ConsumerState<HardwareScreen> createState() => _HardwareScreenState();
 }
 
 class _HardwareScreenState extends legacy.ConsumerState<HardwareScreen> with TickerProviderStateMixin {
