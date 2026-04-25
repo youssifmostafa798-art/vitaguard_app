@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' as legacy;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -7,7 +8,7 @@ import 'package:vitaguard_app/Hardware/screen/metric_card.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 
-class HardwareScreen extends legacy.ConsumerStatefulWidget {
+class HardwareScreen extends ConsumerStatefulWidget {
   const HardwareScreen({
     super.key,
     this.patientId,
@@ -20,10 +21,10 @@ class HardwareScreen extends legacy.ConsumerStatefulWidget {
   final bool automaticallyImplyLeading;
 
   @override
-  legacy.ConsumerState<HardwareScreen> createState() => _HardwareScreenState();
+  ConsumerState<HardwareScreen> createState() => _HardwareScreenState();
 }
 
-class _HardwareScreenState extends legacy.ConsumerState<HardwareScreen> with TickerProviderStateMixin {
+class _HardwareScreenState extends ConsumerState<HardwareScreen> with TickerProviderStateMixin {
   static const double _horizontalPadding = 24;
 
   Map<String, dynamic>? _latestVitals;
