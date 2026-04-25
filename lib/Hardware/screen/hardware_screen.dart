@@ -327,13 +327,16 @@ class _HeartRateRing extends StatelessWidget {
               children: [
                 Icon(Icons.favorite, color: AppColors.primary, size: 36.sp),
                 SizedBox(height: 8.h),
-                Text(
-                  bpm,
-                  style: textTheme.displayMedium?.copyWith(
-                    fontSize: 78.sp,
-                    height: 1.0,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    bpm,
+                    style: textTheme.displayMedium?.copyWith(
+                      fontSize: bpm.length > 3 ? 64.sp : 78.sp,
+                      height: 1.0,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
                 SizedBox(height: 3.h),
