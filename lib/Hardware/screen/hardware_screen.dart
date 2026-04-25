@@ -22,15 +22,20 @@ class HardwareScreen extends StatefulWidget {
   State<HardwareScreen> createState() => _HardwareScreenState();
 }
 
-class _HardwareScreenState extends State<HardwareScreen> {
+class _HardwareScreenState extends State<HardwareScreen> with TickerProviderStateMixin {
   static const double _horizontalPadding = 24;
 
   Map<String, dynamic>? _latestVitals;
   RealtimeChannel? _channel;
+  late AnimationController _alertController;
 
   @override
   void initState() {
     super.initState();
+    _alertController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    )..repeat(reverse: true);
     _subscribeToVitals();
   }
 
@@ -84,6 +89,7 @@ class _HardwareScreenState extends State<HardwareScreen> {
   @override
   void dispose() {
     _channel?.unsubscribe();
+    _alertController.dispose();
     super.dispose();
   }
 
@@ -113,15 +119,23 @@ class _HardwareScreenState extends State<HardwareScreen> {
     final Color statusColor;
     final String battery;
     final String signal;
+    
+    final deviceStatus = data?['device_status'] ?? 'Offline';
+    final bool isEmergency = deviceStatus.toString().contains('EMERGENCY');
 
     if (data == null) {
       status = 'Offline';
       statusColor = Colors.grey;
       battery = '--';
       signal = '--';
-    } else if (data['device_status'] == 'Waiting for Finger') {
+    } else if (deviceStatus == 'Waiting for Finger') {
       status = 'Awaiting Patient';
       statusColor = Colors.orange;
+      battery = '100%';
+      signal = 'Strong';
+    } else if (isEmergency) {
+      status = 'CRITICAL ALERT';
+      statusColor = AppColors.error;
       battery = '100%';
       signal = 'Strong';
     } else {
@@ -144,194 +158,295 @@ class _HardwareScreenState extends State<HardwareScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
-        child: Stack(
-          children: [
-            SafeArea(
-              child: AppBackground(
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: _horizontalPadding.w,
-                    vertical: 18.h,
+        child: AnimatedBuilder(
+          animation: _alertController,
+          builder: (context, child) {
+            final alertOpacity = isEmergency ? (0.2 + 0.3 * _alertController.value) : 0.0;
+            return Stack(
+              children: [
+                // Emergency Pulse Background
+                if (isEmergency)
+                  Container(
+                    width: double.infinity,
+                    height: double.infinity,
+                    color: AppColors.error.withOpacity(alertOpacity),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                    Text(
-                      'DEVICE LIVE STATUS',
-                      style: textTheme.labelMedium?.copyWith(
-                        fontSize: 13.sp,
-                        color: AppColors.primary.withValues(alpha: 0.9),
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    SizedBox(height: 12.h),
-                    Row(
-                      children: [
-                        Container(
-                          width: 11.w,
-                          height: 11.w,
-                          decoration: BoxDecoration(
-                            color: data != null
-                                ? AppColors.success
-                                : Colors.grey,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        SizedBox(width: 10.w),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'VitaGuard Core',
-                                style: textTheme.titleLarge?.copyWith(
-                                  fontSize: 32.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              if (widget.patientName != null &&
-                                  widget.patientName!.isNotEmpty) ...[
-                                SizedBox(height: 4.h),
-                                Text(
-                                  widget.patientName!,
-                                  style: textTheme.bodyMedium?.copyWith(
-                                    fontSize: 16.sp,
-                                    color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 34.h),
-                    _HeartRateRing(bpm: bpm),
-                    SizedBox(height: 24.h),
-                    Container(
+                SafeArea(
+                  child: AppBackground(
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       padding: EdgeInsets.symmetric(
-                        horizontal: 18.w,
+                        horizontal: _horizontalPadding.w,
                         vertical: 18.h,
                       ),
-                      decoration: BoxDecoration(
-                        color: AppColors.cardBackground.withValues(alpha: 0.65),
-                        borderRadius: BorderRadius.circular(20.r),
-                        border: Border.all(
-                          color: colorScheme.outlineVariant.withValues(
-                            alpha: 0.26,
-                          ),
-                        ),
-                      ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: _StatusInfoItem(
-                              title: 'Status',
-                              value: status,
-                              valueColor: statusColor,
+                          if (isEmergency) ...[
+                            _EmergencyBanner(status: deviceStatus),
+                            SizedBox(height: 20.h),
+                          ],
+                          Text(
+                            'DEVICE LIVE STATUS',
+                            style: textTheme.labelMedium?.copyWith(
+                              fontSize: 13.sp,
+                              color: isEmergency ? AppColors.error : AppColors.primary.withValues(alpha: 0.9),
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1.2,
                             ),
                           ),
-                          Expanded(
-                            child: _StatusInfoItem(
-                              title: 'Battery',
-                              value: battery,
+                          SizedBox(height: 12.h),
+                          Row(
+                            children: [
+                              Container(
+                                width: 11.w,
+                                height: 11.w,
+                                decoration: BoxDecoration(
+                                  color: statusColor,
+                                  shape: BoxShape.circle,
+                                  boxShadow: isEmergency ? [
+                                    BoxShadow(
+                                      color: AppColors.error.withOpacity(0.5),
+                                      blurRadius: 10,
+                                      spreadRadius: 2,
+                                    )
+                                  ] : null,
+                                ),
+                              ),
+                              SizedBox(width: 10.w),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'VitaGuard Core',
+                                      style: textTheme.titleLarge?.copyWith(
+                                        fontSize: 32.sp,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    if (widget.patientName != null &&
+                                        widget.patientName!.isNotEmpty) ...[
+                                      SizedBox(height: 4.h),
+                                      Text(
+                                        widget.patientName!,
+                                        style: textTheme.bodyMedium?.copyWith(
+                                          fontSize: 16.sp,
+                                          color: AppColors.textSecondary,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 34.h),
+                          _HeartRateRing(
+                            bpm: bpm, 
+                            isEmergency: isEmergency,
+                            pulseValue: _alertController.value,
+                          ),
+                          SizedBox(height: 24.h),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 18.w,
+                              vertical: 18.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.cardBackground.withValues(alpha: 0.65),
+                              borderRadius: BorderRadius.circular(20.r),
+                              border: Border.all(
+                                color: isEmergency 
+                                  ? AppColors.error.withOpacity(0.3)
+                                  : colorScheme.outlineVariant.withValues(
+                                      alpha: 0.26,
+                                    ),
+                                width: isEmergency ? 2 : 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: _StatusInfoItem(
+                                    title: 'Status',
+                                    value: status,
+                                    valueColor: statusColor,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: _StatusInfoItem(
+                                    title: 'Battery',
+                                    value: battery,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: _StatusInfoItem(
+                                    title: 'Signal',
+                                    value: signal,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          Expanded(
-                            child: _StatusInfoItem(
-                              title: 'Signal',
-                              value: signal,
-                            ),
+                          SizedBox(height: 30.h),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Sensor Array',
+                                      style: textTheme.titleLarge?.copyWith(
+                                        fontSize: 38.sp,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4.h),
+                                    Text(
+                                      'Real-time peripheral metrics',
+                                      style: textTheme.bodyMedium?.copyWith(
+                                        fontSize: 18.sp,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.wifi_tethering_rounded,
+                                size: 30.sp,
+                                color: isEmergency 
+                                  ? AppColors.error.withOpacity(0.5)
+                                  : AppColors.primary.withValues(alpha: 0.32),
+                              ),
+                            ],
                           ),
+                          SizedBox(height: 18.h),
+                          Row(
+                            children: [
+                              MetricCard(
+                                icon: Icons.water_drop_rounded,
+                                iconColor: const Color(0xFF0F766E),
+                                iconBackgroundColor: const Color(0xFFD7F3EF),
+                                value: spo2,
+                                label: 'SPO2 (%)',
+                              ),
+                              SizedBox(width: 14.w),
+                              MetricCard(
+                                icon: Icons.device_thermostat_rounded,
+                                iconColor: AppColors.primary,
+                                iconBackgroundColor: const Color(0xFFE4EEFD),
+                                value: temp,
+                                label: 'BODY TEMP',
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 24.h),
                         ],
                       ),
                     ),
-                    SizedBox(height: 30.h),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Sensor Array',
-                                style: textTheme.titleLarge?.copyWith(
-                                  fontSize: 38.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              SizedBox(height: 4.h),
-                              Text(
-                                'Real-time peripheral metrics',
-                                style: textTheme.bodyMedium?.copyWith(
-                                  fontSize: 18.sp,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          Icons.wifi_tethering_rounded,
-                          size: 30.sp,
-                          color: AppColors.primary.withValues(alpha: 0.32),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 18.h),
-                    Row(
-                      children: [
-                        MetricCard(
-                          icon: Icons.water_drop_rounded,
-                          iconColor: const Color(0xFF0F766E),
-                          iconBackgroundColor: const Color(0xFFD7F3EF),
-                          value: spo2,
-                          label: 'SPO2 (%)',
-                        ),
-                        SizedBox(width: 14.w),
-                        MetricCard(
-                          icon: Icons.device_thermostat_rounded,
-                          iconColor: AppColors.primary,
-                          iconBackgroundColor: const Color(0xFFE4EEFD),
-                          value: temp,
-                          label: 'BODY TEMP',
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 24.h),
-                  ],
+                  ),
                 ),
-              ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _EmergencyBanner extends StatelessWidget {
+  final String status;
+  const _EmergencyBanner({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+      decoration: BoxDecoration(
+        color: AppColors.error,
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.error.withOpacity(0.4),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, color: Colors.white, size: 28.sp),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'EMERGENCY DETECTED',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16.sp,
+                    letterSpacing: 1,
+                  ),
+                ),
+                Text(
+                  status == 'EMERGENCY_NO_PULSE' 
+                    ? 'Check patient immediately - No Pulse Detected' 
+                    : 'Unusual vitals or fall detected',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 12.sp,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
-    ),
-  );
-}
+    );
+  }
 }
 
 class _HeartRateRing extends StatelessWidget {
   final String bpm;
-  const _HeartRateRing({required this.bpm});
+  final bool isEmergency;
+  final double pulseValue;
+  
+  const _HeartRateRing({
+    required this.bpm, 
+    this.isEmergency = false,
+    this.pulseValue = 0.0,
+  });
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final ringColor = isEmergency ? AppColors.error : const Color(0xFFE6E8EE);
+    final iconColor = isEmergency ? AppColors.error : AppColors.primary;
+    
     return Align(
       child: Container(
         width: 280.w,
         height: 280.w,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: const Color(0xFFE6E8EE), width: 14.w),
+          border: Border.all(
+            color: isEmergency 
+              ? ringColor.withOpacity(0.3 + 0.4 * pulseValue)
+              : ringColor, 
+            width: 14.w + (isEmergency ? 4.w * pulseValue : 0),
+          ),
         ),
         child: Center(
           child: Container(
@@ -344,7 +459,11 @@ class _HeartRateRing extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.favorite, color: AppColors.primary, size: 36.sp),
+                Icon(
+                  Icons.favorite, 
+                  color: iconColor, 
+                  size: 36.sp + (isEmergency ? 10.sp * pulseValue : 0),
+                ),
                 SizedBox(height: 8.h),
                 Text(
                   bpm,
@@ -352,7 +471,7 @@ class _HeartRateRing extends StatelessWidget {
                     fontSize: 78.sp,
                     height: 1.0,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: isEmergency ? AppColors.error : AppColors.textPrimary,
                   ),
                 ),
                 SizedBox(height: 3.h),
@@ -373,6 +492,7 @@ class _HeartRateRing extends StatelessWidget {
     );
   }
 }
+
 
 class _StatusInfoItem extends StatelessWidget {
   final String title;
