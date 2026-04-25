@@ -1,4 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/core/network/vital_alert_service.dart';
 import 'package:vitaguard_app/Hardware/screen/metric_card.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
