@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/legacy.dart' as legacy;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/core/network/vital_alert_service.dart';
@@ -7,7 +7,7 @@ import 'package:vitaguard_app/Hardware/screen/metric_card.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 
-class HardwareScreen extends legacy.ConsumerStatefulWidget {
+class HardwareScreen extends ConsumerStatefulWidget {
   const HardwareScreen({
     super.key,
     this.patientId,
@@ -20,10 +20,11 @@ class HardwareScreen extends legacy.ConsumerStatefulWidget {
   final String? patientName;
   final bool automaticallyImplyLeading;
 
-  legacy.ConsumerState<HardwareScreen> createState() => _HardwareScreenState();
+  @override
+  ConsumerState<HardwareScreen> createState() => _HardwareScreenState();
 }
 
-class _HardwareScreenState extends legacy.ConsumerState<HardwareScreen> with TickerProviderStateMixin {
+class _HardwareScreenState extends ConsumerState<HardwareScreen> with TickerProviderStateMixin {
   static const double _horizontalPadding = 24;
 
   Map<String, dynamic>? _latestVitals;
@@ -82,7 +83,7 @@ class _HardwareScreenState extends legacy.ConsumerState<HardwareScreen> with Tic
               final bpm = double.tryParse(newRecord['bpm']?.toString() ?? '0') ?? 0;
               final spo2 = double.tryParse(newRecord['spo2']?.toString() ?? '0') ?? 0;
               
-              // Use legacy ref to access notifier
+              // Correct access for clinical metrics
               ref.read(vitalAlertProvider).processMetrics(
                 spo2: spo2,
                 bpm: bpm,
