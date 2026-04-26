@@ -2,39 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
+import 'package:vitaguard_app/auth/ui/screens/role_screen.dart';
+import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/core/alerts/widgets/app_alert_card.dart';
+import 'package:vitaguard_app/core/providers.dart';
 import 'package:vitaguard_app/core/utils/home_header.dart';
 import 'package:vitaguard_app/doctor/home/widget/category_grid_dr.dart';
-import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/patient/home/widget/home_search.dart';
-import 'package:vitaguard_app/auth/ui/screens/role_screen.dart';
-import 'package:vitaguard_app/core/providers.dart';
-import 'package:vitaguard_app/doctor/home/widget/alert_banner.dart';
 
-class DoctorHomes extends ConsumerStatefulWidget {
+class DoctorHomes extends ConsumerWidget {
   final String name;
+
   const DoctorHomes({super.key, required this.name});
 
   @override
-  ConsumerState<DoctorHomes> createState() => _DoctorHomesState();
-}
-
-class _DoctorHomesState extends ConsumerState<DoctorHomes> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(doctorProvider).fetchAssignedPatients();
-      ref.read(doctorProvider).fetchVerificationStatus();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final doctor = ref.watch(doctorProvider);
+    final alertCenter = ref.watch(alertCenterProvider);
+    final criticalAlerts = alertCenter.criticalActiveAlerts;
 
     return Scaffold(
       appBar: HomeHeader(
-        name_: widget.name,
+        name_: name,
         onExit: () {
           ref.read(authProvider).logout();
           Navigator.pushAndRemoveUntil(
@@ -50,14 +39,23 @@ class _DoctorHomesState extends ConsumerState<DoctorHomes> {
             padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: ListView(
               children: [
-                if (doctor.activeAlerts.isNotEmpty)
+                if (criticalAlerts.isNotEmpty)
                   Padding(
                     padding: EdgeInsets.only(top: 15.h),
                     child: Column(
-                      children: doctor.activeAlerts.map((alert) {
-                        return AlertBanner(
-                          alert: alert,
-                          onDismiss: () => doctor.dismissAlert(alert.id),
+                      children: criticalAlerts.take(3).map((alert) {
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: 12.h),
+                          child: AppAlertCard(
+                            alert: alert,
+                            showPatientName: true,
+                            compact: true,
+                            onAcknowledge: () {
+                              ref
+                                  .read(alertCenterProvider)
+                                  .acknowledgeAlert(alert.id);
+                            },
+                          ),
                         );
                       }).toList(),
                     ),
@@ -92,8 +90,8 @@ class _DoctorHomesState extends ConsumerState<DoctorHomes> {
                         Expanded(
                           child: Text(
                             doctor.verificationStatus == 'pending'
-                                ? "Your identity verification is pending. Some features may be restricted."
-                                : "Your identity verification was rejected. Please contact support.",
+                                ? 'Your identity verification is pending. Some features may be restricted.'
+                                : 'Your identity verification was rejected. Please contact support.',
                             style: TextStyle(
                               color: doctor.verificationStatus == 'pending'
                                   ? Colors.orange[900]
@@ -108,9 +106,8 @@ class _DoctorHomesState extends ConsumerState<DoctorHomes> {
                   ),
                 Gap(20.h),
                 const HomeSearch(),
-
                 Gap(30.h),
-                CategoryGridDr(drName: widget.name),
+                CategoryGridDr(drName: name),
                 Gap(10.h),
               ],
             ),

@@ -201,6 +201,10 @@ class _HardwareScreenState extends State<HardwareScreen>
     final bpmRingColor  = _metricStatusColor(alertState, 'Heart Rate');
     final spo2CardColor = _metricStatusColor(alertState, 'SpO2');
     final tempCardColor = _metricStatusColor(alertState, 'Temperature');
+    final patientDisplayName =
+        widget.patientName != null && widget.patientName!.trim().isNotEmpty
+        ? widget.patientName!.trim()
+        : 'Patient identity syncing';
 
     return Scaffold(
       appBar: PreferredSize(
@@ -271,20 +275,17 @@ class _HardwareScreenState extends State<HardwareScreen>
                                   color:      AppColors.textPrimary,
                                 ),
                               ),
-                              if (widget.patientName != null &&
-                                  widget.patientName!.isNotEmpty) ...[
-                                SizedBox(height: 4.h),
-                                Text(
-                                  widget.patientName!,
-                                  style: textTheme.bodyMedium?.copyWith(
-                                    fontSize:   16.sp,
-                                    color:      AppColors.textSecondary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  maxLines:  1,
-                                  overflow:  TextOverflow.ellipsis,
+                              SizedBox(height: 4.h),
+                              Text(
+                                patientDisplayName,
+                                style: textTheme.bodyMedium?.copyWith(
+                                  fontSize:   16.sp,
+                                  color:      AppColors.textSecondary,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                              ],
+                                maxLines:  1,
+                                overflow:  TextOverflow.ellipsis,
+                              ),
                             ],
                           ),
                         ),

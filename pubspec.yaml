@@ -20,6 +20,7 @@ dependencies:
   logger: ^2.5.0
   image_picker: ^1.1.2
   flutter_riverpod: any
+  flutter_local_notifications: ^20.0.0
   image: any
   supabase_flutter: ^2.5.6
   flutter_animate: ^4.5.2
@@ -51,6 +52,7 @@ flutter:
     - assets/PNG/
     - assets/SVG/
     - assets/models/
+    - assets/sounds/
 
   fonts:
     - family: WixMadeforDisplay

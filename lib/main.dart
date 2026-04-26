@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:vitaguard_app/core/alerts/alert_notification_service.dart';
 import 'package:vitaguard_app/core/utils/screen_util_helper.dart';
 import 'package:vitaguard_app/splash_screen.dart';
 
@@ -11,6 +12,7 @@ Future<void> main() async {
     url: 'https://sumgvbdgucrjyiztmzyn.supabase.co',
     anonKey: 'sb_publishable_mn_LuYvFSEJBx4Kqt07Xpg_6mHktGkV',
   );
+  await AlertNotificationService.instance.initialize();
   runApp(const ProviderScope(child: MyApp()));
 }
 
