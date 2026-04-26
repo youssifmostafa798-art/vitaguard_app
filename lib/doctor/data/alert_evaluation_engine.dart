@@ -46,7 +46,7 @@ class AlertEvaluationEngine {
     final avgTemp = _getAvg('temp');
 
     // 3. Multi-variate Logic (The "Respiratory/Cardiac Distress" Rule)
-    if (avgSpO2 < VitalThresholds.spo2Low && avgHR > VitalThresholds.heartRateHigh) {
+    if (avgSpO2 < VitalThresholds.spo2Warning && avgHR > VitalThresholds.heartRateHigh) {
       if (_canTrigger(patientId, "Combined")) {
         alerts.add(VitalAlert(
           metrics: ["SpO2", "HR"],
@@ -74,7 +74,7 @@ class AlertEvaluationEngine {
       _markTriggered(patientId, "SpO2_Critical");
     } 
     // SpO2 Warning
-    else if (avgSpO2 < VitalThresholds.spo2Low && _canTrigger(patientId, "SpO2_Warning")) {
+    else if (avgSpO2 < VitalThresholds.spo2Warning && _canTrigger(patientId, "SpO2_Warning")) {
       alerts.add(VitalAlert(
         metrics: ["SpO2"],
         message: "Low Oxygen Level: ${avgSpO2.toInt()}%",
@@ -109,7 +109,7 @@ class AlertEvaluationEngine {
     }
 
     // Temperature High
-    if (avgTemp > VitalThresholds.tempHigh && _canTrigger(patientId, "Temp_High")) {
+    if (avgTemp > VitalThresholds.tempWarning && _canTrigger(patientId, "Temp_High")) {
       alerts.add(VitalAlert(
         metrics: ["Temperature"],
         message: "Fever Detected: ${avgTemp.toStringAsFixed(1)}°C",
