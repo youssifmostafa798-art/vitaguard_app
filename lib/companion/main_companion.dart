@@ -64,10 +64,12 @@ class _MainCompanionState extends ConsumerState<MainCompanion>
 
     _bootstrappedPatientId = patientStatus.patientId;
     unawaited(
-      ref.read(alertCenterProvider).bootstrapForCompanion(
-        patientId: patientStatus.patientId,
-        patientName: patientStatus.name,
-      ),
+      ref
+          .read(alertCenterProvider)
+          .bootstrapForCompanion(
+            patientId: patientStatus.patientId,
+            patientName: patientStatus.name,
+          ),
     );
   }
 
