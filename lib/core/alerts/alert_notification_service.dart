@@ -31,7 +31,7 @@ class AlertNotificationService {
       return;
     }
 
-    const androidSettings = AndroidInitializationSettings('launcher_icon');
+    const androidSettings = AndroidInitializationSettings('@mipmap/launcher_icon');
     final darwinSettings = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
