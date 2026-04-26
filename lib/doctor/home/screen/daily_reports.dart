@@ -386,8 +386,8 @@ class _DailyReportCard extends StatelessWidget {
                       child: _MetricTile(
                         icon: Icons.favorite_rounded,
                         label: 'PULSE',
-                        value: '${model.pulse}',
-                        unit: 'bpm',
+                        value: model.pulse > 0 ? '${model.pulse}' : '--',
+                        unit: model.pulse > 0 ? 'bpm' : '',
                         valueColor: AppColors.primary,
                       ),
                     ),
@@ -396,7 +396,7 @@ class _DailyReportCard extends StatelessWidget {
                       child: _MetricTile(
                         icon: Icons.blur_on_rounded,
                         label: 'PPM',
-                        value: '${model.ppm}',
+                        value: model.ppm > 0 ? '${model.ppm}' : '--',
                         unit: '',
                         valueColor: AppColors.textPrimary,
                       ),

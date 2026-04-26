@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/doctor/data/alert_evaluation_engine.dart';
 import 'package:vitaguard_app/doctor/data/doctor_repository.dart';
+import 'package:vitaguard_app/doctor/data/vital_alert_model.dart';
 
 class DoctorProvider with ChangeNotifier {
   final DoctorRepository _repository = DoctorRepository();
@@ -14,12 +16,15 @@ class DoctorProvider with ChangeNotifier {
   String _verificationStatus = 'pending';
   List<Map<String, dynamic>> _dailyReports = [];
   RealtimeChannel? _reportsChannel;
+  final AlertEvaluationEngine _alertEngine = AlertEvaluationEngine();
+  List<VitalAlert> _activeAlerts = [];
 
   bool get isLoading => _isLoading;
   String? get error => _error;
   List<dynamic> get assignedPatients => _assignedPatients;
   String get verificationStatus => _verificationStatus;
   List<Map<String, dynamic>> get dailyReports => _dailyReports;
+  List<VitalAlert> get activeAlerts => _activeAlerts;
 
   // ---------------------------------------------------------------------------
   // Patients
@@ -168,19 +173,48 @@ class DoctorProvider with ChangeNotifier {
 
     final index = _dailyReports.indexWhere((r) => r['id'] == patientId);
     if (index != -1) {
-      final pulse = (record['bpm'] as num?)?.toInt() ?? 0;
-      final ppm = (record['spo2'] as num?)?.toInt() ?? 0;
+      final rawBpm = (record['bpm'] as num?)?.toInt() ?? 0;
+      final pulse = rawBpm > 0 ? rawBpm : 0;
+
+      final rawSpo2 = (record['spo2'] as num?)?.toInt() ?? 0;
+      final ppm = rawSpo2 > 0 ? rawSpo2 : 0;
+
+      final rawTemp = record['temperature'] as num?;
+      final tempDisplay = (rawTemp != null && rawTemp > 0)
+          ? '$rawTemp°C'
+          : '--';
 
       // Update the existing report in memory
       _dailyReports[index] = {
         ..._dailyReports[index],
         'pulse': pulse,
         'ppm': ppm,
-        'temperature': '${record['temperature'] ?? '--'}°C',
+        'temperature': tempDisplay,
         'status': _deriveStatus(pulse, ppm),
       };
+
+      // EVALUATE ALERTS
+      final tempStr = record['temperature']?.toString();
+      final double? temp = tempStr != null ? double.tryParse(tempStr) : null;
+
+      final newAlerts = _alertEngine.evaluate(
+        patientId: patientId,
+        hr: pulse,
+        spo2: ppm,
+        temp: temp,
+      );
+
+      if (newAlerts.isNotEmpty) {
+        _activeAlerts = [..._activeAlerts, ...newAlerts];
+        _repository.logAlertsToCloud(newAlerts, patientId);
+      }
       notifyListeners();
     }
+  }
+
+  void dismissAlert(String alertId) {
+    _activeAlerts.removeWhere((a) => a.id == alertId);
+    notifyListeners();
   }
 
   String _deriveStatus(int pulse, int ppm) {
