@@ -44,7 +44,7 @@ class AlertNotificationService {
     );
 
     await _notifications.initialize(
-      InitializationSettings(android: androidSettings, iOS: darwinSettings),
+      settings: InitializationSettings(android: androidSettings, iOS: darwinSettings),
     );
 
     if (Platform.isAndroid) {
@@ -81,10 +81,10 @@ class AlertNotificationService {
     );
 
     await _notifications.show(
-      _notificationIdFor(alert),
-      _titleFor(alert),
-      _bodyFor(alert),
-      details,
+      id: _notificationIdFor(alert),
+      title: _titleFor(alert),
+      body: _bodyFor(alert),
+      notificationDetails: details,
       payload: alert.id,
     );
 
@@ -100,7 +100,7 @@ class AlertNotificationService {
       return;
     }
 
-    await _notifications.cancel(_notificationIdFor(alert));
+    await _notifications.cancel(id: _notificationIdFor(alert));
     if (_activeCriticalAlertId == alert.id) {
       _activeCriticalAlertId = null;
       await _invokePlatformMethod('stopCriticalAlert');
