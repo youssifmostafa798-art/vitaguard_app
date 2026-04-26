@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:vitaguard_app/doctor/home/screen/daily_reports.dart';
+import 'package:vitaguard_app/doctor/home/screen/doctor_alerts_screen.dart';
 import 'package:vitaguard_app/doctor/home/screen/medical_reports.dart';
 import 'package:vitaguard_app/models/category_model.dart';
 
 List<CategoryModel> homeCategoriesDr(BuildContext context, String drName) {
   return [
+    CategoryModel(
+      icon: LucideIcons.bellRing,
+      title: "Alerts",
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const DoctorAlertsScreen()),
+        );
+      },
+    ),
     CategoryModel(
       icon: LucideIcons.fileText,
       title: "Medical Reports",

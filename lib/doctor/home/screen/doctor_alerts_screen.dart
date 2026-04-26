@@ -7,17 +7,19 @@ import 'package:vitaguard_app/core/providers.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 
-class Alarts extends ConsumerWidget {
-  const Alarts({super.key});
+/// Doctor-facing alert center — shows only critical alerts (severity routing
+/// is enforced on the backend; this screen simply renders what the shared
+/// [AlertCenterProvider] has already fetched for the doctor role).
+class DoctorAlertsScreen extends ConsumerWidget {
+  const DoctorAlertsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final alertCenter = ref.watch(alertCenterProvider);
-    final alerts = alertCenter.alerts;
+    final alerts = alertCenter.alerts; // already severity-filtered to critical for doctor
 
     return Scaffold(
-      resizeToAvoidBottomInset: true,
-      appBar: const SimpleHeader(title: 'Alerts'),
+      appBar: const SimpleHeader(title: 'Critical Alerts'),
       body: SafeArea(
         child: AppBackground(
           child: Padding(
@@ -25,20 +27,22 @@ class Alarts extends ConsumerWidget {
             child: Column(
               children: [
                 SizedBox(height: 24.h),
-                _AlertScreenHeader(
-                  totalAlerts: alerts.length,
-                  activeAlerts: alertCenter.activeAlerts.length,
+                _DoctorAlertHeader(
+                  activeCount: alertCenter.criticalActiveAlerts.length,
+                  totalCount: alerts.length,
                 ),
                 SizedBox(height: 18.h),
                 Expanded(
                   child: Builder(
                     builder: (context) {
                       if (alertCenter.isLoading && alerts.isEmpty) {
-                        return const Center(child: CircularProgressIndicator());
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
                       }
 
                       if (alerts.isEmpty) {
-                        return _EmptyAlertState(error: alertCenter.error);
+                        return _EmptyDoctorAlerts(error: alertCenter.error);
                       }
 
                       return ListView.separated(
@@ -48,7 +52,7 @@ class Alarts extends ConsumerWidget {
                           final alert = alerts[index];
                           return AlertCard(
                             alert: alert,
-                            showPatientName: false,
+                            showPatientName: true,
                             onAcknowledge: alert.isActive
                                 ? () {
                                     ref
@@ -71,14 +75,16 @@ class Alarts extends ConsumerWidget {
   }
 }
 
-class _AlertScreenHeader extends StatelessWidget {
-  const _AlertScreenHeader({
-    required this.totalAlerts,
-    required this.activeAlerts,
+// ── Header summary strip ──────────────────────────────────────────────────────
+
+class _DoctorAlertHeader extends StatelessWidget {
+  const _DoctorAlertHeader({
+    required this.activeCount,
+    required this.totalCount,
   });
 
-  final int totalAlerts;
-  final int activeAlerts;
+  final int activeCount;
+  final int totalCount;
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +101,7 @@ class _AlertScreenHeader extends StatelessWidget {
           Expanded(
             child: _HeaderMetric(
               label: 'Active now',
-              value: '$activeAlerts',
+              value: '$activeCount',
               valueColor: const Color(0xFFD84315),
             ),
           ),
@@ -106,8 +112,8 @@ class _AlertScreenHeader extends StatelessWidget {
           ),
           Expanded(
             child: _HeaderMetric(
-              label: 'Recent alerts',
-              value: '$totalAlerts',
+              label: 'Last 24 h',
+              value: '$totalCount',
               valueColor: AppColors.primary,
             ),
           ),
@@ -154,8 +160,10 @@ class _HeaderMetric extends StatelessWidget {
   }
 }
 
-class _EmptyAlertState extends StatelessWidget {
-  const _EmptyAlertState({this.error});
+// ── Empty state ───────────────────────────────────────────────────────────────
+
+class _EmptyDoctorAlerts extends StatelessWidget {
+  const _EmptyDoctorAlerts({this.error});
 
   final String? error;
 
@@ -171,7 +179,7 @@ class _EmptyAlertState extends StatelessWidget {
             Icon(
               hasError
                   ? Icons.wifi_off_rounded
-                  : Icons.notifications_none_rounded,
+                  : Icons.shield_outlined,
               size: 60.r,
               color: hasError
                   ? const Color(0xFFD84315)
@@ -181,7 +189,7 @@ class _EmptyAlertState extends StatelessWidget {
             Text(
               hasError
                   ? 'Alert sync is temporarily unavailable'
-                  : 'No alerts yet',
+                  : 'No critical alerts',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textPrimary,
@@ -193,7 +201,7 @@ class _EmptyAlertState extends StatelessWidget {
             Text(
               hasError
                   ? error!
-                  : 'Hardware and clinical alerts will appear here as soon as the backend publishes them.',
+                  : 'Critical patient events will appear here in real time. Only severity-critical alerts are routed to the doctor role.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textSecondary,
