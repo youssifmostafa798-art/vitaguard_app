@@ -3,7 +3,10 @@ import 'package:vitaguard_app/core/alerts/alert_model.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 
 class AlertRealtimeService {
-  final SupabaseService _supabase = SupabaseService.instance;
+  AlertRealtimeService({SupabaseService? supabase})
+    : _supabase = supabase ?? SupabaseService.instance;
+
+  final SupabaseService _supabase;
   final List<RealtimeChannel> _channels = [];
 
   SupabaseClient get _client => _supabase.client;
@@ -51,8 +54,7 @@ class AlertRealtimeService {
   }
 
   Future<void> _setRealtimeAuth() async {
-    final token = _client.auth.currentSession?.accessToken;
-    await _client.realtime.setAuth(token);
+    await _supabase.setRealtimeAuth();
   }
 
   Future<void> _subscribeToTopic({

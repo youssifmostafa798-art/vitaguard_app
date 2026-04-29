@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/Hardware/screen/metric_card.dart';
 import 'package:vitaguard_app/Hardware/service/alert_timer_service.dart';
 import 'package:vitaguard_app/Hardware/widget/vital_alert_banner.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/doctor/data/vital_alert_model.dart';
 
@@ -32,7 +32,7 @@ class _HardwareScreenState extends State<HardwareScreen>
   static const double _horizontalPadding = 24;
 
   Map<String, dynamic>? _latestVitals;
-  RealtimeChannel? _channel;
+  SupabaseRealtimeSubscription? _channel;
   String? _subscribedPatientId;
   bool _isLoadingVitals = false;
   String? _subscriptionError;
@@ -117,13 +117,9 @@ class _HardwareScreenState extends State<HardwareScreen>
 
     // 1. Load the most recent row immediately so the screen is not blank.
     try {
-      final row = await Supabase.instance.client
-          .from('patient_live_vitals')
-          .select()
-          .eq('patient_id', patientId)
-          .order('recorded_at', ascending: false)
-          .limit(1)
-          .maybeSingle();
+      final row = await SupabaseService.instance.latestPatientLiveVitals(
+        patientId,
+      );
 
       if (row != null && mounted) {
         setState(() => _latestVitals = row);
@@ -142,29 +138,18 @@ class _HardwareScreenState extends State<HardwareScreen>
     }
 
     // 2. Real-time push — fires instantly when ESP32 inserts a new row.
-    _channel = Supabase.instance.client
-        .channel('hw_vitals_$patientId')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.insert,
-          schema: 'public',
-          table: 'patient_live_vitals',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'patient_id',
-            value: patientId,
-          ),
-          callback: (payload) {
-            if (mounted) {
-              final record = payload.newRecord;
-              setState(() {
-                _latestVitals = record;
-                _subscriptionError = null;
-              });
-              _evaluateVitals(record);
-            }
-          },
-        )
-        .subscribe();
+    _channel = SupabaseService.instance.subscribeToPatientLiveVitals(
+      patientId: patientId,
+      onInsert: (record) {
+        if (mounted) {
+          setState(() {
+            _latestVitals = record;
+            _subscriptionError = null;
+          });
+          _evaluateVitals(record);
+        }
+      },
+    );
   }
 
   String? _effectivePatientId() {
@@ -177,7 +162,7 @@ class _HardwareScreenState extends State<HardwareScreen>
       return null;
     }
 
-    return Supabase.instance.client.auth.currentUser?.id;
+    return SupabaseService.instance.currentUser?.id;
   }
 
   /// Extracts typed values from a raw Supabase record and feeds them to
@@ -365,7 +350,12 @@ class _HardwareScreenState extends State<HardwareScreen>
                     SizedBox(height: 34.h),
 
                     // ── BPM ring — animated border colour ─────────────────
-                    _HeartRateRing(bpm: bpm, statusColor: bpmRingColor),
+                    RepaintBoundary(
+                      child: _HeartRateRing(
+                        bpm: bpm,
+                        statusColor: bpmRingColor,
+                      ),
+                    ),
                     SizedBox(height: 24.h),
 
                     // ── Device status strip ────────────────────────────────

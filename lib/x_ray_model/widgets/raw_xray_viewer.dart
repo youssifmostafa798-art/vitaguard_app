@@ -15,13 +15,15 @@ class RawXRayViewer extends StatelessWidget {
       borderRadius: BorderRadius.circular(16.r),
       child: AspectRatio(
         aspectRatio: 1,
-        child: Image.file(
-          imageFile,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => ColoredBox(
-            color: Colors.grey.shade300,
-            child: Center(
-              child: Icon(Icons.broken_image_outlined, size: 48.sp),
+        child: RepaintBoundary(
+          child: Image.file(
+            imageFile,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => ColoredBox(
+              color: Colors.grey.shade300,
+              child: Center(
+                child: Icon(Icons.broken_image_outlined, size: 48.sp),
+              ),
             ),
           ),
         ),

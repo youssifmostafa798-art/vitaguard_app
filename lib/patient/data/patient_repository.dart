@@ -2,15 +2,31 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:vitaguard_app/core/ai/xray_inference_service.dart';
+import 'package:vitaguard_app/core/local/local_cache_repository.dart';
+import 'package:vitaguard_app/core/local/sync_queue_repository.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 import 'package:vitaguard_app/core/utils/uuid.dart';
 import 'package:vitaguard_app/patient/models/patient_models.dart';
 
 class PatientRepository {
-  final SupabaseService _supabase = SupabaseService.instance;
+  PatientRepository({
+    SupabaseService? supabase,
+    LocalCacheRepository? localCache,
+    SyncQueueRepository? syncQueue,
+    Connectivity? connectivity,
+  }) : _supabase = supabase ?? SupabaseService.instance,
+       _localCache = localCache,
+       _syncQueue = syncQueue,
+       _connectivity = connectivity ?? Connectivity();
+
+  final SupabaseService _supabase;
+  final LocalCacheRepository? _localCache;
+  final SyncQueueRepository? _syncQueue;
+  final Connectivity _connectivity;
 
   SupabaseClient get _client => _supabase.client;
 
@@ -28,7 +44,7 @@ class PatientRepository {
 
   Future<void> submitDailyReport(DailyReport report) async {
     final data = report.toMap();
-    await _client.from('patient_daily_reports').insert({
+    final payload = {
       'patient_id': _uid,
       'report_date': (data['reportDate'] as DateTime?)?.toIso8601String(),
       'heart_rate': data['heartRate'],
@@ -37,7 +53,18 @@ class PatientRepository {
       'blood_pressure': data['bloodPressure'],
       'tasks_activities': data['tasksActivities'],
       'notes': data['notes'],
-    });
+    };
+
+    if (await _shouldQueueWrite()) {
+      await _syncQueue!.enqueue(
+        operation: 'insert',
+        target: 'patient_daily_reports',
+        payload: payload,
+      );
+      return;
+    }
+
+    await _client.from('patient_daily_reports').insert(payload);
   }
 
   Future<void> updateMedicalHistory(MedicalHistory history) async {
@@ -50,7 +77,7 @@ class PatientRepository {
     required String patientId,
   }) async {
     final data = history.toMap();
-    await _client.from('patient_medical_history').upsert({
+    final payload = {
       'patient_id': patientId,
       'allergies': data['allergies'],
       'medications': data['medications'],
@@ -58,7 +85,23 @@ class PatientRepository {
       'surgeries': data['surgeries'],
       'notes': data['notes'],
       'updated_at': DateTime.now().toIso8601String(),
-    });
+    };
+
+    await _localCache?.cacheMedicalHistory(
+      patientId: patientId,
+      row: payload,
+    );
+
+    if (await _shouldQueueWrite()) {
+      await _syncQueue!.enqueue(
+        operation: 'upsert',
+        target: 'patient_medical_history',
+        payload: payload,
+      );
+      return;
+    }
+
+    await _client.from('patient_medical_history').upsert(payload);
   }
 
   Future<MedicalHistory> getMedicalHistory() async {
@@ -69,19 +112,30 @@ class PatientRepository {
   Future<MedicalHistory> getMedicalHistoryForPatient({
     required String patientId,
   }) async {
-    final data = await _client
-        .from('patient_medical_history')
-        .select()
-        .eq('patient_id', patientId)
-        .limit(1);
+    try {
+      final data = await _client
+          .from('patient_medical_history')
+          .select()
+          .eq('patient_id', patientId)
+          .limit(1);
 
-    if (data.isNotEmpty) {
-      return MedicalHistory.fromMap(
-        Map<String, dynamic>.from(data.first as Map),
-      );
+      if (data.isNotEmpty) {
+        final row = Map<String, dynamic>.from(data.first as Map);
+        await _localCache?.cacheMedicalHistory(patientId: patientId, row: row);
+        return MedicalHistory.fromMap(row);
+      }
+    } catch (_) {
+      final cached = await _localCache?.getMedicalHistory(patientId);
+      if (cached != null) {
+        return MedicalHistory.fromMap(cached);
+      }
+      rethrow;
     }
 
-    return MedicalHistory.empty();
+    final cached = await _localCache?.getMedicalHistory(patientId);
+    return cached == null
+        ? MedicalHistory.empty()
+        : MedicalHistory.fromMap(cached);
   }
 
   Future<String> ensureCurrentPatientRecord() async {
@@ -174,7 +228,7 @@ class PatientRepository {
       throw StateError('Invalid file type. Please upload a JPEG, PNG, or PDF.');
     }
 
-    await _client.functions.invoke(
+    await _supabase.invokeFunction(
       'upload_medical_record',
       body: {
         'patient_id': _uid,
@@ -218,7 +272,7 @@ class PatientRepository {
 
   Future<String> _generateUniqueCompanionCode() async {
     try {
-      final response = await _client.functions.invoke(
+      final response = await _supabase.invokeFunction(
         'generate_companion_code',
       );
       final data = response.data;
@@ -266,5 +320,11 @@ class PatientRepository {
     if (ext.endsWith('.jpg') || ext.endsWith('.jpeg')) return 'image/jpeg';
     if (ext.endsWith('.pdf')) return 'application/pdf';
     return 'application/octet-stream';
+  }
+
+  Future<bool> _shouldQueueWrite() async {
+    if (_syncQueue == null) return false;
+    final results = await _connectivity.checkConnectivity();
+    return results.contains(ConnectivityResult.none);
   }
 }

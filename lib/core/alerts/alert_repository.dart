@@ -3,7 +3,10 @@ import 'package:vitaguard_app/core/alerts/alert_model.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 
 class AlertRepository {
-  final SupabaseService _supabase = SupabaseService.instance;
+  AlertRepository({SupabaseService? supabase})
+    : _supabase = supabase ?? SupabaseService.instance;
+
+  final SupabaseService _supabase;
 
   SupabaseClient get _client => _supabase.client;
 
@@ -34,7 +37,7 @@ class AlertRepository {
   }
 
   Future<void> acknowledgeAlert(String alertId) async {
-    final result = await _client.rpc(
+    final result = await _supabase.rpc<Object?>(
       'acknowledge_medical_alert',
       params: {'p_alert_id': alertId},
     );

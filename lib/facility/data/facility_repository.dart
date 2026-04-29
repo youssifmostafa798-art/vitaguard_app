@@ -7,7 +7,10 @@ import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 import 'package:vitaguard_app/core/utils/uuid.dart';
 
 class FacilityRepository {
-  final SupabaseService _supabase = SupabaseService.instance;
+  FacilityRepository({SupabaseService? supabase})
+    : _supabase = supabase ?? SupabaseService.instance;
+
+  final SupabaseService _supabase;
 
   SupabaseClient get _client => _supabase.client;
   String get _uid => _supabase.currentUid;
@@ -45,7 +48,7 @@ class FacilityRepository {
       throw StateError('Invalid file type. Please upload a JPEG, PNG, or PDF.');
     }
 
-    await _client.functions.invoke(
+    await _supabase.invokeFunction(
       'upload_lab_report',
       body: {
         'facility_id': _uid,
@@ -87,7 +90,7 @@ class FacilityRepository {
         );
       }
 
-      await _client.functions.invoke(
+      await _supabase.invokeFunction(
         'upload_lab_offer',
         body: {
           'facility_id': _uid,

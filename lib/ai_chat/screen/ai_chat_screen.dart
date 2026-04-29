@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
@@ -11,6 +10,7 @@ import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/message_input.dart';
 import 'package:intl/intl.dart';
 import 'package:vitaguard_app/core/providers.dart';
+import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 import 'package:vitaguard_app/auth/ui/screens/sign_in_screen.dart';
 class AiChatScreen extends ConsumerStatefulWidget {
   final AiChatProvider? provider;
@@ -65,7 +65,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         builder: (context, _) {
           final provider = _provider;
           final title = provider.conversation?.title ?? 'VitaGuard AI';
-          final hasUser = Supabase.instance.client.auth.currentSession?.user != null;
+          final hasUser = SupabaseService.instance.currentSession?.user != null;
           
           // Full-screen lock ONLY if we have no local user session.
           final isLocked = !hasUser;
@@ -129,7 +129,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   MaterialPageRoute(builder: (_) => const SignInScreen()),
                 );
                 // When returning from login, check if we have a session and refresh
-                if (mounted && Supabase.instance.client.auth.currentSession != null) {
+                if (mounted && SupabaseService.instance.currentSession != null) {
                   _provider.ensureConversation(forceRefresh: true);
                 }
               },

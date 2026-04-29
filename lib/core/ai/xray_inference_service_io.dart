@@ -3,8 +3,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
+import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 import 'package:vitaguard_app/patient/models/patient_models.dart';
 
 // ─────────────────────────────────────────────────────────────
@@ -112,7 +112,7 @@ class XrayInferenceService {
 
   bool get isReady => _interpreter != null;
 
-  final _supabase = Supabase.instance.client;
+  final _supabase = SupabaseService.instance;
 
   /// Returns the calibrated performance metrics for the current model.
   Map<String, dynamic> get performanceMetrics =>
@@ -400,7 +400,7 @@ class XrayInferenceService {
     XRayResult result, {
     required String? patientIdForLog,
   }) async {
-    final user = _supabase.auth.currentUser;
+    final user = _supabase.currentUser;
     if (user == null || patientIdForLog == null || patientIdForLog.isEmpty) {
       return;
     }
@@ -408,18 +408,15 @@ class XrayInferenceService {
     final bytes = await imageFile.readAsBytes();
     final fileName = '${user.id}/${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-    await _supabase.storage
-        .from('xray-images')
-        .uploadBinary(
-          fileName,
-          bytes,
-          fileOptions: const FileOptions(
-            contentType: 'image/jpeg',
-            upsert: true,
-          ),
-        );
+    await _supabase.uploadBinary(
+      bucketId: 'xray-images',
+      path: fileName,
+      bytes: bytes,
+      contentType: 'image/jpeg',
+      upsert: true,
+    );
 
-    await _supabase.from('patient_xray_results').insert({
+    await _supabase.table('patient_xray_results').insert({
       'patient_id': patientIdForLog,
       'image_path': fileName,
       'prediction': result.prediction,

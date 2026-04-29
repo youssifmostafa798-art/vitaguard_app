@@ -3,8 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/core/providers.dart';
+import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 import 'package:vitaguard_app/patient/main_patient.dart';
 import 'package:vitaguard_app/doctor/main_doctor.dart';
 import 'package:vitaguard_app/companion/main_companion.dart';
@@ -86,7 +86,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final rememberMe = prefs.getBool('remember_me') ?? false;
 
     // Check if we have an active session
-    final session = Supabase.instance.client.auth.currentSession;
+    final supabase = SupabaseService.instance;
+    final session = supabase.currentSession;
 
     if (session != null) {
       if (rememberMe) {
@@ -120,7 +121,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         return;
       } else {
         // If they did not want to be remembered, clear the session
-        await Supabase.instance.client.auth.signOut();
+        await supabase.signOut();
       }
     }
 

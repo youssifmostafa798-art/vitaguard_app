@@ -7,12 +7,15 @@ import 'package:vitaguard_app/auth/data/auth_models.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 
 class AuthRepository {
-  final SupabaseService _supabase = SupabaseService.instance;
+  AuthRepository({SupabaseService? supabase})
+    : _supabase = supabase ?? SupabaseService.instance;
+
+  final SupabaseService _supabase;
 
   SupabaseClient get _client => _supabase.client;
 
   Future<void> login(String email, String password) async {
-    await _client.auth.signInWithPassword(email: email, password: password);
+    await _supabase.signInWithPassword(email: email, password: password);
   }
 
   Future<AuthResponse> registerPatient({
@@ -24,7 +27,7 @@ class AuthRepository {
     String? age,
   }) async {
     final companionCode = await _resolveCompanionCode();
-    return await _client.auth.signUp(
+    return await _supabase.signUp(
       email: email,
       password: password,
       data: {
@@ -50,7 +53,7 @@ class AuthRepository {
     String? gender,
     String? age,
   }) async {
-    final response = await _client.auth.signUp(
+    final response = await _supabase.signUp(
       email: email,
       password: password,
       data: {
@@ -103,7 +106,7 @@ class AuthRepository {
     required String companionCode,
   }) async {
     // Step 1: Sign up first so we have an authenticated session.
-    final response = await _client.auth.signUp(
+    final response = await _supabase.signUp(
       email: email,
       password: password,
       data: {
@@ -119,7 +122,7 @@ class AuthRepository {
 
     // Step 2: Use the secure RPC function to verify the code and link the patient.
     // This bypasses RLS read restrictions since the companion is not yet linked.
-    final success = await _client.rpc(
+    final success = await _supabase.rpc<bool?>(
       'link_companion_to_patient',
       params: {'p_code': companionCode, 'p_user_id': uid},
     );
@@ -127,7 +130,7 @@ class AuthRepository {
     if (success != true) {
       // Clean up the orphaned account on code mismatch.
       try {
-        await _client.auth.signOut();
+        await _supabase.signOut();
       } catch (_) {}
       throw StateError('Invalid companion code.');
     }
@@ -144,7 +147,7 @@ class AuthRepository {
     required String facilityType,
     required File? recordImage,
   }) async {
-    final response = await _client.auth.signUp(
+    final response = await _supabase.signUp(
       email: email,
       password: password,
       data: {
@@ -267,16 +270,16 @@ class AuthRepository {
   }
 
   Future<void> logout() async {
-    await _client.auth.signOut();
+    await _supabase.signOut();
   }
 
   Future<bool> isAuthenticated() async {
-    return _client.auth.currentUser != null;
+    return _supabase.currentUser != null;
   }
 
   Future<String> _resolveCompanionCode() async {
     try {
-      final response = await _client.functions.invoke(
+      final response = await _supabase.invokeFunction(
         'generate_companion_code',
       );
       final data = response.data;

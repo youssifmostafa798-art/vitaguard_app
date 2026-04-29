@@ -5,7 +5,10 @@ import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 import 'package:vitaguard_app/models/message_model.dart';
 
 class ChatRepository {
-  final SupabaseService _supabase = SupabaseService.instance;
+  ChatRepository({SupabaseService? supabase})
+    : _supabase = supabase ?? SupabaseService.instance;
+
+  final SupabaseService _supabase;
 
   SupabaseClient get _client => _supabase.client;
   String get _uid => _supabase.currentUid;
@@ -13,12 +16,13 @@ class ChatRepository {
   Stream<List<ChatMessage>> streamMessages(
     String conversationId, {
     required MessageSender otherSender,
+    bool ascending = true,
   }) {
     return _client
         .from('messages')
         .stream(primaryKey: ['id'])
         .eq('conversation_id', conversationId)
-        .order('created_at')
+        .order('created_at', ascending: ascending)
         .map((rows) {
           return rows.map((row) {
             final senderId = row['sender_id'] as String?;

@@ -11,8 +11,8 @@ import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/models/chat_preview_card.dart';
 import 'package:vitaguard_app/patient/home/widget/home_search.dart';
 import 'package:vitaguard_app/models/message_model.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/auth/ui/screens/role_screen.dart';
+import 'package:vitaguard_app/core/chat/chat_repository.dart';
 import 'package:vitaguard_app/core/providers.dart';
 
 class ChatListFacility extends ConsumerStatefulWidget {
@@ -26,6 +26,7 @@ class ChatListFacility extends ConsumerStatefulWidget {
 
 class _ChatListFacilityState extends ConsumerState<ChatListFacility> {
   late final Stream<List<ChatPreview>> _chatStream;
+  final ChatRepository _repository = ChatRepository();
   void _onBotTap() {
     Navigator.push(
       context,
@@ -38,64 +39,7 @@ class _ChatListFacilityState extends ConsumerState<ChatListFacility> {
   @override
   void initState() {
     super.initState();
-    final uid = Supabase.instance.client.auth.currentUser?.id;
-    if (uid != null) {
-      _chatStream = Supabase.instance.client
-          .from('conversation_participants')
-          .stream(primaryKey: ['conversation_id', 'user_id'])
-          .eq('user_id', uid)
-          .asyncMap((participants) async {
-            List<ChatPreview> previews = [];
-            for (final p in participants) {
-              final convId = p['conversation_id'];
-
-              final otherPart = await Supabase.instance.client
-                  .from('conversation_participants')
-                  .select('user_id')
-                  .eq('conversation_id', convId)
-                  .neq('user_id', uid)
-                  .maybeSingle();
-
-              String otherName = 'Patient';
-              String initials = 'P';
-              if (otherPart != null) {
-                final profile = await Supabase.instance.client
-                    .from('profiles')
-                    .select('full_name, role')
-                    .eq('id', otherPart['user_id'])
-                    .maybeSingle();
-                if (profile != null && profile['full_name'] != null) {
-                  otherName = profile['full_name'];
-                  initials = otherName.isNotEmpty
-                      ? otherName[0].toUpperCase()
-                      : 'P';
-                }
-              }
-
-              final convDetail = await Supabase.instance.client
-                  .from('conversations')
-                  .select('last_message, last_message_at')
-                  .eq('id', convId)
-                  .maybeSingle();
-
-              previews.add(
-                ChatPreview(
-                  id: convId,
-                  name: otherName,
-                  avatarInitials: initials,
-                  lastMessage:
-                      convDetail?['last_message'] ?? 'Tap to view messages...',
-                  time: 'Now',
-                  sender: MessageSender.user,
-                  status: MessageStatus.active,
-                ),
-              );
-            }
-            return previews;
-          });
-    } else {
-      _chatStream = Stream.value([]);
-    }
+    _chatStream = _repository.streamConversations();
   }
 
   @override

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:intl/intl.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/core/chat/chat_repository.dart';
 import 'package:vitaguard_app/core/utils/chat_header.dart';
 import 'package:vitaguard_app/facility/home.chat/widget/message_facility_bubble.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/components/message_input.dart';
 import 'package:vitaguard_app/models/message_model.dart';
 class ChatFacilityDetail extends StatefulWidget {
@@ -24,29 +23,16 @@ class ChatFacilityDetail extends StatefulWidget {
 class _ChatFacilityDetailState extends State<ChatFacilityDetail> {
   final TextEditingController _messageController = TextEditingController();
   late final Stream<List<ChatMessage>> _messageStream;
-  final _supabase = Supabase.instance.client;
+  final ChatRepository _repository = ChatRepository();
 
   @override
   void initState() {
     super.initState();
-    _messageStream = _supabase
-        .from('messages')
-        .stream(primaryKey: ['id'])
-        .eq('conversation_id', widget.chatId)
-        .order('created_at', ascending: false)
-        .map((data) => data.map((json) {
-              return ChatMessage(
-                id: json['id'],
-                content: json['content'] ?? '',
-                time: json['created_at'] != null 
-                    ? DateFormat('HH:mm').format(DateTime.parse(json['created_at']).toLocal())
-                    : 'Now',
-                sender: json['sender_id'] == _supabase.auth.currentUser?.id
-                    ? MessageSender.user
-                    : MessageSender.doctor,
-                isRead: json['is_read'] ?? false,
-              );
-            }).toList());
+    _messageStream = _repository.streamMessages(
+      widget.chatId,
+      otherSender: MessageSender.patient,
+      ascending: false,
+    );
   }
 
   Future<void> _sendMessage() async {
@@ -55,21 +41,8 @@ class _ChatFacilityDetailState extends State<ChatFacilityDetail> {
     
     _messageController.clear();
     
-    final uid = _supabase.auth.currentUser?.id;
-    if (uid == null) return;
-    
     try {
-      await _supabase.from('messages').insert({
-        'conversation_id': widget.chatId,
-        'sender_id': uid,
-        'content': text,
-      });
-
-      // Also quickly update the conversation last read / last message
-      await _supabase.from('conversations').update({
-        'last_message': text,
-        'last_message_at': DateTime.now().toIso8601String(),
-      }).eq('id', widget.chatId);
+      await _repository.sendMessage(widget.chatId, text);
     } catch (e) {
       debugPrint('Error sending message: $e');
     }

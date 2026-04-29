@@ -4,13 +4,16 @@ import 'package:vitaguard_app/companion/data/companion_models.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 
 class CompanionRepository {
-  final SupabaseService _supabase = SupabaseService.instance;
+  CompanionRepository({SupabaseService? supabase})
+    : _supabase = supabase ?? SupabaseService.instance;
+
+  final SupabaseService _supabase;
 
   SupabaseClient get _client => _supabase.client;
   String get _uid => _supabase.currentUid;
 
   Future<void> linkPatient(String code) async {
-    final success = await _client.rpc(
+    final success = await _supabase.rpc<bool?>(
       'link_companion_to_patient',
       params: {'p_code': code, 'p_user_id': _uid},
     );

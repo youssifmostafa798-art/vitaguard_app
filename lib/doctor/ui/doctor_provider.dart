@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 import 'package:vitaguard_app/doctor/data/doctor_repository.dart';
 
 class DoctorProvider with ChangeNotifier {
@@ -13,7 +13,7 @@ class DoctorProvider with ChangeNotifier {
   List<dynamic> _assignedPatients = [];
   String _verificationStatus = 'pending';
   List<Map<String, dynamic>> _dailyReports = [];
-  RealtimeChannel? _reportsChannel;
+  SupabaseRealtimeSubscription? _reportsChannel;
 
   bool get isLoading => _isLoading;
   String? get error => _error;

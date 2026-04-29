@@ -4,7 +4,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 
 class DoctorRepository {
-  final SupabaseService _supabase = SupabaseService.instance;
+  DoctorRepository({SupabaseService? supabase})
+    : _supabase = supabase ?? SupabaseService.instance;
+
+  final SupabaseService _supabase;
 
   SupabaseClient get _client => _supabase.client;
   String get _uid => _supabase.currentUid;
@@ -175,13 +178,13 @@ class DoctorRepository {
     return results;
   }
 
-  RealtimeChannel subscribeToAssignedPatientsVitals({
+  SupabaseRealtimeSubscription subscribeToAssignedPatientsVitals({
     required List<String> patientIds,
     required void Function(Map<String, dynamic> newRecord) onUpdate,
   }) {
     final channelId = 'doctor_vitals_mon_${_uid.substring(0, 8)}';
 
-    return _client
+    final channel = _supabase
         .channel(channelId)
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
@@ -197,6 +200,7 @@ class DoctorRepository {
           },
         )
         .subscribe();
+    return SupabaseRealtimeSubscription(channel);
   }
 
   Future<List<Map<String, dynamic>>> getPatientDailyReports(

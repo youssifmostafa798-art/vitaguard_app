@@ -202,12 +202,12 @@ class SupabaseAiChatRepository implements AiChatRepository {
   }) async {
     // Force a session refresh to prevent 401s from stale tokens
     try {
-      await _client.auth.refreshSession();
+      await _supabase.refreshSession();
     } catch (_) {
       // If refresh fails, invoke will naturally fail with 401 anyway
     }
 
-    final response = await _client.functions.invoke(
+    final response = await _supabase.invokeFunction(
       'chatbot',
       body: {'conversationId': conversationId, 'userMessageId': userMessageId},
     );
