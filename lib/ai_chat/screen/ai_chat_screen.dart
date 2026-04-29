@@ -4,18 +4,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 
 import 'package:vitaguard_app/ai_chat/data/ai_chat_models.dart';
-import 'package:vitaguard_app/ai_chat/ui/ai_chat_provider.dart';
+import 'package:vitaguard_app/core/providers_modern.dart';
 import 'package:vitaguard_app/ai_chat/widget/ai_message_bubble.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/message_input.dart';
 import 'package:intl/intl.dart';
-import 'package:vitaguard_app/core/providers.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 import 'package:vitaguard_app/auth/ui/screens/sign_in_screen.dart';
 class AiChatScreen extends ConsumerStatefulWidget {
-  final AiChatProvider? provider;
-
-  const AiChatScreen({super.key, this.provider});
+  const AiChatScreen({super.key});
 
   @override
   ConsumerState<AiChatScreen> createState() => _AiChatScreenState();
@@ -26,13 +23,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isHandlingQuickReply = false;
 
-  AiChatProvider get _provider => widget.provider ?? ref.read(aiChatProvider);
+  
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _provider.ensureConversation();
+      ref.read(aiChatControllerProvider.notifier).ensureConversation();
     });
   }
 
@@ -48,7 +45,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     if (text.isEmpty) return;
 
     _messageController.clear();
-    final ok = await _provider.sendMessage(text);
+    final ok = await ref.read(aiChatControllerProvider.notifier).sendMessage(text);
     if (!ok && mounted) {
       _messageController.text = text;
       // Removed SnackBar to avoid duplicate error display.
@@ -60,10 +57,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
-      child: ListenableBuilder(
-        listenable: _provider,
-        builder: (context, _) {
-          final provider = _provider;
+      child: Consumer(
+        builder: (context, ref, _) {
+          final provider = ref.watch(aiChatControllerProvider);
           final title = provider.conversation?.title ?? 'VitaGuard AI';
           final hasUser = SupabaseService.instance.currentSession?.user != null;
           
@@ -130,7 +126,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 );
                 // When returning from login, check if we have a session and refresh
                 if (mounted && SupabaseService.instance.currentSession != null) {
-                  _provider.ensureConversation(forceRefresh: true);
+                  ref.read(aiChatControllerProvider.notifier).ensureConversation(forceRefresh: true);
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -146,7 +142,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     );
   }
 
-  Widget _buildActiveChatTab(AiChatProvider provider) {
+  Widget _buildActiveChatTab(AiChatControllerState provider) {
     bool isHistorical = false;
     String displayDate = '';
     
@@ -195,7 +191,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 ),
                 TextButton(
                   onPressed: () {
-                    provider.ensureConversation(forceRefresh: true);
+                    ref.read(aiChatControllerProvider.notifier).ensureConversation(forceRefresh: true);
                   },
                   style: TextButton.styleFrom(
                     padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
@@ -235,13 +231,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     );
   }
 
-  Widget _buildHistoryTab(AiChatProvider provider) {
+  Widget _buildHistoryTab(AiChatControllerState provider) {
     if (provider.error != null && provider.error!.toLowerCase().contains('logged in')) {
       return const SizedBox.shrink(); // Prevent fetching if fully unauthorized
     }
 
     return FutureBuilder<List<AiConversation>>(
-      future: provider.fetchUserHistory(),
+      future: ref.read(aiChatControllerProvider.notifier).fetchUserHistory(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: Color(0xFF00A3FF)));
@@ -275,7 +271,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
             return InkWell(
               onTap: () {
-                provider.ensureConversation(conversationId: conversation.id, forceRefresh: true);
+                ref.read(aiChatControllerProvider.notifier).ensureConversation(conversationId: conversation.id, forceRefresh: true);
                 DefaultTabController.of(context).animateTo(0);
               },
               borderRadius: BorderRadius.circular(12.r),
@@ -333,7 +329,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   }
 
 
-  Widget _buildMessages(AiChatProvider provider) {
+  Widget _buildMessages(AiChatControllerState provider) {
     if (provider.isLoading && provider.conversation == null) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -435,7 +431,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     );
   }
 
-  Widget _buildQuickReplies(AiChatProvider provider) {
+  Widget _buildQuickReplies(AiChatControllerState provider) {
     if (provider.conversation == null || provider.isLoading || provider.isSending) return const SizedBox.shrink();
 
     final suggestions = [

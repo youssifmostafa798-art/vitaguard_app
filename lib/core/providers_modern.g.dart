@@ -563,6 +563,52 @@ final class ChatRepositoryProvider
 
 String _$chatRepositoryHash() => r'9d434d3cd7f80470e4706fa862b535d6b591152b';
 
+@ProviderFor(aiChatRepository)
+final aiChatRepositoryProvider = AiChatRepositoryProvider._();
+
+final class AiChatRepositoryProvider
+    extends
+        $FunctionalProvider<
+          AiChatRepository,
+          AiChatRepository,
+          AiChatRepository
+        >
+    with $Provider<AiChatRepository> {
+  AiChatRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'aiChatRepositoryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$aiChatRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<AiChatRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  AiChatRepository create(Ref ref) {
+    return aiChatRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AiChatRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AiChatRepository>(value),
+    );
+  }
+}
+
+String _$aiChatRepositoryHash() => r'fd64b6aaeb8199eca4c53b52feee808b2c08cf11';
+
 @ProviderFor(alertRepository)
 final alertRepositoryProvider = AlertRepositoryProvider._();
 
@@ -749,6 +795,58 @@ abstract class _$PatientMedicalHistoryController
             as $ClassProviderElement<
               AnyNotifier<AsyncValue<MedicalHistory>, MedicalHistory>,
               AsyncValue<MedicalHistory>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
+@ProviderFor(AiChatController)
+final aiChatControllerProvider = AiChatControllerProvider._();
+
+final class AiChatControllerProvider
+    extends $NotifierProvider<AiChatController, AiChatControllerState> {
+  AiChatControllerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'aiChatControllerProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$aiChatControllerHash();
+
+  @$internal
+  @override
+  AiChatController create() => AiChatController();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AiChatControllerState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AiChatControllerState>(value),
+    );
+  }
+}
+
+String _$aiChatControllerHash() => r'2a6650f3059c7534f580988c22aef5e3f8b6ab96';
+
+abstract class _$AiChatController extends $Notifier<AiChatControllerState> {
+  AiChatControllerState build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AiChatControllerState, AiChatControllerState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AiChatControllerState, AiChatControllerState>,
+              AiChatControllerState,
               Object?,
               Object?
             >;

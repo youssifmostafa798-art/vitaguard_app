@@ -98,7 +98,7 @@ void main() {
       tester,
       ChatListPatient(
         repository: repository,
-        aiChatScreen: AiChatScreen(provider: aiProvider),
+        aiChatScreen: AiChatScreen(),
       ),
     );
     await tester.pumpAndSettle();
@@ -118,7 +118,7 @@ void main() {
       tester,
       ChatListDr(
         repository: repository,
-        aiChatScreen: AiChatScreen(provider: aiProvider),
+        aiChatScreen: AiChatScreen(),
       ),
     );
     await tester.pumpAndSettle();
@@ -135,7 +135,7 @@ void main() {
 
     await _pumpHarness(
       tester,
-      AiChatScreen(provider: provider),
+      AiChatScreen(),
     );
 
     await tester.pumpAndSettle();
@@ -180,7 +180,7 @@ void main() {
 
     await _pumpHarness(
       tester,
-      AiChatScreen(provider: provider),
+      AiChatScreen(),
     );
 
     await tester.pumpAndSettle();
@@ -283,6 +283,7 @@ class FakeAiChatRepository implements AiChatRepository {
       role: AiMessageRole.user,
       content: content,
       status: AiMessageStatus.complete,
+      
       provider: null,
       model: null,
       errorMessage: null,
@@ -303,7 +304,8 @@ class FakeAiChatRepository implements AiChatRepository {
       role: AiMessageRole.assistant,
       content: content,
       status: status,
-      provider: 'gemini',
+      
+      provider: 'google',
       model: 'gemini-2.5-flash',
       errorMessage: null,
       createdAt: DateTime(2026, 4, 14, 10, 1),

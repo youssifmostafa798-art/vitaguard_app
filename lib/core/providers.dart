@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/legacy.dart' as legacy;
 import 'package:vitaguard_app/auth/ui/auth_provider.dart';
-import 'package:vitaguard_app/ai_chat/ui/ai_chat_provider.dart';
 import 'package:vitaguard_app/core/alerts/alert_center_provider.dart';
 import 'package:vitaguard_app/patient/ui/patient_provider.dart';
 import 'package:vitaguard_app/doctor/ui/doctor_provider.dart';
@@ -12,9 +11,6 @@ final authProvider = legacy.ChangeNotifierProvider<AuthProvider>((ref) {
   return AuthProvider();
 });
 
-final aiChatProvider = legacy.ChangeNotifierProvider<AiChatProvider>((ref) {
-  return AiChatProvider();
-});
 
 final patientProvider = legacy.ChangeNotifierProvider<PatientProvider>((ref) {
   return PatientProvider();

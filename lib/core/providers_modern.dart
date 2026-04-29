@@ -14,7 +14,9 @@ import 'package:vitaguard_app/Doctor/data/doctor_repository.dart';
 import 'package:vitaguard_app/facility/data/facility_repository.dart';
 import 'package:vitaguard_app/patient/data/patient_repository.dart';
 import 'package:vitaguard_app/patient/models/patient_models.dart';
-
+import 'package:vitaguard_app/ai_chat/data/ai_chat_models.dart';
+import 'package:vitaguard_app/ai_chat/data/ai_chat_repository.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
 part 'providers_modern.g.dart';
 
 @Riverpod(keepAlive: true)
@@ -88,6 +90,11 @@ FacilityRepository facilityRepository(Ref ref) {
 @riverpod
 ChatRepository chatRepository(Ref ref) {
   return ChatRepository(supabase: ref.watch(supabaseServiceProvider));
+}
+
+@riverpod
+AiChatRepository aiChatRepository(Ref ref) {
+  return SupabaseAiChatRepository(supabase: ref.watch(supabaseServiceProvider));
 }
 
 @riverpod
@@ -172,8 +179,8 @@ class PatientMedicalHistoryController
     return ref.read(patientRepositoryProvider).getMedicalHistory();
   }
 
-  Future<bool> update(MedicalHistory history) async {
-    final previous = state.valueOrNull;
+  Future<bool> saveHistory(MedicalHistory history) async {
+    final previous = state.value;
     state = const AsyncLoading<MedicalHistory>();
     try {
       await ref.read(patientRepositoryProvider).updateMedicalHistory(history);
@@ -187,3 +194,152 @@ class PatientMedicalHistoryController
     }
   }
 }
+
+class AiChatControllerState {
+  const AiChatControllerState({
+    this.isLoading = false,
+    this.isSending = false,
+    this.error,
+    this.conversation,
+    this.messageStream,
+    this.loadedUserId,
+    this.lastMessageSentAt,
+  });
+
+  final bool isLoading;
+  final bool isSending;
+  final String? error;
+  final AiConversation? conversation;
+  final Stream<List<AiMessage>>? messageStream;
+  final String? loadedUserId;
+  final DateTime? lastMessageSentAt;
+
+  AiChatControllerState copyWith({
+    bool? isLoading,
+    bool? isSending,
+    String? error,
+    AiConversation? conversation,
+    Stream<List<AiMessage>>? messageStream,
+    String? loadedUserId,
+    DateTime? lastMessageSentAt,
+    bool clearError = false,
+  }) {
+    return AiChatControllerState(
+      isLoading: isLoading ?? this.isLoading,
+      isSending: isSending ?? this.isSending,
+      error: clearError ? null : error ?? this.error,
+      conversation: conversation ?? this.conversation,
+      messageStream: messageStream ?? this.messageStream,
+      loadedUserId: loadedUserId ?? this.loadedUserId,
+      lastMessageSentAt: lastMessageSentAt ?? this.lastMessageSentAt,
+    );
+  }
+}
+
+@riverpod
+class AiChatController extends _$AiChatController {
+  @override
+  AiChatControllerState build() {
+    return const AiChatControllerState();
+  }
+
+  Future<List<AiConversation>> fetchUserHistory() async {
+    final repo = ref.read(aiChatRepositoryProvider);
+    if (repo.currentUserIdOrNull == null) return [];
+    return await repo.fetchConversationHistory();
+  }
+
+  Future<void> ensureConversation({bool forceRefresh = false, String? conversationId}) async {
+    final repo = ref.read(aiChatRepositoryProvider);
+    final currentUserId = repo.currentUserIdOrNull;
+    if (currentUserId == null) {
+      state = state.copyWith(
+        conversation: null,
+        messageStream: null,
+        loadedUserId: null,
+        error: 'You must be logged in to chat with VitaGuard AI.',
+      );
+      return;
+    }
+
+    final isTargetingDifferentConversation = conversationId != null && state.conversation?.id != conversationId;
+
+    if (!forceRefresh &&
+        !isTargetingDifferentConversation &&
+        state.conversation != null &&
+        state.loadedUserId == currentUserId &&
+        state.messageStream != null) {
+      return;
+    }
+
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      final conversation = await repo.ensureConversation(conversationId);
+      final messageStream = repo.streamMessages(conversation.id);
+      
+      state = state.copyWith(
+        conversation: conversation,
+        messageStream: messageStream,
+        loadedUserId: currentUserId,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        error: ErrorMapper.map(e),
+        isLoading: false,
+      );
+    }
+  }
+
+  Future<bool> sendMessage(String content) async {
+    final text = content.trim();
+    if (text.isEmpty || state.isSending) return false;
+
+    final now = DateTime.now();
+    if (state.lastMessageSentAt != null && 
+        now.difference(state.lastMessageSentAt!).inMilliseconds < 1000) {
+       return false;
+    }
+
+    state = state.copyWith(lastMessageSentAt: now);
+
+    await ensureConversation();
+    final conversation = state.conversation;
+    if (conversation == null) {
+      return false;
+    }
+
+    state = state.copyWith(isSending: true, clearError: true);
+
+    try {
+      final repo = ref.read(aiChatRepositoryProvider);
+      final userMessageId = await repo.insertUserMessage(
+        conversation.id,
+        text,
+      );
+      await repo.requestAssistantReply(
+        conversationId: conversation.id,
+        userMessageId: userMessageId,
+      );
+      state = state.copyWith(isSending: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        error: ErrorMapper.map(e),
+        isSending: false,
+      );
+      return false;
+    }
+  }
+
+  void clearError() {
+    if (state.error == null) return;
+    state = state.copyWith(clearError: true);
+  }
+
+  void reset() {
+    state = const AiChatControllerState();
+  }
+}
+
