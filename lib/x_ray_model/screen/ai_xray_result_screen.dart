@@ -11,6 +11,7 @@ import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/patient/models/patient_models.dart';
 
 import '../widgets/ai_diagnosis_display_widgets.dart';
+import '../widgets/clinical_popup.dart';
 import '../data/doctor_two_phase_ai_view_data.dart';
 
 /// AI X-Ray Diagnosis: raw image always visible; AI overlays and text only when the user enables **AI Layer**.
@@ -40,10 +41,13 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
   String? _overrideNote;
   final TransformationController _transformationController =
       TransformationController();
+  final ClinicalPopupController _clinicalPopupController =
+      ClinicalPopupController();
 
   @override
   void dispose() {
     _transformationController.dispose();
+    _clinicalPopupController.dispose();
     super.dispose();
   }
 
@@ -60,9 +64,11 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
         title: 'AI Analysis Assistant',
         automaticallyImplyLeading: true,
       ),
-      body: SafeArea(
-        child: AppBackground(
-          child: Stack(
+      body: ClinicalPopupHost(
+        controller: _clinicalPopupController,
+        child: SafeArea(
+          child: AppBackground(
+            child: Stack(
             children: [
               SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -132,9 +138,9 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                       Gap(24.h),
                       ActionCTARow(
                         onAddToReport: () => _addToReport(aiData),
-                        onFlagForReview: _flagForReview,
-                        onMarkReviewed: _markReviewed,
-                        onOverride: _overrideAnalysis,
+                          onFlagForReview: _flagForReview,
+                          onMarkReviewed: _markReviewed,
+                          onOverride: _overrideAnalysis,
                         isAddedToReport: _addedToReport,
                         isFlaggedForReview: _flaggedForReview,
                         isReviewed: _reviewed,
@@ -191,15 +197,7 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                       Gap(12.h),
                       Center(
                         child: TextButton(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Error reported. Thank you for your feedback.',
-                                ),
-                              ),
-                            );
-                          },
+                          onPressed: _reportIssueFeedback,
                           child: Text(
                             'Report an issue with this analysis',
                             style: TextStyle(
@@ -216,8 +214,18 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
               ),
             ],
           ),
+          ),
         ),
       ),
+    );
+  }
+
+  void _reportIssueFeedback() {
+    _showClinicalPopup(
+      message: 'Error reported. Thank you for your feedback.',
+      icon: Icons.report_gmailerrorred_outlined,
+      type: PopupType.flag,
+      anchor: ClinicalPopupAnchor.bottomRight,
     );
   }
 
@@ -227,65 +235,103 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
 
     if (!mounted) return;
     setState(() => _addedToReport = true);
-    _showSnackBar('AI report summary copied and marked for report inclusion.');
+    _showClinicalPopup(
+      message: 'AI report summary copied and marked for report inclusion.',
+      icon: Icons.note_add_outlined,
+      type: PopupType.addToReport,
+      anchor: ClinicalPopupAnchor.bottomCenter,
+    );
   }
 
   void _flagForReview() {
     setState(() => _flaggedForReview = true);
-    _showSnackBar('Analysis flagged for clinician review.');
+    _showClinicalPopup(
+      message: 'Analysis flagged for clinician review.',
+      icon: Icons.flag_outlined,
+      type: PopupType.flag,
+      anchor: ClinicalPopupAnchor.bottomRight,
+    );
   }
 
   void _markReviewed() {
     setState(() => _reviewed = true);
-    _showSnackBar('Analysis marked as reviewed.');
+    _showClinicalPopup(
+      message: 'Analysis marked as reviewed.',
+      icon: Icons.verified_outlined,
+      type: PopupType.reviewed,
+      anchor: ClinicalPopupAnchor.bottomRight,
+    );
   }
 
   Future<void> _overrideAnalysis() async {
     final controller = TextEditingController(text: _overrideNote ?? '');
-    final override = await showDialog<String>(
+    final override = await showGeneralDialog<String>(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Override AI analysis'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Enter the corrected clinical impression or reason for override.',
+      barrierLabel: 'Override AI analysis',
+      transitionDuration: const Duration(milliseconds: 190),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        String? validationMessage;
+
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              title: const Text('Override AI analysis'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Enter the corrected clinical impression or reason for override.',
+                  ),
+                  Gap(12.h),
+                  TextField(
+                    controller: controller,
+                    maxLines: 5,
+                    decoration: InputDecoration(
+                      labelText: 'Override note',
+                      border: const OutlineInputBorder(),
+                      alignLabelWithHint: true,
+                      errorText: validationMessage,
+                    ),
+                  ),
+                ],
               ),
-              Gap(12.h),
-              TextField(
-                controller: controller,
-                maxLines: 5,
-                decoration: const InputDecoration(
-                  labelText: 'Override note',
-                  border: OutlineInputBorder(),
-                  alignLabelWithHint: true,
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
                 ),
-              ),
-            ],
+                FilledButton(
+                  onPressed: () {
+                    final text = controller.text.trim();
+                    if (text.isEmpty) {
+                      setDialogState(() {
+                        validationMessage = 'Override note is required.';
+                      });
+                      return;
+                    }
+                    Navigator.pop(dialogContext, text);
+                  },
+                  child: const Text('Save override'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return FadeTransition(
+          opacity: curved,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.94, end: 1).animate(curved),
+            child: child,
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final text = controller.text.trim();
-                if (text.isEmpty) {
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    const SnackBar(content: Text('Override note is required.')),
-                  );
-                  return;
-                }
-                Navigator.pop(dialogContext, text);
-              },
-              child: const Text('Save override'),
-            ),
-          ],
         );
       },
     );
@@ -297,7 +343,12 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
       _overrideNote = override;
       _reviewed = true;
     });
-    _showSnackBar('Override saved and analysis marked reviewed.');
+    _showClinicalPopup(
+      message: 'Override saved and analysis marked reviewed.',
+      icon: Icons.edit_note_outlined,
+      type: PopupType.override,
+      anchor: ClinicalPopupAnchor.center,
+    );
   }
 
   String _buildReportText(AiReviewViewData aiData) {
@@ -319,9 +370,18 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
     return buffer.toString().trim();
   }
 
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+  void _showClinicalPopup({
+    required String message,
+    required IconData icon,
+    required PopupType type,
+    ClinicalPopupAnchor anchor = ClinicalPopupAnchor.bottomRight,
+  }) {
+    _clinicalPopupController.showClinicalPopup(
+      message: message,
+      color: ClinicalPopupPalette.forType(type),
+      icon: icon,
+      type: type,
+      anchor: anchor,
+    );
   }
 }
