@@ -115,7 +115,8 @@ class XrayInferenceService {
   final _supabase = Supabase.instance.client;
 
   /// Returns the calibrated performance metrics for the current model.
-  Map<String, dynamic> get performanceMetrics => _ModelConfig._performanceMetrics;
+  Map<String, dynamic> get performanceMetrics =>
+      _ModelConfig._performanceMetrics;
 
   // ── Interpreter loader ─────────────────────────────────────
 
@@ -132,7 +133,7 @@ class XrayInferenceService {
         if (DateTime.now().isAfter(deadline)) {
           throw StateError(
             'TFLite interpreter initialization timed out after 10 s. '
-                'The model asset may be missing or corrupt.',
+            'The model asset may be missing or corrupt.',
           );
         }
         await Future.delayed(const Duration(milliseconds: 50));
@@ -208,7 +209,7 @@ class XrayInferenceService {
   // ── Main inference entry point ─────────────────────────────
 
   /// validate → preprocess → infer → classify → log
-  Future<XRayResult> analyze(File imageFile) async {
+  Future<XRayResult> analyze(File imageFile, {String? patientIdForLog}) async {
     // Step 1 — file validation (runs in isolate)
     final validationError = await _validateImage(imageFile);
     if (validationError != null) {
@@ -311,10 +312,10 @@ class XrayInferenceService {
         // Band centre is the midpoint; halfRange is half the band width.
         const mid =
             (_ModelConfig.pneumoniaThreshold + _ModelConfig.inconclusiveLow) /
-                2.0;
+            2.0;
         const halfRange =
             (_ModelConfig.pneumoniaThreshold - _ModelConfig.inconclusiveLow) /
-                2.0;
+            2.0;
         // Normalised distance from centre: 0 = edge of band, 1 = centre.
         confidence =
             1.0 - ((probPneumonia - mid) / halfRange).abs().clamp(0.0, 1.0);
@@ -338,7 +339,11 @@ class XrayInferenceService {
       );
 
       // Step 7 — async Supabase log (never blocks the caller)
-      _logToSupabase(imageFile, result).catchError((_) {});
+      _logToSupabase(
+        imageFile,
+        result,
+        patientIdForLog: patientIdForLog,
+      ).catchError((_) {});
 
       return result;
     } catch (e) {
@@ -357,11 +362,11 @@ class XrayInferenceService {
   /// Builds the human-readable report string for all three
   /// prediction states including the raw probability breakdown.
   String _buildReport(
-      String prediction,
-      double confidence,
-      double probNormal,
-      double probPneumonia,
-      ) {
+    String prediction,
+    double confidence,
+    double probNormal,
+    double probPneumonia,
+  ) {
     final confPct = (confidence * 100).toStringAsFixed(1);
     final pNorm = (probNormal * 100).toStringAsFixed(1);
     final pPneu = (probPneumonia * 100).toStringAsFixed(1);
@@ -390,9 +395,15 @@ class XrayInferenceService {
   /// Uploads the image and prediction to Supabase.
   /// Runs entirely in the background — any error is swallowed and
   /// logged rather than surfaced to the user.
-  Future<void> _logToSupabase(File imageFile, XRayResult result) async {
+  Future<void> _logToSupabase(
+    File imageFile,
+    XRayResult result, {
+    required String? patientIdForLog,
+  }) async {
     final user = _supabase.auth.currentUser;
-    if (user == null) return;
+    if (user == null || patientIdForLog == null || patientIdForLog.isEmpty) {
+      return;
+    }
 
     final bytes = await imageFile.readAsBytes();
     final fileName = '${user.id}/${DateTime.now().millisecondsSinceEpoch}.jpg';
@@ -400,16 +411,16 @@ class XrayInferenceService {
     await _supabase.storage
         .from('xray-images')
         .uploadBinary(
-      fileName,
-      bytes,
-      fileOptions: const FileOptions(
-        contentType: 'image/jpeg',
-        upsert: true,
-      ),
-    );
+          fileName,
+          bytes,
+          fileOptions: const FileOptions(
+            contentType: 'image/jpeg',
+            upsert: true,
+          ),
+        );
 
     await _supabase.from('patient_xray_results').insert({
-      'patient_id': user.id,
+      'patient_id': patientIdForLog,
       'image_path': fileName,
       'prediction': result.prediction,
       'confidence': result.confidence,
@@ -474,11 +485,7 @@ List<List<List<List<double>>>> _preprocessImage(String path) {
         final pixel = decoded!.getPixel(x, y);
         // Feed raw decoded RGB values only. The TFLite graph applies
         // /255 + ImageNet normalization internally.
-        return [
-          pixel.r.toDouble(),
-          pixel.g.toDouble(),
-          pixel.b.toDouble(),
-        ];
+        return [pixel.r.toDouble(), pixel.g.toDouble(), pixel.b.toDouble()];
       });
     }),
   ];

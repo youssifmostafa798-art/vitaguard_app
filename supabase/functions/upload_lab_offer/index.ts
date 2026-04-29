@@ -4,6 +4,17 @@ import { uploadBase64File, inferExtension } from "../_shared/upload.ts";
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+function validationError(details: string) {
+  return jsonResponse({ error: "Invalid input", details }, 400);
+}
+
 Deno.serve(async (req) => {
   try {
     const payload = await req.json();
@@ -16,9 +27,13 @@ Deno.serve(async (req) => {
     const data = payload?.data as string | undefined;
 
     if (!facilityId || !offerId || !title || !description || !filename || !contentType || !data) {
-      return new Response(JSON.stringify({ error: "Missing required fields." }), {
-        status: 400,
-      });
+      return validationError(
+        "Missing required fields: facility_id, offer_id, title, description, filename, content_type, and data are required.",
+      );
+    }
+
+    if (!ALLOWED_TYPES.includes(contentType)) {
+      return validationError("Offer cover image must be a JPEG or PNG.");
     }
 
     const ext = inferExtension(filename, contentType);
@@ -44,13 +59,21 @@ Deno.serve(async (req) => {
 
     if (error) throw error;
 
-    return new Response(JSON.stringify({ image_path: path, offer_id: offerId }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse({ image_path: path, offer_id: offerId });
   } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    const err = error as {
+      message?: string;
+      code?: string;
+      details?: string;
+      hint?: string;
+    };
+
+    return jsonResponse({
+      error: "Offer creation failed",
+      details: err.message ?? "Unknown error",
+      code: err.code,
+      hint: err.hint,
+      supabaseDetails: err.details,
+    }, 400);
   }
 });

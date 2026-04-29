@@ -8,7 +8,7 @@ abstract class AiChatRepository {
   String? get currentUserIdOrNull;
 
   Future<AiConversation> ensureConversation([String? conversationId]);
-  
+
   Future<List<AiConversation>> fetchConversationHistory();
 
   Stream<List<AiMessage>> streamMessages(String conversationId);
@@ -42,7 +42,12 @@ class SupabaseAiChatRepository implements AiChatRepository {
         .eq('owner_user_id', _uid)
         .order('created_at', ascending: false);
 
-    return rows.map((row) => AiConversation.fromMap(Map<String, dynamic>.from(row as Map))).toList();
+    return rows
+        .map(
+          (row) =>
+              AiConversation.fromMap(Map<String, dynamic>.from(row as Map)),
+        )
+        .toList();
   }
 
   @override
@@ -54,7 +59,7 @@ class SupabaseAiChatRepository implements AiChatRepository {
           .eq('owner_user_id', _uid)
           .eq('id', conversationId)
           .limit(1);
-          
+
       if (existing.isNotEmpty) {
         return AiConversation.fromMap(
           Map<String, dynamic>.from(existing.first as Map),
@@ -64,7 +69,11 @@ class SupabaseAiChatRepository implements AiChatRepository {
     }
 
     final nowDateTime = DateTime.now();
-    final todayStart = DateTime.utc(nowDateTime.year, nowDateTime.month, nowDateTime.day).toIso8601String();
+    final todayStart = DateTime.utc(
+      nowDateTime.year,
+      nowDateTime.month,
+      nowDateTime.day,
+    ).toIso8601String();
 
     final existing = await _client
         .from('ai_conversations')
@@ -114,6 +123,7 @@ class SupabaseAiChatRepository implements AiChatRepository {
         .order('created_at', ascending: false)
         .map(
           (rows) => rows
+              .where((row) => row['role']?.toString() == 'assistant')
               .map(
                 (row) =>
                     AiMessage.fromMap(Map<String, dynamic>.from(row as Map)),

@@ -65,6 +65,16 @@ class FacilityRepository {
     required String description,
     File? image,
   }) async {
+    final cleanTitle = title.trim();
+    final cleanDescription = description.trim();
+
+    if (cleanTitle.isEmpty) {
+      throw StateError('Offer title is required.');
+    }
+    if (cleanDescription.isEmpty) {
+      throw StateError('Offer description is required.');
+    }
+
     if (image != null) {
       final size = await image.length();
       if (size > 10 * 1024 * 1024) {
@@ -73,7 +83,7 @@ class FacilityRepository {
       final contentType = _contentTypeForFile(image.path);
       if (contentType == 'application/octet-stream') {
         throw StateError(
-          'Invalid file type. Please upload a JPEG, PNG, or PDF.',
+          'Invalid cover image type. Please upload a JPEG or PNG image.',
         );
       }
 
@@ -82,10 +92,10 @@ class FacilityRepository {
         body: {
           'facility_id': _uid,
           'offer_id': Uuid.v4(),
-          'title': title,
-          'description': description,
+          'title': cleanTitle,
+          'description': cleanDescription,
           'filename': _basename(image.path),
-          'content_type': _contentTypeForFile(image.path),
+          'content_type': contentType,
           'data': base64Encode(await image.readAsBytes()),
         },
       );
@@ -94,8 +104,8 @@ class FacilityRepository {
 
     await _client.from('facility_offers').insert({
       'facility_id': _uid,
-      'title': title,
-      'description': description,
+      'title': cleanTitle,
+      'description': cleanDescription,
       'is_active': true,
     });
   }
@@ -118,7 +128,6 @@ class FacilityRepository {
     final ext = path.toLowerCase();
     if (ext.endsWith('.png')) return 'image/png';
     if (ext.endsWith('.jpg') || ext.endsWith('.jpeg')) return 'image/jpeg';
-    if (ext.endsWith('.pdf')) return 'application/pdf';
     return 'application/octet-stream';
   }
 }

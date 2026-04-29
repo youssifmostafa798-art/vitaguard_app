@@ -12,7 +12,16 @@ import 'package:vitaguard_app/core/providers.dart';
 import 'ai_xray_result_screen.dart';
 
 class UploadXRay extends ConsumerStatefulWidget {
-  const UploadXRay({super.key});
+  const UploadXRay({
+    super.key,
+    this.patientId,
+    this.patientName,
+    this.requiresPatientContext = false,
+  });
+
+  final String? patientId;
+  final String? patientName;
+  final bool requiresPatientContext;
 
   @override
   ConsumerState<UploadXRay> createState() => _UploadXRayState();
@@ -32,6 +41,14 @@ class _UploadXRayState extends ConsumerState<UploadXRay> {
   }
 
   void _handleScan() async {
+    if (widget.requiresPatientContext &&
+        (widget.patientId == null || widget.patientId!.trim().isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Linked patient is still syncing.')),
+      );
+      return;
+    }
+
     if (_selectedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select an X-ray image first')),
@@ -41,7 +58,7 @@ class _UploadXRayState extends ConsumerState<UploadXRay> {
 
     final success = await ref
         .read(patientProvider)
-        .analyzeXRay(_selectedImage!);
+        .analyzeXRay(_selectedImage!, patientId: widget.patientId);
 
     if (success) {
       if (!mounted) return;
@@ -87,7 +104,9 @@ class _UploadXRayState extends ConsumerState<UploadXRay> {
                     children: [
                       const Gap(20),
                       CustemText(
-                        text: "Upload the X-ray",
+                        text: widget.patientName == null
+                            ? "Upload the X-ray"
+                            : "Upload ${widget.patientName}'s X-ray",
                         size: 20,
                         weight: FontWeight.w600,
                         color: const Color(0xff003F6B),

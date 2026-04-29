@@ -86,10 +86,15 @@ class _MainCompanionState extends ConsumerState<MainCompanion>
     final List<Widget> screens = [
       CompanionHome(name: widget.name),
       ChatListPatient(),
-      UploadXRay(),
+      UploadXRay(
+        patientId: patientStatus?.patientId,
+        patientName: patientStatus?.name,
+        requiresPatientContext: true,
+      ),
       HardwareScreen(
         patientId: patientStatus?.patientId,
         patientName: patientStatus?.name,
+        requiresPatientContext: true,
       ),
     ];
 

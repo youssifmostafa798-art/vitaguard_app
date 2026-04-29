@@ -30,6 +30,11 @@ class ErrorMapper {
     }
 
     if (error is FunctionException) {
+      final details = _functionDetails(error);
+      if (details != null && details.isNotEmpty) {
+        return details;
+      }
+
       final msg = error.reasonPhrase ?? 'Function error (${error.status}).';
       // If we have a status 401, it's definitely an auth/session issue
       if (error.status == 401) {
@@ -47,21 +52,57 @@ class ErrorMapper {
     }
 
     final errorStr = error.toString().toLowerCase();
-    
+
     // Mask technical details / JSON / Gemini specific leakage
-    if (errorStr.contains('unauthorized') || errorStr.contains('invalid auth token') || errorStr.contains('missing authorization')) {
+    if (errorStr.contains('unauthorized') ||
+        errorStr.contains('invalid auth token') ||
+        errorStr.contains('missing authorization')) {
       return 'Session expired or unauthorized. Please log in again to continue.';
     }
-    
-    if (errorStr.contains('gemini') || 
-        errorStr.contains('v1beta') || 
+
+    if (errorStr.contains('gemini') ||
+        errorStr.contains('v1beta') ||
         errorStr.contains('v1/') ||
-        errorStr.contains('{') || 
+        errorStr.contains('{') ||
         errorStr.contains('status:') ||
         errorStr.contains('bad request')) {
       return 'Sorry, I\'m having trouble connecting right now. Please try again in a moment.';
     }
 
     return error.toString();
+  }
+
+  static String? _functionDetails(FunctionException error) {
+    dynamic details;
+    try {
+      details = (error as dynamic).details;
+    } catch (_) {
+      return null;
+    }
+
+    if (details is Map) {
+      final detailText = details['details']?.toString();
+      if (detailText != null &&
+          detailText.trim().isNotEmpty &&
+          detailText != '[object Object]') {
+        return detailText;
+      }
+
+      final errorText = details['error']?.toString();
+      if (errorText != null &&
+          errorText.trim().isNotEmpty &&
+          errorText != '[object Object]') {
+        return errorText;
+      }
+    }
+
+    final detailsText = details?.toString();
+    if (detailsText == null ||
+        detailsText.trim().isEmpty ||
+        detailsText.contains('[object Object]')) {
+      return null;
+    }
+
+    return detailsText;
   }
 }

@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_field.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/facility/data/facility_repository.dart';
 
@@ -82,9 +83,11 @@ class _AddOfferState extends State<AddOffer> {
       Navigator.pop(context, nameController.text);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Failed to create offer: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Failed to create offer: ${ErrorMapper.map(e)}"),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
