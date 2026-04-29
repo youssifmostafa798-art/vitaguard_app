@@ -15,7 +15,9 @@ class AlertNotificationService {
   );
 
   static const _warningChannelId = 'vitaguard_warning_alerts';
-  static const _criticalChannelId = 'vitaguard_critical_alerts';
+  // Android notification channels are immutable after creation. Bump this id
+  // whenever sound/vibration settings change so existing installs receive them.
+  static const _criticalChannelId = 'vitaguard_critical_alerts_v2';
 
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
@@ -31,7 +33,9 @@ class AlertNotificationService {
       return;
     }
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/launcher_icon');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/launcher_icon',
+    );
     final darwinSettings = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
@@ -44,7 +48,10 @@ class AlertNotificationService {
     );
 
     await _notifications.initialize(
-      settings: InitializationSettings(android: androidSettings, iOS: darwinSettings),
+      settings: InitializationSettings(
+        android: androidSettings,
+        iOS: darwinSettings,
+      ),
     );
 
     if (Platform.isAndroid) {
@@ -179,8 +186,9 @@ class AlertNotificationService {
   Future<void> _invokePlatformMethod(String method) async {
     try {
       await _platformChannel.invokeMethod<void>(method);
-    } catch (_) {
+    } catch (error) {
       // Native siren and vibration are best effort.
+      debugPrint('Critical alert platform method failed ($method): $error');
     }
   }
 }

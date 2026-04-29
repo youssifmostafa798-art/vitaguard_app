@@ -59,14 +59,17 @@ class PatientProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> analyzeXRay(File image) async {
+  Future<bool> analyzeXRay(File image, {String? patientId}) async {
     _isLoading = true;
     _error = null;
     _lastXRayResult = null;
     notifyListeners();
 
     try {
-      _lastXRayResult = await _repository.analyzeXRay(image);
+      _lastXRayResult = await _repository.analyzeXRay(
+        image,
+        patientId: patientId,
+      );
       _isLoading = false;
       notifyListeners();
       return true;

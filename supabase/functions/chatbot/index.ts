@@ -7,7 +7,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 class HttpError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(public status: number, message: string, public details?: string) {
     super(message);
     this.name = "HttpError";
   }
@@ -37,13 +37,27 @@ async function getUserIdFromRequest(req: Request) {
   return data.user.id;
 }
 
+function requireUuid(value: unknown, field: string) {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new HttpError(400, "Invalid input", `Missing required field: ${field}.`);
+  }
+
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidPattern.test(value)) {
+    throw new HttpError(400, "Invalid input", `${field} must be a valid UUID.`);
+  }
+
+  return value;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return jsonResponse("ok");
 
   try {
     const userId = await getUserIdFromRequest(req);
     const body = (await req.json()) as any;
-    const { conversationId, userMessageId } = body;
+    const conversationId = requireUuid(body?.conversationId, "conversationId");
+    const userMessageId = requireUuid(body?.userMessageId, "userMessageId");
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const assistantMessageId = crypto.randomUUID();
@@ -66,14 +80,24 @@ Deno.serve(async (req: Request) => {
 
   } catch (error) {
     const status = error instanceof HttpError ? error.status : 500;
-    return jsonResponse({ error: error instanceof Error ? error.message : "Internal Error" }, status);
+    return jsonResponse({
+      error: error instanceof Error ? error.message : "Internal Error",
+      details: error instanceof HttpError ? error.details : undefined,
+    }, status);
   }
 });
 
 async function processRequest(supabase: any, conversationId: string, assistantMessageId: string, userMessageId: string) {
   try {
-    const { data: userMsg } = await supabase.from("ai_messages").select("content").eq("id", userMessageId).single();
-    if (!userMsg) throw new Error("User message not found.");
+    const { data: userMsg, error: userMessageError } = await supabase
+      .from("ai_messages")
+      .select("content, role, conversation_id")
+      .eq("id", userMessageId)
+      .eq("conversation_id", conversationId)
+      .single();
+
+    if (userMessageError || !userMsg) throw new Error("User message not found.");
+    if (userMsg.role !== "user") throw new Error("Message must be a user prompt.");
 
     const { data: history } = await supabase
       .from("ai_messages")
@@ -133,7 +157,7 @@ STRICT FORMATTING RULES:
     }
 
     await supabase.from("ai_messages").update({
-      content: fullText.trim(),
+      content: sanitizeAssistantResponse(fullText, userMsg.content),
       status: "complete",
       updated_at: new Date().toISOString(),
     }).eq("id", assistantMessageId);
@@ -146,4 +170,27 @@ STRICT FORMATTING RULES:
       updated_at: new Date().toISOString(),
     }).eq("id", assistantMessageId);
   }
+}
+
+function sanitizeAssistantResponse(raw: string, userPrompt: string) {
+  let cleaned = raw
+    .replace(/<thought>[\s\S]*?<\/thought>/gi, "")
+    .replace(/<thought>[\s\S]*$/gi, "")
+    .replace(/\*\*\s+(.*?)\s+\*\*/g, "**$1**")
+    .trim();
+
+  const prompt = userPrompt.trim();
+  if (!prompt || !cleaned) return cleaned;
+
+  const escapedPrompt = prompt.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const leadingEchoPatterns = [
+    new RegExp(`^(user\\s*:?\\s*)?${escapedPrompt}\\s*[-:]*\\s*`, "i"),
+    new RegExp(`^["']${escapedPrompt}["']\\s*[-:]*\\s*`, "i"),
+  ];
+
+  for (const pattern of leadingEchoPatterns) {
+    cleaned = cleaned.replace(pattern, "").trim();
+  }
+
+  return cleaned || "I'm sorry, I could not generate a useful response. Please try rephrasing your question.";
 }

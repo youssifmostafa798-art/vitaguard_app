@@ -22,7 +22,7 @@ class PatientRepository {
         .select('id, name, email')
         .eq('role', 'doctor')
         .order('name', ascending: true);
-        
+
     return List<Map<String, dynamic>>.from(response);
   }
 
@@ -137,7 +137,7 @@ class PatientRepository {
     return patientId;
   }
 
-  Future<XRayResult> analyzeXRay(File imageFile) async {
+  Future<XRayResult> analyzeXRay(File imageFile, {String? patientId}) async {
     final uid = _supabase.currentUidOrNull;
     if (uid == null) {
       throw StateError('You must be logged in to perform a scan.');
@@ -145,8 +145,23 @@ class PatientRepository {
 
     // On-device TFLite inference — fast, reliable, no network dependency.
     // Background Supabase logging is handled inside the service itself.
-    final result = await XrayInferenceService.instance.analyze(imageFile);
+    final logPatientId = patientId ?? await _currentPatientLogIdOrNull();
+    final result = await XrayInferenceService.instance.analyze(
+      imageFile,
+      patientIdForLog: logPatientId,
+    );
     return result;
+  }
+
+  Future<String?> _currentPatientLogIdOrNull() async {
+    final rows = await _client
+        .from('profiles')
+        .select('role')
+        .eq('id', _uid)
+        .limit(1);
+
+    if (rows.isEmpty) return null;
+    return rows.first['role']?.toString() == 'patient' ? _uid : null;
   }
 
   Future<void> uploadMedicalDocument(File documentFile) async {

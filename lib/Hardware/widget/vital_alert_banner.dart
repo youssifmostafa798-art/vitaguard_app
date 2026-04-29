@@ -33,14 +33,14 @@ class VitalAlertBanner extends StatefulWidget {
 class _VitalAlertBannerState extends State<VitalAlertBanner>
     with SingleTickerProviderStateMixin {
   // Track previous states so we fire haptics exactly once per transition.
-  bool _wasAlert    = false;
+  bool _wasAlert = false;
   bool _wasPreAlert = false;
 
   @override
   void didUpdateWidget(VitalAlertBanner old) {
     super.didUpdateWidget(old);
 
-    final isAlert    = widget.alertState.hasAlert;
+    final isAlert = widget.alertState.hasAlert;
     final isPreAlert = widget.alertState.hasPreAlert;
 
     if (isAlert && !_wasAlert) {
@@ -49,7 +49,7 @@ class _VitalAlertBannerState extends State<VitalAlertBanner>
       HapticFeedback.selectionClick();
     }
 
-    _wasAlert    = isAlert;
+    _wasAlert = isAlert;
     _wasPreAlert = isPreAlert;
   }
 
@@ -57,12 +57,12 @@ class _VitalAlertBannerState extends State<VitalAlertBanner>
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 320),
-      switchInCurve:  Curves.easeOutCubic,
+      switchInCurve: Curves.easeOutCubic,
       switchOutCurve: Curves.easeInCubic,
       transitionBuilder: (child, animation) => SlideTransition(
         position: Tween<Offset>(
           begin: const Offset(0, -1),
-          end:   Offset.zero,
+          end: Offset.zero,
         ).animate(animation),
         child: FadeTransition(opacity: animation, child: child),
       ),
@@ -75,15 +75,15 @@ class _VitalAlertBannerState extends State<VitalAlertBanner>
 
     if (state.hasAlert) {
       return _ActiveAlertBanner(
-        key:        ValueKey('alert_${state.primaryAlert!.id}'),
+        key: ValueKey('alert_${state.primaryAlert!.id}'),
         alertState: state,
-        onDismiss:  widget.onDismiss,
+        onDismiss: widget.onDismiss,
       );
     }
 
     if (state.hasPreAlert) {
       return _PreAlertStrip(
-        key:     const ValueKey('pre_alert'),
+        key: const ValueKey('pre_alert'),
         preAlert: state.preAlert!,
       );
     }
@@ -109,8 +109,12 @@ class _ActiveAlertBanner extends StatelessWidget {
     final alert = alertState.primaryAlert!;
     final isCritical = alert.severity == AlertSeverity.critical;
 
-    final Color bg   = isCritical ? const Color(0xFFC62828) : const Color(0xFFE65100);
-    final Color soft = isCritical ? const Color(0xFFEF9A9A) : const Color(0xFFFFCC80);
+    final Color bg = isCritical
+        ? const Color(0xFFC62828)
+        : const Color(0xFFE65100);
+    final Color soft = isCritical
+        ? const Color(0xFFEF9A9A)
+        : const Color(0xFFFFCC80);
 
     final int extra = alertState.allAlerts.length - 1;
 
@@ -135,7 +139,7 @@ class _ActiveAlertBanner extends StatelessWidget {
             children: [
               // ── Icon ───────────────────────────────────────────────────────
               _PulsingIcon(
-                icon:  isCritical
+                icon: isCritical
                     ? Icons.warning_rounded
                     : Icons.info_outline_rounded,
                 color: Colors.white,
@@ -150,10 +154,10 @@ class _ActiveAlertBanner extends StatelessWidget {
                     Text(
                       alert.message,
                       style: TextStyle(
-                        color:      Colors.white,
-                        fontSize:   14.sp,
+                        color: Colors.white,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.w700,
-                        height:     1.3,
+                        height: 1.3,
                       ),
                     ),
                     Gap(2.h),
@@ -162,7 +166,7 @@ class _ActiveAlertBanner extends StatelessWidget {
                         Text(
                           _timeAgo(alert.timestamp),
                           style: TextStyle(
-                            color:   Colors.white.withValues(alpha: 0.75),
+                            color: Colors.white.withValues(alpha: 0.75),
                             fontSize: 11.sp,
                           ),
                         ),
@@ -172,7 +176,8 @@ class _ActiveAlertBanner extends StatelessWidget {
                             onTap: () => _showAllAlerts(context),
                             child: Container(
                               padding: EdgeInsets.symmetric(
-                                horizontal: 7.w, vertical: 2.h,
+                                horizontal: 7.w,
+                                vertical: 2.h,
                               ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.22),
@@ -181,8 +186,8 @@ class _ActiveAlertBanner extends StatelessWidget {
                               child: Text(
                                 '+$extra more',
                                 style: TextStyle(
-                                  color:      soft,
-                                  fontSize:   10.sp,
+                                  color: soft,
+                                  fontSize: 10.sp,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -201,13 +206,13 @@ class _ActiveAlertBanner extends StatelessWidget {
                 child: Container(
                   padding: EdgeInsets.all(4.r),
                   decoration: BoxDecoration(
-                    color:  Colors.white.withValues(alpha: 0.18),
+                    color: Colors.white.withValues(alpha: 0.18),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.close_rounded,
                     color: Colors.white,
-                    size:  18.r,
+                    size: 18.r,
                   ),
                 ),
               ),
@@ -262,8 +267,8 @@ class _PreAlertStrip extends StatelessWidget {
                     child: Text(
                       preAlert.label,
                       style: TextStyle(
-                        color:      const Color(0xFFE65100),
-                        fontSize:   13.sp,
+                        color: const Color(0xFFE65100),
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -271,8 +276,8 @@ class _PreAlertStrip extends StatelessWidget {
                   Text(
                     '${((1.0 - preAlert.progress) * VitalThresholds.alertOnsetDelay.inSeconds).ceil()}s',
                     style: TextStyle(
-                      color:      const Color(0xFFE65100).withValues(alpha: 0.7),
-                      fontSize:   11.sp,
+                      color: const Color(0xFFE65100).withValues(alpha: 0.7),
+                      fontSize: 11.sp,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -280,10 +285,10 @@ class _PreAlertStrip extends StatelessWidget {
               ),
             ),
             LinearProgressIndicator(
-              value:           preAlert.progress,
-              minHeight:       3,
+              value: preAlert.progress,
+              minHeight: 3,
               backgroundColor: Colors.orange.withValues(alpha: 0.15),
-              valueColor:      const AlwaysStoppedAnimation<Color>(
+              valueColor: const AlwaysStoppedAnimation<Color>(
                 Color(0xFFE65100),
               ),
             ),
@@ -324,9 +329,9 @@ class _AllAlertsSheet extends StatelessWidget {
           Text(
             'Active Alerts',
             style: TextStyle(
-              fontSize:   17.sp,
+              fontSize: 17.sp,
               fontWeight: FontWeight.w700,
-              color:      const Color(0xFF1E2A3E),
+              color: const Color(0xFF1E2A3E),
             ),
           ),
           Gap(12.h),
@@ -354,16 +359,16 @@ class _AlertRow extends StatelessWidget {
                 ? Icons.warning_rounded
                 : Icons.info_outline_rounded,
             color: color,
-            size:  20.r,
+            size: 20.r,
           ),
           Gap(10.w),
           Expanded(
             child: Text(
               alert.message,
               style: TextStyle(
-                fontSize:   13.sp,
+                fontSize: 13.sp,
                 fontWeight: FontWeight.w600,
-                color:      const Color(0xFF1E2A3E),
+                color: const Color(0xFF1E2A3E),
               ),
             ),
           ),
@@ -394,12 +399,13 @@ class _PulsingIconState extends State<_PulsingIcon>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-      vsync:    this,
+      vsync: this,
       duration: const Duration(milliseconds: 800),
     )..repeat(reverse: true);
-    _scale = Tween<double>(begin: 0.88, end: 1.12).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _scale = Tween<double>(
+      begin: 0.88,
+      end: 1.12,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -431,7 +437,7 @@ class _PulsingDotState extends State<_PulsingDot>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-      vsync:    this,
+      vsync: this,
       duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
     _opacity = Tween<double>(begin: 0.3, end: 1.0).animate(_ctrl);
@@ -448,7 +454,7 @@ class _PulsingDotState extends State<_PulsingDot>
     return FadeTransition(
       opacity: _opacity,
       child: Container(
-        width:  9.r,
+        width: 9.r,
         height: 9.r,
         decoration: const BoxDecoration(
           color: Color(0xFFE65100),

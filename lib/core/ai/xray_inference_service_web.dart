@@ -9,7 +9,10 @@ class XrayInferenceService {
 
   Future<void> ensureLoaded() async {}
 
-  Future<XRayResult> analyze(Object imageFile) async {
+  Future<XRayResult> analyze(
+    Object imageFile, {
+    String? patientIdForLog,
+  }) async {
     return XRayResult(
       isValid: false,
       prediction: null,

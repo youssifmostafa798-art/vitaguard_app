@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
@@ -33,7 +34,12 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
   /// Default ON — show summary and analysis immediately.
   bool _aiLayerOn = true;
   int _wlMode = 0;
-  final TransformationController _transformationController = TransformationController();
+  bool _addedToReport = false;
+  bool _flaggedForReview = false;
+  bool _reviewed = false;
+  String? _overrideNote;
+  final TransformationController _transformationController =
+      TransformationController();
 
   @override
   void dispose() {
@@ -79,7 +85,8 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                         aiLayerOn: _aiLayerOn,
                         onAiLayerChanged: (v) => setState(() => _aiLayerOn = v),
                         wlMode: _wlMode,
-                        onWlToggled: () => setState(() => _wlMode = (_wlMode + 1) % 3),
+                        onWlToggled: () =>
+                            setState(() => _wlMode = (_wlMode + 1) % 3),
                         onZoomReset: () {
                           _transformationController.value = Matrix4.identity();
                         },
@@ -117,11 +124,22 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
                       AiDiagnosisFindingsSection(labels: aiData.labels),
                       Gap(12.h),
                       AiDiagnosisSummaryCard(
-                        title: 'AI Summary',
-                        body: aiData.summary,
+                        title: _overrideNote == null
+                            ? 'AI Summary'
+                            : 'Clinician Override',
+                        body: _overrideNote ?? aiData.summary,
                       ),
                       Gap(24.h),
-                      const ActionCTARow(),
+                      ActionCTARow(
+                        onAddToReport: () => _addToReport(aiData),
+                        onFlagForReview: _flagForReview,
+                        onMarkReviewed: _markReviewed,
+                        onOverride: _overrideAnalysis,
+                        isAddedToReport: _addedToReport,
+                        isFlaggedForReview: _flaggedForReview,
+                        isReviewed: _reviewed,
+                        hasOverride: _overrideNote != null,
+                      ),
                     ],
 
                     Gap(24.h),
@@ -201,5 +219,109 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _addToReport(AiReviewViewData aiData) async {
+    final report = _buildReportText(aiData);
+    await Clipboard.setData(ClipboardData(text: report));
+
+    if (!mounted) return;
+    setState(() => _addedToReport = true);
+    _showSnackBar('AI report summary copied and marked for report inclusion.');
+  }
+
+  void _flagForReview() {
+    setState(() => _flaggedForReview = true);
+    _showSnackBar('Analysis flagged for clinician review.');
+  }
+
+  void _markReviewed() {
+    setState(() => _reviewed = true);
+    _showSnackBar('Analysis marked as reviewed.');
+  }
+
+  Future<void> _overrideAnalysis() async {
+    final controller = TextEditingController(text: _overrideNote ?? '');
+    final override = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Override AI analysis'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Enter the corrected clinical impression or reason for override.',
+              ),
+              Gap(12.h),
+              TextField(
+                controller: controller,
+                maxLines: 5,
+                decoration: const InputDecoration(
+                  labelText: 'Override note',
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final text = controller.text.trim();
+                if (text.isEmpty) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    const SnackBar(content: Text('Override note is required.')),
+                  );
+                  return;
+                }
+                Navigator.pop(dialogContext, text);
+              },
+              child: const Text('Save override'),
+            ),
+          ],
+        );
+      },
+    );
+
+    controller.dispose();
+    if (override == null || !mounted) return;
+
+    setState(() {
+      _overrideNote = override;
+      _reviewed = true;
+    });
+    _showSnackBar('Override saved and analysis marked reviewed.');
+  }
+
+  String _buildReportText(AiReviewViewData aiData) {
+    final buffer = StringBuffer()
+      ..writeln('VitaGuard AI X-Ray Analysis')
+      ..writeln('Diagnosis: ${aiData.diagnosisTitle}')
+      ..writeln('Confidence: ${aiData.confidencePercentText}')
+      ..writeln('Severity: ${aiData.severityLabel}')
+      ..writeln('Summary: ${_overrideNote ?? aiData.summary}');
+
+    if (aiData.labels.isNotEmpty) {
+      buffer.writeln('Findings: ${aiData.labels.join(', ')}');
+    }
+
+    if (_flaggedForReview) {
+      buffer.writeln('Review flag: Clinician review requested.');
+    }
+
+    return buffer.toString().trim();
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
