@@ -31,27 +31,75 @@ class XRayImageWithOptionalHeatmap extends StatelessWidget {
     switch (wlMode) {
       case 1: // High Contrast
         filter = const ColorFilter.matrix([
-          1.5, 0, 0, 0, -50,
-          0, 1.5, 0, 0, -50,
-          0, 0, 1.5, 0, -50,
-          0, 0, 0, 1, 0,
+          1.5,
+          0,
+          0,
+          0,
+          -50,
+          0,
+          1.5,
+          0,
+          0,
+          -50,
+          0,
+          0,
+          1.5,
+          0,
+          -50,
+          0,
+          0,
+          0,
+          1,
+          0,
         ]);
         break;
       case 2: // Inverted
         filter = const ColorFilter.matrix([
-          -1, 0, 0, 0, 255,
-          0, -1, 0, 0, 255,
-          0, 0, -1, 0, 255,
-          0, 0, 0, 1, 0,
+          -1,
+          0,
+          0,
+          0,
+          255,
+          0,
+          -1,
+          0,
+          0,
+          255,
+          0,
+          0,
+          -1,
+          0,
+          255,
+          0,
+          0,
+          0,
+          1,
+          0,
         ]);
         break;
       case 0:
       default:
         filter = const ColorFilter.matrix([
-          1, 0, 0, 0, 0,
-          0, 1, 0, 0, 0,
-          0, 0, 1, 0, 0,
-          0, 0, 0, 1, 0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
         ]);
         break;
     }
@@ -172,7 +220,9 @@ class ClinicalToolbar extends StatelessWidget {
               ),
               _ToolbarButton(
                 icon: Icons.contrast,
-                label: wlMode == 0 ? 'W/L: Norm' : (wlMode == 1 ? 'W/L: High' : 'W/L: Inv'),
+                label: wlMode == 0
+                    ? 'W/L: Norm'
+                    : (wlMode == 1 ? 'W/L: High' : 'W/L: Inv'),
                 onTap: onWlToggled,
               ),
               _ToolbarButton(
@@ -180,17 +230,16 @@ class ClinicalToolbar extends StatelessWidget {
                 label: 'Measure',
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Measurement tool coming soon')),
+                    const SnackBar(
+                      content: Text('Measurement tool coming soon'),
+                    ),
                   );
                 },
               ),
               Gap(12.w),
               Container(width: 1, height: 24.h, color: Colors.grey.shade300),
               Gap(12.w),
-              AiLayerToggle(
-                aiLayerOn: aiLayerOn,
-                onChanged: onAiLayerChanged,
-              ),
+              AiLayerToggle(aiLayerOn: aiLayerOn, onChanged: onAiLayerChanged),
             ],
           ),
         ),
@@ -200,11 +249,7 @@ class ClinicalToolbar extends StatelessWidget {
 }
 
 class _ToolbarButton extends StatelessWidget {
-  const _ToolbarButton({
-    required this.icon,
-    required this.label,
-    this.onTap,
-  });
+  const _ToolbarButton({required this.icon, required this.label, this.onTap});
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
@@ -285,7 +330,10 @@ class DiagnosisBannerCard extends StatelessWidget {
                   ),
                   Gap(6.w),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 4.w,
+                      vertical: 2.h,
+                    ),
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(4.r),
@@ -298,7 +346,7 @@ class DiagnosisBannerCard extends StatelessWidget {
                         color: color,
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ],
@@ -334,12 +382,22 @@ class ProbabilityBarChart extends StatelessWidget {
         children: [
           Text(
             'Probability breakdown',
-            style: textTheme.labelLarge?.copyWith(color: AppColors.textSecondary),
+            style: textTheme.labelLarge?.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
           Gap(12.h),
-          _BarRow(label: 'Normal', value: probNormal, color: Colors.green.shade500),
+          _BarRow(
+            label: 'Normal',
+            value: probNormal,
+            color: Colors.green.shade500,
+          ),
           Gap(8.h),
-          _BarRow(label: 'Pneumonia', value: probPneumonia, color: Colors.amber.shade600),
+          _BarRow(
+            label: 'Pneumonia',
+            value: probPneumonia,
+            color: Colors.amber.shade600,
+          ),
         ],
       ),
     );
@@ -412,7 +470,6 @@ class _BarRow extends StatelessWidget {
   }
 }
 
-
 /// Confidence + severity tiles.
 class AiDiagnosisMetricRow extends StatelessWidget {
   const AiDiagnosisMetricRow({
@@ -441,7 +498,8 @@ class AiDiagnosisMetricRow extends StatelessWidget {
             label: 'Severity (derived)',
             value: severityLabel,
             showInfoIcon: true,
-            infoTooltip: 'Severity is a derived metric based on model confidence.',
+            infoTooltip:
+                'Severity is a derived metric based on model confidence.',
           ),
         ),
       ],
@@ -467,8 +525,8 @@ class _MetricTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final labelColor = label.contains('Severity') && value == 'High' 
-        ? Colors.amber.shade700 
+    final labelColor = label.contains('Severity') && value == 'High'
+        ? Colors.amber.shade700
         : (value == 'Low' ? Colors.green.shade600 : AppColors.textPrimary);
 
     return Container(
@@ -494,9 +552,13 @@ class _MetricTile extends StatelessWidget {
                 Tooltip(
                   message: infoTooltip!,
                   triggerMode: TooltipTriggerMode.tap,
-                  child: Icon(Icons.info_outline, size: 14.sp, color: Colors.grey.shade400),
-                )
-              ]
+                  child: Icon(
+                    Icons.info_outline,
+                    size: 14.sp,
+                    color: Colors.grey.shade400,
+                  ),
+                ),
+              ],
             ],
           ),
           SizedBox(height: 6.h),
@@ -512,8 +574,8 @@ class _MetricTile extends StatelessWidget {
             Text(
               subLabel!,
               style: TextStyle(fontSize: 9.sp, color: Colors.grey.shade500),
-            )
-          ]
+            ),
+          ],
         ],
       ),
     );
@@ -541,7 +603,9 @@ class AiDiagnosisFindingsSection extends StatelessWidget {
         children: [
           Text(
             'Findings',
-            style: textTheme.labelLarge?.copyWith(color: AppColors.textSecondary),
+            style: textTheme.labelLarge?.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
           SizedBox(height: 10.h),
           ...labels.map(
@@ -550,8 +614,22 @@ class AiDiagnosisFindingsSection extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('• ', style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary)),
-                  Expanded(child: Text(l, style: textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary, height: 1.3))),
+                  Text(
+                    '• ',
+                    style: textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      l,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -582,9 +660,7 @@ class AiDiagnosisSummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.indigo.shade50,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: Colors.indigo.shade200,
-        ),
+        border: Border.all(color: Colors.indigo.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -597,7 +673,13 @@ class AiDiagnosisSummaryCard extends StatelessWidget {
             ),
           ),
           SizedBox(height: 8.h),
-          Text(body, style: textTheme.bodyMedium?.copyWith(height: 1.4, color: Colors.indigo.shade800)),
+          Text(
+            body,
+            style: textTheme.bodyMedium?.copyWith(
+              height: 1.4,
+              color: Colors.indigo.shade800,
+            ),
+          ),
         ],
       ),
     );
@@ -690,7 +772,26 @@ class AiErrorDisplay extends StatelessWidget {
 }
 
 class ActionCTARow extends StatelessWidget {
-  const ActionCTARow({super.key});
+  const ActionCTARow({
+    super.key,
+    required this.onAddToReport,
+    required this.onFlagForReview,
+    required this.onMarkReviewed,
+    required this.onOverride,
+    this.isAddedToReport = false,
+    this.isFlaggedForReview = false,
+    this.isReviewed = false,
+    this.hasOverride = false,
+  });
+
+  final VoidCallback onAddToReport;
+  final VoidCallback onFlagForReview;
+  final VoidCallback onMarkReviewed;
+  final VoidCallback onOverride;
+  final bool isAddedToReport;
+  final bool isFlaggedForReview;
+  final bool isReviewed;
+  final bool hasOverride;
 
   @override
   Widget build(BuildContext context) {
@@ -700,24 +801,33 @@ class ActionCTARow extends StatelessWidget {
           children: [
             Expanded(
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: onAddToReport,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(vertical: 14.h),
                 ),
-                child: const Text('Add to report'),
+                child: Text(
+                  isAddedToReport ? 'Added to report' : 'Add to report',
+                ),
               ),
             ),
             Gap(12.w),
             Expanded(
               child: OutlinedButton(
-                onPressed: () {},
+                onPressed: onFlagForReview,
                 style: OutlinedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 14.h),
-                  foregroundColor: AppColors.textSecondary,
+                  foregroundColor: isFlaggedForReview
+                      ? Colors.orange.shade800
+                      : AppColors.textSecondary,
+                  side: BorderSide(
+                    color: isFlaggedForReview
+                        ? Colors.orange.shade300
+                        : AppColors.border,
+                  ),
                 ),
-                child: const Text('Flag for review'),
+                child: Text(isFlaggedForReview ? 'Flagged' : 'Flag for review'),
               ),
             ),
           ],
@@ -727,25 +837,25 @@ class ActionCTARow extends StatelessWidget {
           children: [
             Expanded(
               child: OutlinedButton(
-                onPressed: () {},
+                onPressed: onMarkReviewed,
                 style: OutlinedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 14.h),
                   foregroundColor: Colors.green.shade700,
                   side: BorderSide(color: Colors.green.shade300),
                 ),
-                child: const Text('Mark reviewed'),
+                child: Text(isReviewed ? 'Reviewed' : 'Mark reviewed'),
               ),
             ),
             Gap(12.w),
             Expanded(
               child: OutlinedButton(
-                onPressed: () {},
+                onPressed: onOverride,
                 style: OutlinedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 14.h),
                   foregroundColor: Colors.red.shade700,
                   side: BorderSide(color: Colors.red.shade300),
                 ),
-                child: const Text('Override'),
+                child: Text(hasOverride ? 'Override saved' : 'Override'),
               ),
             ),
           ],
