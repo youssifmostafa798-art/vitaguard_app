@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
+import 'package:vitaguard_app/ai_chat/screen/ai_chat_screen.dart';
 import 'package:vitaguard_app/core/utils/home_header.dart';
 import 'package:vitaguard_app/facility/home.chat/screens/chat_facility_detail.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
@@ -16,7 +17,8 @@ import 'package:vitaguard_app/core/providers.dart';
 
 class ChatListFacility extends ConsumerStatefulWidget {
   final String name;
-  const ChatListFacility({super.key, required this.name});
+  final Widget? aiChatScreen;
+  const ChatListFacility({super.key, required this.name,this.aiChatScreen});
 
   @override
   ConsumerState<ChatListFacility> createState() => _ChatListFacilityState();
@@ -24,7 +26,14 @@ class ChatListFacility extends ConsumerStatefulWidget {
 
 class _ChatListFacilityState extends ConsumerState<ChatListFacility> {
   late final Stream<List<ChatPreview>> _chatStream;
-  void _onBotTap() {}
+  void _onBotTap() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => widget.aiChatScreen ?? const AiChatScreen(),
+      ),
+    );
+  }
 
   @override
   void initState() {

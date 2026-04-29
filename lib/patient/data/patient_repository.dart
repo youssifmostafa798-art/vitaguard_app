@@ -7,7 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/core/ai/xray_inference_service.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 import 'package:vitaguard_app/core/utils/uuid.dart';
-import 'package:vitaguard_app/patient/data/patient_models.dart';
+import 'package:vitaguard_app/patient/models/patient_models.dart';
 
 class PatientRepository {
   final SupabaseService _supabase = SupabaseService.instance;

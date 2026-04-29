@@ -5,7 +5,7 @@ import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_text.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
-import 'package:vitaguard_app/patient/data/patient_models.dart';
+import 'package:vitaguard_app/patient/models/patient_models.dart';
 
 class RadiologyResult extends StatelessWidget {
   final XRayResult result;

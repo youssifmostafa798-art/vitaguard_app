@@ -56,9 +56,10 @@ class _CompanionCodeState extends ConsumerState<CompanionCode> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Gap(10),
-                const Gap(40),
 
+                const Gap(50),
+
+                //Code
                 CustemText(
                   text: "Code",
                   size: 18,
@@ -97,6 +98,7 @@ class _CompanionCodeState extends ConsumerState<CompanionCode> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         else
+                          //copy
                           IconButton(
                             icon: const Icon(
                               Icons.copy,
@@ -112,6 +114,7 @@ class _CompanionCodeState extends ConsumerState<CompanionCode> {
 
                 const Gap(30),
 
+                //Change Code
                 SimpleButtom(
                   text: patient.isLoading ? "Regenerating..." : "Change Code",
                   onTap: patient.isLoading ? null : _regenerateCode,

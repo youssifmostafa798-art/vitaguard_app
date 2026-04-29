@@ -1,4 +1,4 @@
-import 'package:vitaguard_app/patient/data/patient_models.dart';
+import 'package:vitaguard_app/patient/models/patient_models.dart';
 
 /// Presentation model for Phase 2 AI UI.
 ///

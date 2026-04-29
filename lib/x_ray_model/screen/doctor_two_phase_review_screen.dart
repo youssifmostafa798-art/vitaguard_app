@@ -6,13 +6,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/core/providers.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
-import 'package:vitaguard_app/patient/data/patient_models.dart';
+import 'package:vitaguard_app/patient/models/patient_models.dart';
 import '../widgets/phase1_diagnosis_panel.dart';
 import '../widgets/phase2_ai_review_panel.dart';
 import '../widgets/raw_xray_viewer.dart';
 import '../widgets/review_progress_header.dart';
-import 'doctor_two_phase_ai_view_data.dart';
-import 'doctor_two_phase_models.dart';
+import '../data/doctor_two_phase_ai_view_data.dart';
+import '../model/doctor_two_phase_models.dart';
 
 /// Mandatory two-phase X-ray review: manual first (AI locked), then AI unlocks.
 ///

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 
-import '../screen/doctor_two_phase_ai_view_data.dart';
+import '../data/doctor_two_phase_ai_view_data.dart';
 import 'ai_diagnosis_display_widgets.dart';
 
 class Phase2AiReviewPanel extends StatefulWidget {

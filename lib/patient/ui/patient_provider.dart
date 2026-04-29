@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/patient/data/patient_repository.dart';
-import 'package:vitaguard_app/patient/data/patient_models.dart';
+import 'package:vitaguard_app/patient/models/patient_models.dart';
 
 class PatientProvider with ChangeNotifier {
   final PatientRepository _repository = PatientRepository();

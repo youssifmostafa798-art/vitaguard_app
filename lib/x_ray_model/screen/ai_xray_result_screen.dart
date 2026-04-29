@@ -7,10 +7,10 @@ import 'package:gap/gap.dart';
 import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
-import 'package:vitaguard_app/patient/data/patient_models.dart';
+import 'package:vitaguard_app/patient/models/patient_models.dart';
 
 import '../widgets/ai_diagnosis_display_widgets.dart';
-import 'doctor_two_phase_ai_view_data.dart';
+import '../data/doctor_two_phase_ai_view_data.dart';
 
 /// AI X-Ray Diagnosis: raw image always visible; AI overlays and text only when the user enables **AI Layer**.
 class AiXRayResultScreen extends ConsumerStatefulWidget {

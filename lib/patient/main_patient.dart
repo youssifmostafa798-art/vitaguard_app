@@ -23,8 +23,6 @@ class _MainPatientState extends State<MainPatient> {
   @override
   void initState() {
     super.initState();
-    // FIX: Keep `screens` length aligned with bottom-nav tabs to prevent index overflow
-    // when users open the Device tab (index 3).
     screens = [
       PatientHome(name: widget.name),
       ChatListPatient(),

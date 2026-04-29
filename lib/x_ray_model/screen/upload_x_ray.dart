@@ -86,6 +86,7 @@ class _UploadXRayState extends ConsumerState<UploadXRay> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const Gap(20),
+                      //Upload the X-ray
                       CustemText(
                         text: "Upload the X-ray",
                         size: 20,
@@ -124,6 +125,7 @@ class _UploadXRayState extends ConsumerState<UploadXRay> {
                                         color: Colors.grey,
                                       ),
                                       Gap(8),
+                                      //Tap to select image
                                       Text(
                                         "Tap to select image",
                                         style: TextStyle(color: Colors.grey),

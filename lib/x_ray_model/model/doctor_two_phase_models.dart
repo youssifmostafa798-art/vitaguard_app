@@ -1,4 +1,4 @@
-import 'package:vitaguard_app/patient/data/patient_models.dart';
+import 'package:vitaguard_app/patient/models/patient_models.dart';
 
 /// Workflow step for UI gating (AI must not run until [manual] is completed).
 enum ReviewPhase { manual, ai }

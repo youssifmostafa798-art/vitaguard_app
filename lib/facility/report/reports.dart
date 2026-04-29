@@ -21,6 +21,7 @@ class _ReportsState extends State<Reports> {
   final _nameController = TextEditingController();
   final _repository = FacilityRepository();
   bool _isLoading = false;
+  bool _isPicking = false;
   File? _selectedFile;
 
   @override
@@ -30,7 +31,7 @@ class _ReportsState extends State<Reports> {
     super.dispose();
   }
 
-  bool _isPicking = false;
+
 
   Future<void> _pickImage() async {
     if (_isPicking) return;

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 
-import '../screen/doctor_two_phase_models.dart';
+import '../model/doctor_two_phase_models.dart';
 
 class Phase1DiagnosisPanel extends StatelessWidget {
   const Phase1DiagnosisPanel({

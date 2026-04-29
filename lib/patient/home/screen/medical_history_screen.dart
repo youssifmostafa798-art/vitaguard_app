@@ -4,8 +4,8 @@ import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_field.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
-import 'package:vitaguard_app/patient/data/patient_models.dart';
-import 'package:vitaguard_app/patient/home/screen/medical_history_view_model.dart';
+import 'package:vitaguard_app/patient/models/patient_models.dart';
+import 'package:vitaguard_app/patient/models/medical_history_view_model.dart';
 import 'package:vitaguard_app/patient/home/widget/name_card.dart';
 
 class MedicalHistoryScreen extends StatefulWidget {
@@ -174,6 +174,7 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
 
                       const Gap(30),
 
+                      //Chronic Diseases
                       CustemField(
                         title: "Chronic Diseases",
                         hint: "No data available",
@@ -183,6 +184,7 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
 
                       const Gap(20),
 
+                      //Medications
                       CustemField(
                         title: "Medications",
                         hint: "No data available",
@@ -191,7 +193,7 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
                       ),
 
                       const Gap(20),
-
+                      //Allergies
                       CustemField(
                         title: "Allergies",
                         hint: "No data available",

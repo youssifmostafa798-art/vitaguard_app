@@ -16,8 +16,7 @@ class HardwareScreen extends StatefulWidget {
     this.automaticallyImplyLeading = true,
   });
 
-  /// When set (e.g. doctor viewing a patient), vitals load for this id;
-  /// otherwise uses the signed-in user.
+
   final String? patientId;
   final String? patientName;
   final bool automaticallyImplyLeading;
@@ -348,6 +347,7 @@ class _HardwareScreenState extends State<HardwareScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              //Sensor Array
                               Text(
                                 'Sensor Array',
                                 style: textTheme.titleLarge?.copyWith(
@@ -357,6 +357,7 @@ class _HardwareScreenState extends State<HardwareScreen>
                                 ),
                               ),
                               SizedBox(height: 4.h),
+                              //Real-time peripheral metrics
                               Text(
                                 'Real-time peripheral metrics',
                                 style: textTheme.bodyMedium?.copyWith(
@@ -367,6 +368,7 @@ class _HardwareScreenState extends State<HardwareScreen>
                             ],
                           ),
                         ),
+                        //wifi_tethering_rounded
                         Icon(
                           Icons.wifi_tethering_rounded,
                           size:  30.sp,

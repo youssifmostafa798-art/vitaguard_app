@@ -68,7 +68,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           final hasUser = Supabase.instance.client.auth.currentSession?.user != null;
           
           // Full-screen lock ONLY if we have no local user session.
-          // Other auth errors (like server-side 401s) will show in the inline error bubble below.
           final isLocked = !hasUser;
 
           return Scaffold(

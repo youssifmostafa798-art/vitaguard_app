@@ -5,7 +5,7 @@ import 'package:vitaguard_app/components/custem_background.dart';
 import 'package:vitaguard_app/components/custem_bottom.dart';
 import 'package:vitaguard_app/components/custem_field.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
-import 'package:vitaguard_app/patient/data/patient_models.dart';
+import 'package:vitaguard_app/patient/models/patient_models.dart';
 import 'package:vitaguard_app/core/providers.dart';
 
 class DailyReportScreen extends ConsumerStatefulWidget {
@@ -65,6 +65,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                     children: [
                       const Gap(30),
 
+                      //Heart Rate (bpm)
                       CustemField(
                         title: "Heart Rate (bpm)",
                         hint: "e.g. 75",
@@ -73,6 +74,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
 
                       const Gap(20),
 
+                      //Oxygen Level (%)
                       CustemField(
                         title: "Oxygen Level (%)",
                         hint: "e.g. 98",
@@ -81,6 +83,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
 
                       const Gap(20),
 
+                      //Temperature (°C)
                       CustemField(
                         title: "Temperature (°C)",
                         hint: "e.g. 36.5",
@@ -89,6 +92,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
 
                       const Gap(20),
 
+                      //Blood Pressure
                       CustemField(
                         title: "Blood Pressure",
                         hint: "e.g. 120/80",

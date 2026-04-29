@@ -4,7 +4,7 @@ import 'package:vitaguard_app/auth/ui/screens/create_account_screen.dart';
 import 'package:vitaguard_app/auth/ui/widgets/signup_success_dialog.dart';
 import 'package:vitaguard_app/core/providers.dart';
 import 'package:vitaguard_app/core/errors/error_mapper.dart';
-import 'package:vitaguard_app/patient/data/patient_models.dart';
+import 'package:vitaguard_app/patient/models/patient_models.dart';
 import 'package:vitaguard_app/patient/data/patient_repository.dart';
 import 'package:vitaguard_app/patient/home/screen/medical_history_screen.dart';
 

@@ -72,6 +72,7 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        //Available Doctors
         CustemText(
           text: "Available Doctors",
           size: 22,

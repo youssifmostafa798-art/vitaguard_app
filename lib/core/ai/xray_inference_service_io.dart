@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
-import 'package:vitaguard_app/patient/data/patient_models.dart';
+import 'package:vitaguard_app/patient/models/patient_models.dart';
 
 // ─────────────────────────────────────────────────────────────
 // Softmax helper
