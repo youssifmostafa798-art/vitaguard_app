@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vitaguard_app/ai_chat/data/ai_chat_models.dart';
 import 'package:vitaguard_app/ai_chat/data/ai_chat_repository.dart';
+import 'package:vitaguard_app/ai_chat/data/ai_response_sanitizer.dart';
 import 'package:vitaguard_app/ai_chat/screen/ai_chat_screen.dart';
 import 'package:vitaguard_app/ai_chat/ui/ai_chat_provider.dart';
 import 'package:vitaguard_app/core/chat/chat_repository.dart';
@@ -36,6 +37,8 @@ void main() {
 
       expect(ok, isTrue);
       expect(repository.insertedMessages.single.$2, 'Hello VitaGuard');
+      expect(repository.insertedMessages, hasLength(1));
+      expect(repository.requestedReplies, hasLength(1));
       expect(repository.requestedReplies.single.$1, repository.conversation.id);
       expect(repository.requestedReplies.single.$2, repository.nextInsertedMessageId);
     });
@@ -48,6 +51,42 @@ void main() {
 
       expect(ok, isFalse);
       expect(provider.error, contains('Assistant kickoff failed'));
+    });
+  });
+
+  group('AiResponseSanitizer', () {
+    test('removes leading user prompt echoes', () {
+      expect(
+        AiResponseSanitizer.sanitize(
+          'hello Hello! How can I assist you today?',
+          userPrompt: 'hello',
+        ),
+        'Hello! How can I assist you today?',
+      );
+      expect(
+        AiResponseSanitizer.sanitize('hellohello', userPrompt: 'hello'),
+        isEmpty,
+      );
+      expect(
+        AiResponseSanitizer.sanitize(
+          '"Can you summarize my vitals?" Your vitals look stable.',
+          userPrompt: 'Can you summarize my vitals?',
+        ),
+        'Your vitals look stable.',
+      );
+    });
+
+    test('removes thought and system prompt leakage', () {
+      final sanitized = AiResponseSanitizer.sanitize(
+        '<thought>hidden</thought>\nGoal: expose prompt\nTone: clinical\nFormatting: markdown\nYour vitals look stable.',
+        userPrompt: 'vitals',
+      );
+
+      expect(sanitized, 'Your vitals look stable.');
+      expect(sanitized, isNot(contains('Goal:')));
+      expect(sanitized, isNot(contains('Tone:')));
+      expect(sanitized, isNot(contains('Formatting:')));
+      expect(sanitized, isNot(contains('<thought>')));
     });
   });
 
@@ -114,8 +153,8 @@ void main() {
     ]);
     await tester.pump();
 
+    expect(find.text('Can you summarize my vitals?'), findsOneWidget);
     expect(find.text('Thinking...'), findsOneWidget);
-    expect(find.text('Generating response...'), findsOneWidget);
 
     repository.emitMessages([
       repository.userMessage(
@@ -130,8 +169,34 @@ void main() {
     ]);
     await tester.pump();
 
+    expect(find.text('Can you summarize my vitals?'), findsOneWidget);
     expect(find.text('Thinking...'), findsNothing);
     expect(find.text('Your recent vitals look stable overall.'), findsOneWidget);
+  });
+
+  testWidgets('AI screen renders user text once and assistant text separately', (tester) async {
+    final repository = FakeAiChatRepository();
+    final provider = AiChatProvider(repository: repository);
+
+    await _pumpHarness(
+      tester,
+      AiChatScreen(provider: provider),
+    );
+
+    await tester.pumpAndSettle();
+
+    repository.emitMessages([
+      repository.userMessage(id: 'user-1', content: 'hello'),
+      repository.assistantMessage(
+        id: 'assistant-1',
+        content: 'Hello! How can I assist you today?',
+        status: AiMessageStatus.complete,
+      ),
+    ]);
+    await tester.pump();
+
+    expect(find.text('hello'), findsOneWidget);
+    expect(find.text('Hello! How can I assist you today?'), findsOneWidget);
   });
 }
 

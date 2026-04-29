@@ -1,10 +1,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.22.0";
 
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "AIzaSyBlOIuJNwvkfzaYCseAbhMuF5ubEg6YiFA";
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
 const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") || "gemma-4-26b-a4b-it";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const SAFE_FALLBACK_RESPONSE =
+  "I'm sorry, I could not generate a useful response. Please try rephrasing your question.";
 
 class HttpError extends Error {
   constructor(public status: number, message: string, public details?: string) {
@@ -59,6 +61,10 @@ Deno.serve(async (req: Request) => {
     const conversationId = requireUuid(body?.conversationId, "conversationId");
     const userMessageId = requireUuid(body?.userMessageId, "userMessageId");
 
+    if (!GEMINI_API_KEY) {
+      throw new HttpError(500, "AI assistant is not configured.", "Missing GEMINI_API_KEY.");
+    }
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const assistantMessageId = crypto.randomUUID();
     const now = new Date().toISOString();
@@ -105,6 +111,8 @@ async function processRequest(supabase: any, conversationId: string, assistantMe
       .eq("conversation_id", conversationId)
       .eq("status", "complete")
       .neq("id", userMessageId) // Exclude current message so it's not double-fed
+      .neq("id", assistantMessageId) // Exclude the streaming placeholder too
+      .neq("role", "system")
       .order("created_at", { ascending: true })
       .limit(10);
 
@@ -140,24 +148,28 @@ STRICT FORMATTING RULES:
       if (!chunk.text) continue;
       
       const chunkText = chunk.text();
-      // 1. Remove thought tags
-      let cleanText = chunkText.replace(/<thought>[\s\S]*?<\/thought>/gi, "").replace(/<thought>[\s\S]*$/gi, "");
-      
-      // 2. Clean up malformed bolding with spaces (common in MoE output)
-      // Fixes "** text **" -> "**text**" for correct Markdown parsing
-      cleanText = cleanText.replace(/\*\*\s+(.*?)\s+\*\*/g, "**$1**");
+      if (chunkText) {
+        fullText += chunkText;
+        const sanitizedPartial = sanitizeAssistantResponse(fullText, userMsg.content, {
+          fallbackWhenEmpty: false,
+        });
+        if (!sanitizedPartial) continue;
 
-      if (cleanText) {
-        fullText += cleanText;
         await supabase.from("ai_messages").update({
-          content: fullText,
+          content: sanitizedPartial,
           updated_at: new Date().toISOString(),
         }).eq("id", assistantMessageId);
       }
     }
 
+    const finalText = sanitizeAssistantResponse(fullText, userMsg.content, {
+      fallbackWhenEmpty: true,
+    });
+
     await supabase.from("ai_messages").update({
-      content: sanitizeAssistantResponse(fullText, userMsg.content),
+      content: isUnsafeAssistantResponse(finalText, userMsg.content)
+        ? SAFE_FALLBACK_RESPONSE
+        : finalText,
       status: "complete",
       updated_at: new Date().toISOString(),
     }).eq("id", assistantMessageId);
@@ -172,25 +184,68 @@ STRICT FORMATTING RULES:
   }
 }
 
-function sanitizeAssistantResponse(raw: string, userPrompt: string) {
+function sanitizeAssistantResponse(
+  raw: string,
+  userPrompt: string,
+  options: { fallbackWhenEmpty: boolean } = { fallbackWhenEmpty: true },
+) {
   let cleaned = raw
     .replace(/<thought>[\s\S]*?<\/thought>/gi, "")
     .replace(/<thought>[\s\S]*$/gi, "")
     .replace(/\*\*\s+(.*?)\s+\*\*/g, "**$1**")
     .trim();
 
+  cleaned = cleaned
+    .split("\n")
+    .filter((line) => !isBlockedInstructionLine(line))
+    .join("\n")
+    .trim();
+
   const prompt = userPrompt.trim();
-  if (!prompt || !cleaned) return cleaned;
+  if (!prompt || !cleaned) {
+    return cleaned || (options.fallbackWhenEmpty ? SAFE_FALLBACK_RESPONSE : "");
+  }
 
   const escapedPrompt = prompt.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const repeatedPrompt = new RegExp(`^(?:${escapedPrompt}){2,}\\s*`, "i");
+  cleaned = cleaned.replace(repeatedPrompt, "").trimStart();
+
   const leadingEchoPatterns = [
-    new RegExp(`^(user\\s*:?\\s*)?${escapedPrompt}\\s*[-:]*\\s*`, "i"),
+    new RegExp(`^(user\\s*:?\\s*)?${escapedPrompt}(?:\\s+|\\s*[-:]\\s+)`, "i"),
     new RegExp(`^["']${escapedPrompt}["']\\s*[-:]*\\s*`, "i"),
   ];
 
-  for (const pattern of leadingEchoPatterns) {
-    cleaned = cleaned.replace(pattern, "").trim();
+  let changed = true;
+  while (changed && cleaned) {
+    changed = false;
+    for (const pattern of leadingEchoPatterns) {
+      const next = cleaned.replace(pattern, "").trimStart();
+      if (next !== cleaned) {
+        cleaned = next;
+        changed = true;
+      }
+    }
   }
 
-  return cleaned || "I'm sorry, I could not generate a useful response. Please try rephrasing your question.";
+  return cleaned || (options.fallbackWhenEmpty ? SAFE_FALLBACK_RESPONSE : "");
+}
+
+function isBlockedInstructionLine(line: string) {
+  return /^\s*(Goal|Tone|Formatting)\s*:/i.test(line) ||
+    /^\s*STRICT\s+FORMATTING\s+RULES\s*:?/i.test(line) ||
+    /^\s*You are a clinical AI assistant/i.test(line);
+}
+
+function isUnsafeAssistantResponse(response: string, userPrompt: string) {
+  if (response.split("\n").some(isBlockedInstructionLine)) return true;
+
+  const prompt = normalizeForLeakCheck(userPrompt);
+  const content = normalizeForLeakCheck(response);
+  if (prompt.length < 12) return false;
+
+  return content.includes(prompt);
+}
+
+function normalizeForLeakCheck(value: string) {
+  return value.toLowerCase().replace(/\s+/g, " ").trim();
 }

@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:vitaguard_app/ai_chat/data/ai_chat_models.dart';
+import 'package:vitaguard_app/ai_chat/data/ai_response_sanitizer.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 import 'package:vitaguard_app/core/utils/uuid.dart';
 
@@ -121,15 +122,55 @@ class SupabaseAiChatRepository implements AiChatRepository {
         .stream(primaryKey: ['id'])
         .eq('conversation_id', conversationId)
         .order('created_at', ascending: false)
-        .map(
-          (rows) => rows
-              .where((row) => row['role']?.toString() == 'assistant')
-              .map(
-                (row) =>
-                    AiMessage.fromMap(Map<String, dynamic>.from(row as Map)),
-              )
-              .toList(),
-        );
+        .map(_mapVisibleMessages);
+  }
+
+  List<AiMessage> _mapVisibleMessages(List<Map<String, dynamic>> rows) {
+    final messages = rows
+        .where((row) => row['role']?.toString() != 'system')
+        .map((row) => AiMessage.fromMap(Map<String, dynamic>.from(row)))
+        .toList();
+
+    return [
+      for (var index = 0; index < messages.length; index++)
+        _sanitizeAssistantMessage(messages, index),
+    ];
+  }
+
+  AiMessage _sanitizeAssistantMessage(List<AiMessage> messages, int index) {
+    final message = messages[index];
+    if (message.role != AiMessageRole.assistant) return message;
+
+    final prompt = _nearestOlderUserPrompt(messages, index);
+    final cleanContent = AiResponseSanitizer.sanitize(
+      message.content,
+      userPrompt: prompt,
+    );
+
+    if (cleanContent == message.content) return message;
+
+    return AiMessage(
+      id: message.id,
+      conversationId: message.conversationId,
+      ownerUserId: message.ownerUserId,
+      role: message.role,
+      content: cleanContent,
+      status: message.status,
+      provider: message.provider,
+      model: message.model,
+      errorMessage: message.errorMessage,
+      createdAt: message.createdAt,
+      updatedAt: message.updatedAt,
+    );
+  }
+
+  String? _nearestOlderUserPrompt(List<AiMessage> messages, int index) {
+    for (var i = index + 1; i < messages.length; i++) {
+      if (messages[i].role == AiMessageRole.user) {
+        return messages[i].content;
+      }
+    }
+    return null;
   }
 
   @override
