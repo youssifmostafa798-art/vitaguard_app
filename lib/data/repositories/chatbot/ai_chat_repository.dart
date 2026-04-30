@@ -15,7 +15,7 @@ AiChatRepository aiChatRepository(Ref ref) {
 abstract class AiChatRepository {
   String? get currentUserIdOrNull;
 
-  Future<AiConversation> ensureConversation([String? conversationId]);
+  Future<AiConversation> ensureConversation([String? conversationId, bool forceNew = false]);
 
   Future<List<AiConversation>> fetchConversationHistory();
 
@@ -59,7 +59,7 @@ class SupabaseAiChatRepository implements AiChatRepository {
   }
 
   @override
-  Future<AiConversation> ensureConversation([String? conversationId]) async {
+  Future<AiConversation> ensureConversation([String? conversationId, bool forceNew = false]) async {
     if (conversationId != null) {
       final existing = await _client
           .from('ai_conversations')
@@ -83,18 +83,20 @@ class SupabaseAiChatRepository implements AiChatRepository {
       nowDateTime.day,
     ).toIso8601String();
 
-    final existing = await _client
-        .from('ai_conversations')
-        .select()
-        .eq('owner_user_id', _uid)
-        .gte('created_at', todayStart)
-        .order('created_at', ascending: false)
-        .limit(1);
+    if (!forceNew) {
+      final existing = await _client
+          .from('ai_conversations')
+          .select()
+          .eq('owner_user_id', _uid)
+          .gte('created_at', todayStart)
+          .order('created_at', ascending: false)
+          .limit(1);
 
-    if (existing.isNotEmpty) {
-      return AiConversation.fromMap(
-        Map<String, dynamic>.from(existing.first as Map),
-      );
+      if (existing.isNotEmpty) {
+        return AiConversation.fromMap(
+          Map<String, dynamic>.from(existing.first as Map),
+        );
+      }
     }
 
     final role = await _loadConversationRole();

@@ -73,6 +73,16 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               elevation: 0,
               centerTitle: true,
               iconTheme: const IconThemeData(color: Color(0xFF0D3B66)),
+              actions: [
+                if (!isLocked)
+                  IconButton(
+                    icon: const Icon(Icons.add_comment_rounded),
+                    tooltip: 'Start New Chat',
+                    onPressed: () {
+                      ref.read(aiChatControllerProvider.notifier).startNewChat();
+                    },
+                  ),
+              ],
               bottom: isLocked ? null : TabBar(
                 labelColor: const Color(0xFF00A3FF),
                 unselectedLabelColor: const Color(0xFF51617A),

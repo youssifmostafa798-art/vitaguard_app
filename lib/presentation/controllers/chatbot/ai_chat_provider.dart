@@ -90,6 +90,20 @@ class AiChatController extends _$AiChatController {
     }
   }
 
+  Future<void> startNewChat() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final conversation = await _repository.ensureConversation(null, true);
+      state = state.copyWith(
+        isLoading: false,
+        conversation: conversation,
+        messageStream: _repository.streamMessages(conversation.id),
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: ErrorMapper.map(e));
+    }
+  }
+
   Future<bool> sendMessage(String content) async {
     final text = content.trim();
     if (text.isEmpty || state.isSending) return false;
