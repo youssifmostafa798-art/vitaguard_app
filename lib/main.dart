@@ -8,7 +8,7 @@ import 'package:vitaguard_app/presentation/screens/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Start heavy initialization in background
   Future.microtask(() async {
     await Supabase.initialize(
@@ -17,7 +17,7 @@ Future<void> main() async {
     );
     await AlertNotificationService.instance.initialize();
   });
-  
+
   runApp(const ProviderScope(child: MyApp()));
 }
 

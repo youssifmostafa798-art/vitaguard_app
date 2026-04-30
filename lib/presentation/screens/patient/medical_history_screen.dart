@@ -222,7 +222,7 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
                           'Companions can view medical history but cannot edit it.',
                           style: TextStyle(color: Color(0xff0D3B66)),
                         ),
-                        
+
                       const Gap(30),
                     ],
                   ),

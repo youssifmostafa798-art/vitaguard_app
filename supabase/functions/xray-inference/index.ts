@@ -1,3 +1,4 @@
+// @ts-nocheck – Deno runtime globals
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0"
 
 const corsHeaders = {
@@ -10,7 +11,7 @@ const corsHeaders = {
 const PRIMARY_MODEL = "AhmedMIX/vitaguard-xray".trim();
 const FALLBACK_MODEL = "google/vit-base-patch16-224".trim();
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -70,8 +71,8 @@ Deno.serve(async (req) => {
       const doh = await fetch("https://dns.google/resolve?name=api-inference.huggingface.co&type=A");
       const dohJson = await doh.json();
       console.log(`[DOH_DIAGNOSTIC] api-inference.huggingface.co IP: ${dohJson.Answer?.[0]?.data || "NOT_FOUND"}`);
-    } catch (e) {
-       console.warn(`[DOH_DIAGNOSTIC] DoH lookup itself failed: ${e.message}`);
+    } catch (e: unknown) {
+       console.warn(`[DOH_DIAGNOSTIC] DoH lookup itself failed: ${(e instanceof Error ? e.message : String(e))}`);
     }
 
     modelLoop: for (const model of models) {

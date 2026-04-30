@@ -90,7 +90,7 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
             if (snapshot.hasError) {
               return const Text("Error loading doctors.");
             }
-            
+
             final doctors = snapshot.data ?? [];
             if (doctors.isEmpty) {
               return const Text("No doctors available offline.");

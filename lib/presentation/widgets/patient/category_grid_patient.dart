@@ -13,7 +13,7 @@ class CategoryGridPatient extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var categories = homeCategoriesPatient(context, patientName);
-    
+
     if (searchQuery.isNotEmpty) {
       categories = categories.where((category) {
         return category.title.toLowerCase().contains(searchQuery.toLowerCase());

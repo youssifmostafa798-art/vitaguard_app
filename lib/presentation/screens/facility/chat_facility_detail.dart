@@ -39,9 +39,9 @@ class _ChatFacilityDetailState extends State<ChatFacilityDetail> {
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
-    
+
     _messageController.clear();
-    
+
     try {
       await _repository.sendMessage(widget.chatId, text);
     } catch (e) {
@@ -90,7 +90,7 @@ class _ChatFacilityDetailState extends State<ChatFacilityDetail> {
                     }
 
                     final messages = snapshot.data ?? [];
-                    
+
                     return ListView.builder(
                       reverse: true,
                       padding: EdgeInsets.symmetric(horizontal: 8.w),

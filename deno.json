@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.window", "deno.ns", "deno.unstable", "dom", "esnext"],
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "strict": true,
+    "noImplicitAny": true
+  },
+  "importMap": "./import_map.json"
+}

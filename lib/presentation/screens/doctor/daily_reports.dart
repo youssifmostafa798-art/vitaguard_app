@@ -63,7 +63,7 @@ class _DailyReportsState extends ConsumerState<DailyReports> {
 
   List<DailyReportModel> _getFilteredReports(List<Map<String, dynamic>> reports) {
     final q = _searchController.text.trim().toLowerCase();
-    
+
     final list = reports.map((e) {
       final statusStr = e['status']?.toString().toLowerCase() ?? 'normal';
       DailyReportStatus status;

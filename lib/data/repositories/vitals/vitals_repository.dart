@@ -25,7 +25,7 @@ class SupabaseVitalsRepository implements VitalsRepository {
   @override
   Stream<PatientLiveVitals> subscribeToVitals(String patientId) {
     final controller = StreamController<PatientLiveVitals>.broadcast();
-    
+
     final subscription = _supabase.subscribeToPatientLiveVitals(
       patientId: patientId,
       onInsert: (record) {
@@ -34,14 +34,14 @@ class SupabaseVitalsRepository implements VitalsRepository {
         }
       },
     );
-    
+
     controller.onCancel = () {
       subscription.unsubscribe();
       if (!controller.isClosed) {
         controller.close();
       }
     };
-    
+
     return controller.stream;
   }
 }

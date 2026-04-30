@@ -1,3 +1,4 @@
+// @ts-nocheck – Deno runtime globals
 import { supabase } from "../_shared/supabase_client.ts";
 import { uploadBase64File, inferExtension } from "../_shared/upload.ts";
 
@@ -15,7 +16,7 @@ function validationError(details: string) {
   return jsonResponse({ error: "Invalid input", details }, 400);
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   try {
     const payload = await req.json();
     const facilityId = payload?.facility_id as string | undefined;

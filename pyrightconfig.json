@@ -1,0 +1,9 @@
+{
+  "include": ["scripts"],
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "basic",
+  "venvPath": ".",
+  "venv": ".venv_vitaguard",
+  "reportMissingModuleSource": "none",
+  "reportMissingImports": "none"
+}

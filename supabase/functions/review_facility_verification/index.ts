@@ -1,7 +1,8 @@
+// @ts-nocheck – Deno runtime globals
 import { supabase } from "../_shared/supabase_client.ts";
 import { assertAdmin, getUserIdFromRequest } from "../_shared/auth.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   try {
     const userId = await getUserIdFromRequest(req);
     await assertAdmin(userId);

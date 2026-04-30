@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:vitaguard_app/data/models/chatbot/ai_chat_models.dart';
 import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
 
@@ -27,7 +27,7 @@ class AiMessageBubble extends StatelessWidget {
         ? Colors.white
         : (message.isError ? const Color(0xFFC62828) : const Color(0xFF0D3B66));
     final textColor = isUser ? Colors.white : const Color(0xFF1B263B);
-    
+
     final localTime = message.createdAt.toLocal();
     final now = DateTime.now();
     final isToday = localTime.year == now.year && localTime.month == now.month && localTime.day == now.day;
@@ -41,7 +41,7 @@ class AiMessageBubble extends StatelessWidget {
     } else {
       timeText = '${DateFormat('MMM d, y').format(localTime)} $timeStr';
     }
-    
+
     final displayText = message.content.trim().isEmpty && message.isStreaming
         ? 'Thinking...'
         : message.content;

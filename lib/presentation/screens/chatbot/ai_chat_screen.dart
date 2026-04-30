@@ -23,7 +23,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isHandlingQuickReply = false;
 
-  
+
 
   @override
   void initState() {
@@ -62,7 +62,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           final provider = ref.watch(aiChatControllerProvider);
           final title = ref.read(aiChatControllerProvider).conversation?.title ?? 'VitaGuard AI';
           final hasUser = SupabaseService.instance.currentSession?.user != null;
-          
+
           // Full-screen lock ONLY if we have no local user session.
           final isLocked = !hasUser;
 
@@ -155,7 +155,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   Widget _buildActiveChatTab(AiChatState provider) {
     bool isHistorical = false;
     String displayDate = '';
-    
+
     if (ref.read(aiChatControllerProvider).conversation != null) {
       final localTime = ref.read(aiChatControllerProvider).conversation!.createdAt.toLocal();
       final now = DateTime.now();
@@ -184,7 +184,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               ),
             ),
           ),
-        
+
         if (isHistorical)
           Container(
             width: double.infinity,
@@ -214,7 +214,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               ],
             ),
           ),
-          
+
         Expanded(
           child: _buildMessages(provider),
         ),
@@ -253,7 +253,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: Color(0xFF00A3FF)));
         }
-        
+
         if (snapshot.hasError) {
           return Center(child: Text("Unable to load history."));
         }

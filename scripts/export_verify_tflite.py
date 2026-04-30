@@ -1,14 +1,18 @@
+"""Module for Export Verify Tflite."""
+
+import onnx
 from __future__ import annotations
 
-import argparse
 import shutil
 from pathlib import Path
+import argparse
 
 import numpy as np
 import torch
 
 
 def _load_fastai_learner(export_pkl: Path):
+    """Load fastai learner."""
     import pathlib
     if hasattr(pathlib, "WindowsPath"):
         pathlib.PosixPath = pathlib.WindowsPath  # type: ignore[assignment]
@@ -21,6 +25,7 @@ def _load_fastai_learner(export_pkl: Path):
 
 
 def _collect_images(path: Path, limit: int) -> list[Path]:
+    """Collect images."""
     if path.is_file():
         return [path]
     exts = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
@@ -30,6 +35,7 @@ def _collect_images(path: Path, limit: int) -> list[Path]:
 
 
 def _imagenet_preprocess_nchw(image_path: Path, size_hw: tuple[int, int]) -> np.ndarray:
+    """Imagenet preprocess nchw."""
     from PIL import Image
 
     mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
@@ -44,6 +50,7 @@ def _imagenet_preprocess_nchw(image_path: Path, size_hw: tuple[int, int]) -> np.
 
 
 def _run_pt(learn, x_nchw: np.ndarray) -> np.ndarray:
+    """Run pt."""
     x = torch.from_numpy(x_nchw).to(next(learn.model.parameters()).device)
     with torch.inference_mode():
         y = learn.model(x)
@@ -51,6 +58,7 @@ def _run_pt(learn, x_nchw: np.ndarray) -> np.ndarray:
 
 
 def _run_onnx(onnx_path: Path, x_nchw: np.ndarray) -> np.ndarray:
+    """Run onnx."""
     import onnxruntime as ort
 
     sess = ort.InferenceSession(str(onnx_path), providers=["CPUExecutionProvider"])
@@ -60,6 +68,7 @@ def _run_onnx(onnx_path: Path, x_nchw: np.ndarray) -> np.ndarray:
 
 
 def _export_onnx_from_export_pkl(learn, onnx_path: Path, input_size: int) -> None:
+    """Export onnx from export pkl."""
     onnx_path.parent.mkdir(parents=True, exist_ok=True)
     model = learn.model.cpu().eval()
     dummy = torch.zeros(1, 3, input_size, input_size, dtype=torch.float32)
@@ -77,7 +86,9 @@ def _export_onnx_from_export_pkl(learn, onnx_path: Path, input_size: int) -> Non
     )
 
 
-def _parity_gate(learn, onnx_path: Path, images: list[Path], input_size: int, max_diff: float) -> float:
+def _parity_gate(learn, onnx_path: Path, images: list[Path], input_size: int,
+    max_diff: float) -> float:
+    """Parity gate."""
     worst = 0.0
     for im in images:
         x = _imagenet_preprocess_nchw(im, (input_size, input_size))
@@ -96,7 +107,7 @@ def _parity_gate(learn, onnx_path: Path, images: list[Path], input_size: int, ma
 
 
 def _convert_onnx_to_tflite(onnx_path: Path, tflite_path: Path, temp_dir: Path) -> None:
-    import onnx
+    """Convert onnx to tflite."""
     import onnx2tf
 
     model = onnx.load(str(onnx_path))
@@ -122,6 +133,7 @@ def _convert_onnx_to_tflite(onnx_path: Path, tflite_path: Path, temp_dir: Path) 
 
 
 def main() -> int:
+    """Main."""
     ap = argparse.ArgumentParser(
         description="Canonical export pipeline: export.pkl -> ONNX -> parity gate -> TFLite"
     )

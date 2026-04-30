@@ -1,17 +1,23 @@
+"""Module for Convert To Onnx."""
+
+from collections import OrderedDict
+import onnx
 import torch
 import torch.nn as nn
 import torchvision.models as models
-from collections import OrderedDict
 
 # ONNX-friendly AdaptiveConcatPool2d
 class AdaptiveConcatPool2d(nn.Module):
+    """AdaptiveConcatPool2d class."""
     def __init__(self, sz=1):
+        """Init."""
         super().__init__()
-        # For 224x224 input, DenseNet features are 7x7. 
+        # For 224x224 input, DenseNet features are 7x7.
         # Using MaxPool2d(7) instead of AdaptiveMaxPool2d(1) to avoid ONNX export issues.
         self.ap = nn.AvgPool2d(7)
         self.mp = nn.MaxPool2d(7)
-    def forward(self, x): 
+    def forward(self, x):
+        """Forward."""
         # Check if shape is not 7x7, then fallback to adaptive (safety)
         # However, for ONNX export, we want fixed paths if possible
         ap_out = self.ap(x)
@@ -19,11 +25,13 @@ class AdaptiveConcatPool2d(nn.Module):
         return torch.cat([ap_out, mp_out], dim=1)
 
 class FastaiDenseNet121(nn.Module):
+    """FastaiDenseNet121 class."""
     def __init__(self, num_classes=2):
+        """Init."""
         super().__init__()
         original_densenet = models.densenet121(weights=None)
         self.body = original_densenet.features
-        
+
         self.head = nn.Sequential(
             AdaptiveConcatPool2d(),
             nn.Flatten(),
@@ -37,25 +45,31 @@ class FastaiDenseNet121(nn.Module):
         )
 
     def forward(self, x):
+        """Forward."""
         x = self.body(x)
         x = self.head(x)
         return x
 
 def convert(model_path, output_path):
+    """Convert."""
     print(f"Loading weights from {model_path}...")
     checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
     state_dict = checkpoint['model'] if 'model' in checkpoint else checkpoint
-    
+
     model = FastaiDenseNet121(num_classes=2)
     # The weight mapping remains the same as AdaptiveMaxPool doesn't have weights
     new_state_dict = OrderedDict()
     for k, v in state_dict.items():
-        if k.startswith('0.0.'): new_k = k.replace('0.0.', 'body.', 1)
-        elif k.startswith('0.1.'): new_k = k.replace('0.1.', 'body.', 1)
-        elif k.startswith('1.'): new_k = k.replace('1.', 'head.', 1)
-        else: new_k = k
+        if k.startswith('0.0.'):
+            new_k = k.replace('0.0.', 'body.', 1)
+        elif k.startswith('0.1.'):
+            new_k = k.replace('0.1.', 'body.', 1)
+        elif k.startswith('1.'):
+            new_k = k.replace('1.', 'head.', 1)
+        else:
+            new_k = k
         new_state_dict[new_k] = v
-            
+
     model.load_state_dict(new_state_dict, strict=True)
     model.eval()
     print("Weights loaded successfully.")
@@ -64,8 +78,8 @@ def convert(model_path, output_path):
     dummy_input = torch.randn(1, 3, 224, 224)
     print(f"Exporting model to {output_path}...")
     torch.onnx.export(
-        model, 
-        dummy_input, 
+        model,
+        dummy_input,
         output_path,
         export_params=True,
         opset_version=18, # Use a modern opset
@@ -75,7 +89,6 @@ def convert(model_path, output_path):
         # Ensure we don't use external data
         # some versions of torch split if model is 'large', but 32MB is small.
     )
-    import onnx
     print("Consolidating into a single file...")
     onnx_model = onnx.load(output_path)
     # This will save everything into one file if it's < 2GB

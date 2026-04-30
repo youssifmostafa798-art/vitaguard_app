@@ -60,13 +60,13 @@ class MessageInput extends StatelessWidget {
                 backgroundColor: enabled ? const Color(0xFF00A3FF) : Colors.grey,
                 child: IconButton(
                   icon: Icon(
-                    isTyping ? Icons.send : Icons.mic, 
-                    color: Colors.white, 
+                    isTyping ? Icons.send : Icons.mic,
+                    color: Colors.white,
                     size: 22.r,
                   ),
                   onPressed: enabled
-                      ? (isTyping 
-                          ? onSend 
+                      ? (isTyping
+                          ? onSend
                           : () {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('Voice input coming soon!')),

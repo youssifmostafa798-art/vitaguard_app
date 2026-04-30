@@ -1,3 +1,4 @@
+// @ts-nocheck – Deno runtime globals
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { supabase } from "../_shared/supabase_client.ts";
@@ -61,7 +62,7 @@ type Recipient = {
   role: "companion" | "doctor";
 };
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return jsonResponse({ ok: true });
   }

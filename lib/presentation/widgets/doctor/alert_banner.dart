@@ -16,7 +16,7 @@ class AlertBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = VitalThresholds.getSeverityColor(alert.severity);
-    
+
     return Container(
       margin: EdgeInsets.only(bottom: 8.h),
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),

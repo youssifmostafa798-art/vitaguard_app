@@ -4,11 +4,11 @@ class AlertEvaluationEngine {
   // Per-metric cooldown trackers
   final Map<String, DateTime> _lastAlertTimes = {};
   final Duration _cooldown = const Duration(seconds: 45); // Cooldown to prevent spam
-  
+
   // Rolling windows for smoothing (last 5 readings)
   final Map<String, List<double>> _windows = {
-    'hr': [], 
-    'spo2': [], 
+    'hr': [],
+    'spo2': [],
     'temp': []
   };
 
@@ -40,7 +40,7 @@ class AlertEvaluationEngine {
     _addToWindow('hr', hr.toDouble());
     _addToWindow('spo2', spo2.toDouble());
     if (temp != null) _addToWindow('temp', temp);
-    
+
     final avgHR = _getAvg('hr');
     final avgSpO2 = _getAvg('spo2');
     final avgTemp = _getAvg('temp');
@@ -61,7 +61,7 @@ class AlertEvaluationEngine {
     }
 
     // 4. Independent Thresholds
-    
+
     // SpO2 Critical
     if (avgSpO2 < VitalThresholds.spo2Critical && _canTrigger(patientId, "SpO2_Critical")) {
       alerts.add(VitalAlert(
@@ -72,7 +72,7 @@ class AlertEvaluationEngine {
         rawValues: {"spo2": spo2},
       ));
       _markTriggered(patientId, "SpO2_Critical");
-    } 
+    }
     // SpO2 Warning
     else if (avgSpO2 < VitalThresholds.spo2Warning && _canTrigger(patientId, "SpO2_Warning")) {
       alerts.add(VitalAlert(
@@ -134,12 +134,12 @@ class AlertEvaluationEngine {
     final key = "${patientId}_$type";
     _lastAlertTimes[key] = DateTime.now();
   }
-  
+
   void _addToWindow(String key, double val) {
     _windows[key]!.add(val);
     if (_windows[key]!.length > 5) _windows[key]!.removeAt(0);
   }
 
-  double _getAvg(String key) => 
+  double _getAvg(String key) =>
     _windows[key]!.isEmpty ? 0 : _windows[key]!.reduce((a, b) => a + b) / _windows[key]!.length;
 }

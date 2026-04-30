@@ -1,10 +1,11 @@
+// @ts-nocheck – Deno runtime globals
 import { supabase } from "../_shared/supabase_client.ts";
 import { uploadBase64File, inferExtension } from "../_shared/upload.ts";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "application/pdf"];
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   try {
     const payload = await req.json();
     const patientId = payload?.patient_id as string | undefined;

@@ -1,14 +1,17 @@
+"""Module for Parity Check Pt Onnx Tflite."""
+
 from __future__ import annotations
 
-import argparse
 from pathlib import Path
 from typing import Iterable
+import argparse
 
 import numpy as np
 from PIL import Image
 
 
 def _softmax(x: np.ndarray) -> np.ndarray:
+    """Softmax."""
     z = x.astype(np.float64)
     z = z - np.max(z)
     e = np.exp(z)
@@ -16,6 +19,7 @@ def _softmax(x: np.ndarray) -> np.ndarray:
 
 
 def _collect_images(path: Path, limit: int) -> list[Path]:
+    """Collect images."""
     if path.is_file():
         return [path]
     exts = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
@@ -27,6 +31,7 @@ def _collect_images(path: Path, limit: int) -> list[Path]:
 
 
 def _load_fastai_learner(export_pkl: Path):
+    """Load fastai learner."""
     # Fastai exports created on Linux may pickle PosixPath; map it on Windows.
     import pathlib
     if hasattr(pathlib, "WindowsPath"):
@@ -40,6 +45,7 @@ def _load_fastai_learner(export_pkl: Path):
 
 
 def _imagenet_preprocess_nchw(image_path: Path, size_hw: tuple[int, int]) -> np.ndarray:
+    """Imagenet preprocess nchw."""
     # Shared preprocessing used for all three backends in this script:
     # RGB -> resize -> /255 -> ImageNet normalize -> NCHW float32.
     mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
@@ -54,6 +60,7 @@ def _imagenet_preprocess_nchw(image_path: Path, size_hw: tuple[int, int]) -> np.
 
 
 def _run_pytorch_logits(learn, xb) -> np.ndarray:
+    """Run pytorch logits."""
     import torch
 
     x = torch.from_numpy(xb).to(next(learn.model.parameters()).device)
@@ -63,6 +70,7 @@ def _run_pytorch_logits(learn, xb) -> np.ndarray:
 
 
 def _run_onnx_logits(onnx_path: Path, x_nchw: np.ndarray) -> np.ndarray:
+    """Run onnx logits."""
     import onnxruntime as ort
 
     sess = ort.InferenceSession(str(onnx_path), providers=["CPUExecutionProvider"])
@@ -71,6 +79,7 @@ def _run_onnx_logits(onnx_path: Path, x_nchw: np.ndarray) -> np.ndarray:
     return out.reshape(-1)
 
 def _onnx_input_hw(onnx_path: Path) -> tuple[int, int]:
+    """Onnx input hw."""
     import onnxruntime as ort
 
     sess = ort.InferenceSession(str(onnx_path), providers=["CPUExecutionProvider"])
@@ -84,6 +93,7 @@ def _onnx_input_hw(onnx_path: Path) -> tuple[int, int]:
 
 
 def _run_tflite_logits(tflite_path: Path, x_nchw: np.ndarray) -> tuple[np.ndarray, tuple[int, ...]]:
+    """Run tflite logits."""
     try:
         import tensorflow as tf
 
@@ -132,6 +142,7 @@ def _fmt_row(
     labels = list(vocab)
 
     def pick(arr: np.ndarray) -> str:
+        """Pick."""
         idx = int(np.argmax(arr))
         name = labels[idx] if 0 <= idx < len(labels) else f"idx{idx}"
         return f"{name} ({arr[idx]:.6f})"
@@ -147,6 +158,7 @@ def _fmt_row(
 
 
 def main() -> int:
+    """Main."""
     ap = argparse.ArgumentParser(
         description="Parity check for FastAI export.pkl vs ONNX vs TFLite logits."
     )

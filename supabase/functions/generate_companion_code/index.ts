@@ -1,3 +1,4 @@
+// @ts-nocheck – Deno runtime globals
 import { supabase } from "../_shared/supabase_client.ts";
 
 const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
