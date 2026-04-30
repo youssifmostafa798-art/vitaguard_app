@@ -1,6 +1,12 @@
 {
   "compilerOptions": {
-    "lib": ["deno.window", "deno.ns", "deno.unstable", "dom", "esnext"],
+    "lib": [
+      "deno.window",
+      "deno.ns",
+      "deno.unstable",
+      "dom",
+      "esnext"
+    ],
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "strict": true,

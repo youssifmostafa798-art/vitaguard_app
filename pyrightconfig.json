@@ -1,5 +1,7 @@
 {
-  "include": ["scripts"],
+  "include": [
+    "scripts"
+  ],
   "pythonVersion": "3.11",
   "typeCheckingMode": "basic",
   "venvPath": ".",
