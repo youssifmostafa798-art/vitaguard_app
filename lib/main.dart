@@ -8,11 +8,16 @@ import 'package:vitaguard_app/presentation/screens/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize(
-    url: 'https://sumgvbdgucrjyiztmzyn.supabase.co',
-    anonKey: 'sb_publishable_mn_LuYvFSEJBx4Kqt07Xpg_6mHktGkV',
-  );
-  await AlertNotificationService.instance.initialize();
+  
+  // Start heavy initialization in background
+  Future.microtask(() async {
+    await Supabase.initialize(
+      url: 'https://sumgvbdgucrjyiztmzyn.supabase.co',
+      anonKey: 'sb_publishable_mn_LuYvFSEJBx4Kqt07Xpg_6mHktGkV',
+    );
+    await AlertNotificationService.instance.initialize();
+  });
+  
   runApp(const ProviderScope(child: MyApp()));
 }
 

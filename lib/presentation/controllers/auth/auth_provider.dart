@@ -228,6 +228,7 @@ class AuthController extends _$AuthController {
 
   Future<void> logout() async {
     await _repository.logout();
+    if (!ref.mounted) return;
     state = const AsyncValue.data(null);
   }
 }

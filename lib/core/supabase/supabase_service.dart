@@ -92,7 +92,7 @@ class SupabaseService {
   }
 
   Future<void> signOut() {
-    return track('auth.signOut', client.auth.signOut);
+    return track('auth.signOut', () => client.auth.signOut().timeout(const Duration(seconds: 5)));
   }
 
   Future<AuthResponse> refreshSession() {
