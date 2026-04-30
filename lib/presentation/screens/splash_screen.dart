@@ -91,7 +91,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (hasSession) {
       if (rememberMe) {
         // Auto-login bypassing the login screen
-        final auth = ref.read(authControllerProvider.notifier);
         final role = await ref.read(authControllerProvider.notifier).getUserRole();
         if (!mounted) return;
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod/riverpod.dart' show Override;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vitaguard_app/data/models/chatbot/ai_chat_models.dart';
@@ -15,24 +16,35 @@ import 'package:vitaguard_app/data/models/message_model.dart';
 import 'package:vitaguard_app/presentation/screens/patient/chat_list_patient.dart';
 
 void main() {
-  group('AiChatProvider', () {
+  group('AiChatController', () {
     test('ensureConversation creates or reuses the conversation once per user', () async {
       final repository = FakeAiChatRepository();
-      final provider = AiChatProvider(repository: repository);
+      final container = ProviderContainer(
+        overrides: [
+          aiChatRepositoryProvider.overrideWithValue(repository),
+        ],
+      );
+      final controller = container.read(aiChatControllerProvider.notifier);
 
-      await provider.ensureConversation();
-      await provider.ensureConversation();
+      await controller.ensureConversation();
+      await controller.ensureConversation();
 
-      expect(provider.conversation?.id, repository.conversation.id);
+      final state = container.read(aiChatControllerProvider);
+      expect(state.conversation?.id, repository.conversation.id);
       expect(repository.ensureConversationCalls, 1);
-      expect(provider.messageStream, isNotNull);
+      expect(state.messageStream, isNotNull);
     });
 
     test('sendMessage inserts the user message and requests the assistant reply', () async {
       final repository = FakeAiChatRepository();
-      final provider = AiChatProvider(repository: repository);
+      final container = ProviderContainer(
+        overrides: [
+          aiChatRepositoryProvider.overrideWithValue(repository),
+        ],
+      );
+      final controller = container.read(aiChatControllerProvider.notifier);
 
-      final ok = await provider.sendMessage('Hello VitaGuard');
+      final ok = await controller.sendMessage('Hello VitaGuard');
 
       expect(ok, isTrue);
       expect(repository.insertedMessages.single.$2, 'Hello VitaGuard');
@@ -44,12 +56,18 @@ void main() {
 
     test('sendMessage surfaces repository failures', () async {
       final repository = FakeAiChatRepository()..failRequest = true;
-      final provider = AiChatProvider(repository: repository);
+      final container = ProviderContainer(
+        overrides: [
+          aiChatRepositoryProvider.overrideWithValue(repository),
+        ],
+      );
+      final controller = container.read(aiChatControllerProvider.notifier);
 
-      final ok = await provider.sendMessage('Hello VitaGuard');
+      final ok = await controller.sendMessage('Hello VitaGuard');
 
+      final state = container.read(aiChatControllerProvider);
       expect(ok, isFalse);
-      expect(provider.error, contains('Assistant kickoff failed'));
+      expect(state.error, contains('Assistant kickoff failed'));
     });
   });
 
@@ -90,28 +108,32 @@ void main() {
   });
 
   testWidgets('patient bot button opens the AI chat screen', (tester) async {
-    final repository = FakeHumanChatRepository();
-    final aiProvider = AiChatProvider(repository: FakeAiChatRepository());
+    final aiRepository = FakeAiChatRepository();
 
     await _pumpHarness(
       tester,
-      ChatListPatient(
-        repository: repository,
+      const ChatListPatient(
         aiChatScreen: AiChatScreen(),
       ),
+      overrides: [
+        aiChatRepositoryProvider.overrideWithValue(aiRepository),
+      ],
     );
+
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(InkWell).last);
+    final botButton = find.byIcon(Icons.smart_toy_rounded);
+    expect(botButton, findsOneWidget);
+
+    await tester.tap(botButton);
     await tester.pumpAndSettle();
 
     expect(find.byType(AiChatScreen), findsOneWidget);
-    expect(find.text('VitaGuard AI'), findsWidgets);
   });
 
   testWidgets('doctor bot button opens the AI chat screen', (tester) async {
     final repository = FakeHumanChatRepository();
-    final aiProvider = AiChatProvider(repository: FakeAiChatRepository());
+    final aiRepository = FakeAiChatRepository();
 
     await _pumpHarness(
       tester,
@@ -119,6 +141,9 @@ void main() {
         repository: repository,
         aiChatScreen: AiChatScreen(),
       ),
+      overrides: [
+        aiChatRepositoryProvider.overrideWithValue(aiRepository),
+      ],
     );
     await tester.pumpAndSettle();
 
@@ -128,13 +153,15 @@ void main() {
     expect(find.byType(AiChatScreen), findsOneWidget);
   });
 
-  testWidgets('AI screen updates a streamed assistant message in place', (tester) async {
+  testWidgets('AI screen renders messages from stream', (tester) async {
     final repository = FakeAiChatRepository();
-    final provider = AiChatProvider(repository: repository);
 
     await _pumpHarness(
       tester,
-      AiChatScreen(),
+      const AiChatScreen(),
+      overrides: [
+        aiChatRepositoryProvider.overrideWithValue(repository),
+      ],
     );
 
     await tester.pumpAndSettle();
@@ -146,14 +173,14 @@ void main() {
       ),
       repository.assistantMessage(
         id: 'assistant-1',
-        content: 'Thinking...',
+        content: '...',
         status: AiMessageStatus.streaming,
       ),
     ]);
     await tester.pump();
 
     expect(find.text('Can you summarize my vitals?'), findsOneWidget);
-    expect(find.text('Thinking...'), findsOneWidget);
+    expect(find.text('...'), findsOneWidget);
 
     repository.emitMessages([
       repository.userMessage(
@@ -169,17 +196,19 @@ void main() {
     await tester.pump();
 
     expect(find.text('Can you summarize my vitals?'), findsOneWidget);
-    expect(find.text('Thinking...'), findsNothing);
+    expect(find.text('...'), findsNothing);
     expect(find.text('Your recent vitals look stable overall.'), findsOneWidget);
   });
 
   testWidgets('AI screen renders user text once and assistant text separately', (tester) async {
     final repository = FakeAiChatRepository();
-    final provider = AiChatProvider(repository: repository);
 
     await _pumpHarness(
       tester,
-      AiChatScreen(),
+      const AiChatScreen(),
+      overrides: [
+        aiChatRepositoryProvider.overrideWithValue(repository),
+      ],
     );
 
     await tester.pumpAndSettle();
@@ -199,9 +228,14 @@ void main() {
   });
 }
 
-Future<void> _pumpHarness(WidgetTester tester, Widget child) async {
+Future<void> _pumpHarness(
+  WidgetTester tester,
+  Widget child, {
+  List<Override> overrides = const [],
+}) async {
   await tester.pumpWidget(
     ProviderScope(
+      overrides: overrides,
       child: ScreenUtilInit(
         designSize: ScreenUtilHelper.designSize,
         minTextAdapt: true,

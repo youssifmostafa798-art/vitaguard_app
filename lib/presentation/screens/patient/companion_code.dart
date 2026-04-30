@@ -45,7 +45,7 @@ class _CompanionCodeState extends ConsumerState<CompanionCode> {
   @override
   Widget build(BuildContext context) {
     final patient = ref.watch(patientControllerProvider);
-    final displayCode = ref.read(patientControllerProvider).companionCode ?? "......";
+    final displayCode = patient.companionCode ?? "......";
 
     return Scaffold(
       appBar: SimpleHeader(title: "Companion Code"),
@@ -91,7 +91,7 @@ class _CompanionCodeState extends ConsumerState<CompanionCode> {
                             weight: FontWeight.w700,
                           ),
                         ),
-                        if (ref.read(patientControllerProvider).isLoading)
+                        if (patient.isLoading)
                           const SizedBox(
                             width: 20,
                             height: 20,
@@ -116,14 +116,14 @@ class _CompanionCodeState extends ConsumerState<CompanionCode> {
 
                 //Change Code
                 SimpleButtom(
-                  text: ref.read(patientControllerProvider).isLoading ? "Regenerating..." : "Change Code",
-                  onTap: ref.read(patientControllerProvider).isLoading ? null : _regenerateCode,
+                  text: patient.isLoading ? "Regenerating..." : "Change Code",
+                  onTap: patient.isLoading ? null : _regenerateCode,
                 ),
 
-                if (ref.read(patientControllerProvider).error?.toString() != null) ...[
+                if (patient.error?.toString() != null) ...[
                   const Gap(10),
                   Text(
-                    ref.read(patientControllerProvider).error?.toString() ?? '',
+                    patient.error?.toString() ?? '',
                     style: const TextStyle(color: Colors.red, fontSize: 12),
                   ),
                 ],

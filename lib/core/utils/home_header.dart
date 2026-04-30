@@ -48,7 +48,7 @@ class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
                         width: 14.r,
                         height: 14.r,
                         decoration: BoxDecoration(
-                          color: ref.read(healthControllerProvider).isAiOnline ? Colors.green : Colors.red,
+                          color: health.isAiOnline ? Colors.green : Colors.red,
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
                         ),
@@ -77,11 +77,11 @@ class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
                           ),
                           Gap(2.w),
                           Tooltip(
-                            message: ref.read(healthControllerProvider).aiMessage,
+                            message: health.aiMessage,
                             child: Icon(
                               Icons.bolt,
                               size: 16.r,
-                              color: ref.read(healthControllerProvider).isAiOnline
+                              color: health.isAiOnline
                                   ? Colors.orange
                                   : Colors.grey,
                             ),

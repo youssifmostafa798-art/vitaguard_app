@@ -33,7 +33,7 @@ class _FacilityRegisterScreenState
     return CreateAccountScreen(
       title: "Create Facility Account",
       buttonText: "Sign up",
-      errorMessage: _localError ?? ref.read(authControllerProvider).error?.toString(),
+      errorMessage: _localError ?? authState.error?.toString(),
       fields: [
         {
           'hint': 'Name of Facility',

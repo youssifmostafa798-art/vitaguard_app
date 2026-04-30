@@ -14,7 +14,7 @@ class CategoryGridCompanion extends ConsumerWidget {
     final companionState = ref.watch(companionControllerProvider);
     final categories = homeCategoriesCompanion(
       context,
-      patientStatus: ref.read(companionControllerProvider).patientStatus,
+      patientStatus: companionState.patientStatus,
     );
 
     return Column(
@@ -31,11 +31,11 @@ class CategoryGridCompanion extends ConsumerWidget {
 
         const Gap(15),
 
-        if (ref.read(companionControllerProvider).error?.toString() != null && ref.read(companionControllerProvider).patientStatus == null)
+        if (companionState.error?.toString() != null && companionState.patientStatus == null)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(
-              ref.read(companionControllerProvider).error?.toString() ?? '',
+              companionState.error?.toString() ?? '',
               style: const TextStyle(color: Colors.redAccent),
               textAlign: TextAlign.center,
             ),

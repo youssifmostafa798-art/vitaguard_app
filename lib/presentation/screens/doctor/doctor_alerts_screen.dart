@@ -16,7 +16,7 @@ class DoctorAlertsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final alertCenter = ref.watch(alertControllerProvider);
-    final alerts = ref.read(alertControllerProvider).alerts; // already severity-filtered to critical for doctor
+    final alerts = alertCenter.alerts; // already severity-filtered to critical for doctor
 
     return Scaffold(
       appBar: const SimpleHeader(title: 'Critical Alerts'),
@@ -28,21 +28,21 @@ class DoctorAlertsScreen extends ConsumerWidget {
               children: [
                 SizedBox(height: 24.h),
                 _DoctorAlertHeader(
-                  activeCount: ref.read(alertControllerProvider).criticalActiveAlerts.length,
+                  activeCount: alertCenter.criticalActiveAlerts.length,
                   totalCount: alerts.length,
                 ),
                 SizedBox(height: 18.h),
                 Expanded(
                   child: Builder(
                     builder: (context) {
-                      if (ref.read(alertControllerProvider).isLoading && alerts.isEmpty) {
+                      if (alertCenter.isLoading && alerts.isEmpty) {
                         return const Center(
                           child: CircularProgressIndicator(),
                         );
                       }
 
                       if (alerts.isEmpty) {
-                        return _EmptyDoctorAlerts(error: ref.read(alertControllerProvider).error?.toString());
+                        return _EmptyDoctorAlerts(error: alertCenter.error?.toString());
                       }
 
                       return ListView.separated(

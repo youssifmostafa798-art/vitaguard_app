@@ -21,7 +21,7 @@ class CompanionHome extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final alertCenter = ref.watch(alertControllerProvider);
-    final criticalAlerts = ref.read(alertControllerProvider).criticalActiveAlerts;
+    final criticalAlerts = alertCenter.criticalActiveAlerts;
 
     return Scaffold(
       appBar: HomeHeader(

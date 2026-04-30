@@ -39,8 +39,8 @@ class _CompanionRegisterScreenState
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
-    final isLoading = ref.read(authControllerProvider).isLoading;
-    final effectiveError = _localError ?? ref.read(authControllerProvider).error?.toString() ?? '';
+    final isLoading = authState.isLoading;
+    final effectiveError = _localError ?? authState.error?.toString() ?? '';
     final hasError = effectiveError.trim().isNotEmpty;
 
     return Scaffold(

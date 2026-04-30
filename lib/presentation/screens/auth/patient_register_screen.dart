@@ -81,7 +81,7 @@ class _PatientRegisterScreenState extends ConsumerState<PatientRegisterScreen> {
     return CreateAccountScreen(
       title: "Create Patient Account",
       buttonText: "sign up",
-      errorMessage: _localError ?? ref.read(authControllerProvider).error?.toString(),
+      errorMessage: _localError ?? authState.error?.toString(),
       fields: [
         {
           'hint': 'User Name',

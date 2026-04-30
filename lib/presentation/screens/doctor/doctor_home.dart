@@ -21,7 +21,7 @@ class DoctorHomes extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final doctor = ref.watch(doctorControllerProvider);
     final alertCenter = ref.watch(alertControllerProvider);
-    final criticalAlerts = ref.read(alertControllerProvider).criticalActiveAlerts;
+    final criticalAlerts = alertCenter.criticalActiveAlerts;
 
     return Scaffold(
       appBar: HomeHeader(
@@ -60,17 +60,17 @@ class DoctorHomes extends ConsumerWidget {
                       }).toList(),
                     ),
                   ),
-                if (ref.read(doctorControllerProvider).verificationStatus != 'approved')
+                if (doctor.verificationStatus != 'approved')
                   Container(
                     margin: EdgeInsets.only(top: 10.h),
                     padding: EdgeInsets.all(12.r),
                     decoration: BoxDecoration(
-                      color: ref.read(doctorControllerProvider).verificationStatus == 'pending'
+                      color: doctor.verificationStatus == 'pending'
                           ? Colors.orange.withValues(alpha: 0.1)
                           : Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(
-                        color: ref.read(doctorControllerProvider).verificationStatus == 'pending'
+                        color: doctor.verificationStatus == 'pending'
                             ? Colors.orange
                             : Colors.red,
                       ),
@@ -78,22 +78,22 @@ class DoctorHomes extends ConsumerWidget {
                     child: Row(
                       children: [
                         Icon(
-                          ref.read(doctorControllerProvider).verificationStatus == 'pending'
+                          doctor.verificationStatus == 'pending'
                               ? Icons.hourglass_empty
                               : Icons.error_outline,
                           size: 24.r,
-                          color: ref.read(doctorControllerProvider).verificationStatus == 'pending'
+                          color: doctor.verificationStatus == 'pending'
                               ? Colors.orange
                               : Colors.red,
                         ),
                         Gap(12.w),
                         Expanded(
                           child: Text(
-                            ref.read(doctorControllerProvider).verificationStatus == 'pending'
+                            doctor.verificationStatus == 'pending'
                                 ? 'Your identity verification is pending. Some features may be restricted.'
                                 : 'Your identity verification was rejected. Please contact support.',
                             style: TextStyle(
-                              color: ref.read(doctorControllerProvider).verificationStatus == 'pending'
+                              color: doctor.verificationStatus == 'pending'
                                   ? Colors.orange[900]
                                   : Colors.red[900],
                               fontSize: 13.sp,

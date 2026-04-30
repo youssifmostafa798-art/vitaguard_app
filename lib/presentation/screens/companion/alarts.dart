@@ -13,7 +13,7 @@ class Alarts extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final alertCenter = ref.watch(alertControllerProvider);
-    final alerts = ref.read(alertControllerProvider).alerts;
+    final alerts = alertCenter.alerts;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,

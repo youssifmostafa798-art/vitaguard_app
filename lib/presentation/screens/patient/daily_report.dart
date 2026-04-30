@@ -39,7 +39,6 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
       Navigator.pop(context);
     } else {
       if (!mounted) return;
-      final provider = ref.read(patientControllerProvider.notifier);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(ref.read(patientControllerProvider).error?.toString() ?? 'Failed to save report')),
       );
