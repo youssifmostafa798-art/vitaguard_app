@@ -105,7 +105,7 @@ async function processRequest(supabase: any, conversationId: string, assistantMe
     if (userMessageError || !userMsg) throw new Error("User message not found.");
     if (userMsg.role !== "user") throw new Error("Message must be a user prompt.");
 
-    const { data: history } = await supabase
+    const { data: rawHistory } = await supabase
       .from("ai_messages")
       .select("role, content")
       .eq("conversation_id", conversationId)
@@ -113,8 +113,10 @@ async function processRequest(supabase: any, conversationId: string, assistantMe
       .neq("id", userMessageId) // Exclude current message so it's not double-fed
       .neq("id", assistantMessageId) // Exclude the streaming placeholder too
       .neq("role", "system")
-      .order("created_at", { ascending: true })
+      .order("created_at", { ascending: false })
       .limit(10);
+
+    const history = (rawHistory || []).reverse();
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ 
@@ -130,11 +132,23 @@ STRICT FORMATTING RULES:
 7. NEVER repeat, paraphrase, or echo the user's input. Respond concisely with only new, relevant information.`,
     });
 
+    const formattedHistory: any[] = [];
+    let lastRole: string | null = null;
+    for (const msg of history) {
+      const currentRole = msg.role === "user" ? "user" : "model";
+      if (currentRole !== lastRole) {
+        formattedHistory.push({
+          role: currentRole,
+          parts: [{ text: msg.content }],
+        });
+        lastRole = currentRole;
+      } else {
+        formattedHistory[formattedHistory.length - 1].parts[0].text += `\n\n${msg.content}`;
+      }
+    }
+
     const chat = model.startChat({
-      history: (history || []).map((m: any) => ({
-        role: m.role === "user" ? "user" : "model",
-        parts: [{ text: m.content }],
-      })),
+      history: formattedHistory,
       generationConfig: {
         maxOutputTokens: 2000,
         temperature: 0.7,
@@ -207,12 +221,18 @@ function sanitizeAssistantResponse(
   }
 
   const escapedPrompt = prompt.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  
+  // Remove user prefix patterns globally just in case model hallucinated it
+  const userPrefixPattern = new RegExp(`(?:user|patient)\\s*:?\\s*${escapedPrompt}`, "gi");
+  cleaned = cleaned.replace(userPrefixPattern, "").trim();
+
   const repeatedPrompt = new RegExp(`^(?:${escapedPrompt}){2,}\\s*`, "i");
   cleaned = cleaned.replace(repeatedPrompt, "").trimStart();
 
   const leadingEchoPatterns = [
     new RegExp(`^(user\\s*:?\\s*)?${escapedPrompt}(?:\\s+|\\s*[-:]\\s+)`, "i"),
     new RegExp(`^["']${escapedPrompt}["']\\s*[-:]*\\s*`, "i"),
+    new RegExp(`^${escapedPrompt}\\s*`, "i"),
   ];
 
   let changed = true;

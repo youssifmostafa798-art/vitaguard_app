@@ -42,6 +42,13 @@ class AiResponseSanitizer {
   static String _removeLeadingPromptEcho(String value, String prompt) {
     var cleaned = value;
     final escapedPrompt = RegExp.escape(prompt);
+    
+    final userPrefixPattern = RegExp(
+      '(?:user|patient)\\s*:?\\s*$escapedPrompt',
+      caseSensitive: false,
+    );
+    cleaned = cleaned.replaceAll(userPrefixPattern, '').trim();
+
     final repeatedPrompt = RegExp(
       '^(?:$escapedPrompt){2,}\\s*',
       caseSensitive: false,
@@ -54,6 +61,7 @@ class AiResponseSanitizer {
         caseSensitive: false,
       ),
       RegExp("^[\"']$escapedPrompt[\"']\\s*[-:]*\\s*", caseSensitive: false),
+      RegExp("^$escapedPrompt\\s*", caseSensitive: false),
     ];
 
     var changed = true;
