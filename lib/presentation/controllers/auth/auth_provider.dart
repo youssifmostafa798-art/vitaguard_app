@@ -15,15 +15,25 @@ class AuthController extends _$AuthController {
   AsyncValue<Map<String, dynamic>?> build() {
     // Initial state: try to load the current user
     _init();
+
+    // Set up disposal callback
+    ref.onDispose(() {
+      // Cleanup if needed
+    });
+
     return const AsyncValue.loading();
   }
 
   Future<void> _init() async {
     try {
       final user = await _repository.getMe();
-      state = AsyncValue.data(user);
+      if (ref.mounted) {
+        state = AsyncValue.data(user);
+      }
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      if (ref.mounted) {
+        state = AsyncValue.error(e, st);
+      }
     }
   }
 
@@ -35,12 +45,18 @@ class AuthController extends _$AuthController {
     state = const AsyncValue.loading();
     try {
       await _repository.login(email, password);
+      if (!ref.mounted) return false;
+
       final user = await _repository.getMe();
-      state = AsyncValue.data(user);
+      if (ref.mounted) {
+        state = AsyncValue.data(user);
+      }
       return true;
     } catch (e, st) {
       debugPrint('Auth login error: $e');
-      state = AsyncValue.error(ErrorMapper.map(e), st);
+      if (ref.mounted) {
+        state = AsyncValue.error(ErrorMapper.map(e), st);
+      }
       return false;
     }
   }
@@ -63,14 +79,20 @@ class AuthController extends _$AuthController {
         gender: gender,
         age: age,
       );
+      if (!ref.mounted) return false;
+
       if (response.session != null) {
         final user = await _repository.getMe();
-        state = AsyncValue.data(user);
+        if (ref.mounted) {
+          state = AsyncValue.data(user);
+        }
       }
       return true;
     } catch (e, st) {
       debugPrint('Auth register patient error: $e');
-      state = AsyncValue.error(ErrorMapper.map(e), st);
+      if (ref.mounted) {
+        state = AsyncValue.error(ErrorMapper.map(e), st);
+      }
       return false;
     }
   }
@@ -97,14 +119,20 @@ class AuthController extends _$AuthController {
         gender: gender,
         age: age,
       );
+      if (!ref.mounted) return false;
+
       if (response.session != null) {
         final user = await _repository.getMe();
-        state = AsyncValue.data(user);
+        if (ref.mounted) {
+          state = AsyncValue.data(user);
+        }
       }
       return true;
     } catch (e, st) {
       debugPrint('Auth register doctor error: $e');
-      state = AsyncValue.error(ErrorMapper.map(e), st);
+      if (ref.mounted) {
+        state = AsyncValue.error(ErrorMapper.map(e), st);
+      }
       return false;
     }
   }
@@ -123,14 +151,20 @@ class AuthController extends _$AuthController {
         password: password,
         companionCode: companionCode,
       );
+      if (!ref.mounted) return false;
+
       if (response.session != null) {
         final user = await _repository.getMe();
-        state = AsyncValue.data(user);
+        if (ref.mounted) {
+          state = AsyncValue.data(user);
+        }
       }
       return true;
     } catch (e, st) {
       debugPrint('Auth register companion error: $e');
-      state = AsyncValue.error(ErrorMapper.map(e), st);
+      if (ref.mounted) {
+        state = AsyncValue.error(ErrorMapper.map(e), st);
+      }
       return false;
     }
   }
@@ -155,14 +189,20 @@ class AuthController extends _$AuthController {
         facilityType: facilityType,
         recordImage: recordImage,
       );
+      if (!ref.mounted) return false;
+
       if (response.session != null) {
         final user = await _repository.getMe();
-        state = AsyncValue.data(user);
+        if (ref.mounted) {
+          state = AsyncValue.data(user);
+        }
       }
       return true;
     } catch (e, st) {
       debugPrint('Auth register facility error: $e');
-      state = AsyncValue.error(ErrorMapper.map(e), st);
+      if (ref.mounted) {
+        state = AsyncValue.error(ErrorMapper.map(e), st);
+      }
       return false;
     }
   }
@@ -177,6 +217,8 @@ class AuthController extends _$AuthController {
     }
     try {
       final user = await _repository.getMe();
+      if (!ref.mounted) return null;
+
       state = AsyncValue.data(user);
       return user['role'] as String?;
     } catch (_) {
