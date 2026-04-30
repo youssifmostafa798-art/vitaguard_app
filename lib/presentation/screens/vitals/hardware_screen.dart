@@ -1,0 +1,654 @@
+import 'dart:async';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:vitaguard_app/presentation/screens/vitals/metric_card.dart';
+import 'package:vitaguard_app/features/vitals/service/alert_timer_service.dart';
+import 'package:vitaguard_app/presentation/widgets/vitals/vital_alert_banner.dart';
+import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
+import 'package:vitaguard_app/data/repositories/vitals/vitals_repository.dart';
+import 'package:vitaguard_app/core/utils/app_colors.dart';
+import 'package:vitaguard_app/data/models/doctor/vital_alert_model.dart';
+import 'package:vitaguard_app/presentation/controllers/auth/auth_provider.dart';
+
+class HardwareScreen extends ConsumerStatefulWidget {
+  const HardwareScreen({
+    super.key,
+    this.patientId,
+    this.patientName,
+    this.automaticallyImplyLeading = true,
+    this.requiresPatientContext = false,
+  });
+
+  final String? patientId;
+  final String? patientName;
+  final bool automaticallyImplyLeading;
+  final bool requiresPatientContext;
+
+  @override
+  ConsumerState<HardwareScreen> createState() => _HardwareScreenState();
+}
+
+class _HardwareScreenState extends ConsumerState<HardwareScreen>
+    with WidgetsBindingObserver {
+  static const double _horizontalPadding = 24;
+
+  Map<String, dynamic>? _latestVitals;
+  StreamSubscription? _channel;
+  String? _subscribedPatientId;
+  bool _isLoadingVitals = false;
+  String? _subscriptionError;
+
+  /// One alert service instance per screen — never shared across patients.
+  late final AlertTimerService _alertService;
+
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
+
+  @override
+  void initState() {
+    super.initState();
+    _alertService = AlertTimerService();
+    WidgetsBinding.instance.addObserver(this);
+    _subscribeToVitals();
+  }
+
+  @override
+  void didUpdateWidget(covariant HardwareScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.patientId != widget.patientId ||
+        oldWidget.requiresPatientContext != widget.requiresPatientContext) {
+      _subscribeToVitals();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+        _alertService.onBackground();
+      case AppLifecycleState.resumed:
+        _alertService.onForeground();
+      case AppLifecycleState.detached:
+        break;
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _channel?.cancel();
+    _alertService.dispose();
+    super.dispose();
+  }
+
+  // ── Data subscription ──────────────────────────────────────────────────────
+
+  Future<void> _subscribeToVitals() async {
+    final patientId = _effectivePatientId();
+    if (patientId == null) {
+      await _channel?.cancel();
+      _channel = null;
+      _subscribedPatientId = null;
+      if (mounted) {
+        setState(() {
+          _latestVitals = null;
+          _isLoadingVitals = false;
+          _subscriptionError = widget.requiresPatientContext
+              ? 'Linked patient is still syncing.'
+              : 'Sign in to view hardware readings.';
+        });
+      }
+      return;
+    }
+
+    if (_subscribedPatientId == patientId && _channel != null) return;
+
+    await _channel?.cancel();
+    _channel = null;
+    _subscribedPatientId = patientId;
+    if (mounted) {
+      setState(() {
+        _latestVitals = null;
+        _isLoadingVitals = true;
+        _subscriptionError = null;
+      });
+    }
+
+    // 1. Load the most recent row immediately so the screen is not blank.
+    try {
+      final vitals = await ref.read(vitalsRepositoryProvider).getLatestVitals(patientId);
+
+      if (vitals != null && mounted) {
+        final record = vitals.toJson();
+        setState(() => _latestVitals = record);
+        _evaluateVitals(record);
+      }
+      if (mounted) {
+        setState(() => _isLoadingVitals = false);
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _isLoadingVitals = false;
+          _subscriptionError = 'Unable to load hardware readings: $error';
+        });
+      }
+    }
+
+    // 2. Real-time push — fires instantly when ESP32 inserts a new row.
+    _channel = ref.read(vitalsRepositoryProvider).subscribeToVitals(patientId).listen(
+      (vitals) {
+        if (mounted) {
+          final record = vitals.toJson();
+          setState(() {
+            _latestVitals = record;
+            _subscriptionError = null;
+          });
+          _evaluateVitals(record);
+        }
+      },
+    );
+  }
+
+  String? _effectivePatientId() {
+    final explicitPatientId = widget.patientId?.trim();
+    if (explicitPatientId != null && explicitPatientId.isNotEmpty) {
+      return explicitPatientId;
+    }
+
+    if (widget.requiresPatientContext) {
+      return null;
+    }
+
+    return ref.read(authControllerProvider.notifier).currentUser?.id;
+  }
+
+  /// Extracts typed values from a raw Supabase record and feeds them to
+  /// the alert service.
+  void _evaluateVitals(Map<String, dynamic> record) {
+    _alertService.evaluate(
+      bpm: (record['bpm'] as num?)?.toInt(),
+      spo2: (record['spo2'] as num?)?.toInt(),
+      temp: (record['temperature'] as num?)?.toDouble(),
+      deviceStatus: record['device_status'] as String?,
+    );
+  }
+
+  // ── Per-metric status colour helper ───────────────────────────────────────
+
+  /// Returns the alert colour for [displayMetric] based on [state].
+  ///
+  /// [displayMetric] must match the value stored in [VitalAlert.metrics]:
+  /// `'SpO2'`, `'Heart Rate'`, `'Temperature'`.
+  Color? _metricStatusColor(VitalAlertState state, String displayMetric) {
+    // Check active alerts first.
+    for (final alert in state.allAlerts) {
+      if (alert.metrics.any((m) => m.contains(displayMetric))) {
+        return VitalThresholds.getSeverityColor(alert.severity);
+      }
+    }
+
+    // Check pre-alert.
+    if (state.hasPreAlert && state.preAlert!.metric.contains(displayMetric)) {
+      return Colors.orange.withValues(alpha: 0.75);
+    }
+
+    return null; // null → card uses its neutral default border
+  }
+
+  // ── Build ──────────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<VitalAlertState>(
+      stream: _alertService.alertStream,
+      initialData: VitalAlertState.normal,
+      builder: (context, snapshot) {
+        final alertState = snapshot.data ?? VitalAlertState.normal;
+        return _buildScaffold(context, alertState);
+      },
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context, VitalAlertState alertState) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    final data = _latestVitals;
+
+    // ── Display values ────────────────────────────────────────────────────
+    final String bpm = data?['bpm']?.toString() ?? '--';
+    final String spo2 = data != null ? '${data['spo2'] ?? '--'}%' : '--';
+    final String temp = data != null
+        ? '${data['temperature'] ?? '--'}°C'
+        : '--';
+
+    final String status;
+    final Color statusColor;
+    final String battery;
+    final String signal;
+
+    if (data == null) {
+      status = 'Offline';
+      statusColor = Colors.grey;
+      battery = '--';
+      signal = '--';
+    } else if (data['device_status'] == 'Waiting for Finger') {
+      status = 'Awaiting Patient';
+      statusColor = Colors.orange;
+      battery = '100%';
+      signal = 'Strong';
+    } else {
+      status = 'Online';
+      statusColor = AppColors.success;
+      battery = '100%';
+      signal = 'Strong';
+    }
+
+    // Per-metric colours from the alert service state.
+    final bpmRingColor = _metricStatusColor(alertState, 'Heart Rate');
+    final spo2CardColor = _metricStatusColor(alertState, 'SpO2');
+    final tempCardColor = _metricStatusColor(alertState, 'Temperature');
+    final patientDisplayName =
+        widget.patientName != null && widget.patientName!.trim().isNotEmpty
+        ? widget.patientName!.trim()
+        : 'Patient identity syncing';
+
+    return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: AppBackground(
+          child: AppBar(
+            automaticallyImplyLeading: widget.automaticallyImplyLeading,
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+          ),
+        ),
+      ),
+      body: Column(
+        children: [
+          // ── Alert banner — always first, zero-height when inactive ─────────
+          VitalAlertBanner(
+            alertState: alertState,
+            onDismiss: _alertService.snooze,
+          ),
+
+          // ── Main scrollable content ────────────────────────────────────────
+          if (_subscriptionError != null || _isLoadingVitals)
+            _HardwareSyncBanner(
+              message:
+                  _subscriptionError ??
+                  'Connecting to real-time hardware readings...',
+              isLoading: _isLoadingVitals,
+            ),
+          Expanded(
+            child: AppBackground(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.symmetric(
+                  horizontal: _horizontalPadding.w,
+                  vertical: 18.h,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Section label ──────────────────────────────────────
+                    Text(
+                      'DEVICE LIVE STATUS',
+                      style: textTheme.labelMedium?.copyWith(
+                        fontSize: 13.sp,
+                        color: AppColors.primary.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
+
+                    // ── Device header row ──────────────────────────────────
+                    Row(
+                      children: [
+                        Container(
+                          width: 11.w,
+                          height: 11.w,
+                          decoration: BoxDecoration(
+                            color: data != null
+                                ? AppColors.success
+                                : Colors.grey,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'VitaGuard Core',
+                                style: textTheme.titleLarge?.copyWith(
+                                  fontSize: 32.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              SizedBox(height: 4.h),
+                              Text(
+                                patientDisplayName,
+                                style: textTheme.bodyMedium?.copyWith(
+                                  fontSize: 16.sp,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 34.h),
+
+                    // ── BPM ring — animated border colour ─────────────────
+                    RepaintBoundary(
+                      child: _HeartRateRing(
+                        bpm: bpm,
+                        statusColor: bpmRingColor,
+                      ),
+                    ),
+                    SizedBox(height: 24.h),
+
+                    // ── Device status strip ────────────────────────────────
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 18.w,
+                        vertical: 18.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardBackground.withValues(alpha: 0.65),
+                        borderRadius: BorderRadius.circular(20.r),
+                        border: Border.all(
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.26,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _StatusInfoItem(
+                              title: 'Status',
+                              value: status,
+                              valueColor: statusColor,
+                            ),
+                          ),
+                          Expanded(
+                            child: _StatusInfoItem(
+                              title: 'Battery',
+                              value: battery,
+                            ),
+                          ),
+                          Expanded(
+                            child: _StatusInfoItem(
+                              title: 'Signal',
+                              value: signal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 30.h),
+
+                    // ── Sensor array label ─────────────────────────────────
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              //Sensor Array
+                              Text(
+                                'Sensor Array',
+                                style: textTheme.titleLarge?.copyWith(
+                                  fontSize: 38.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              SizedBox(height: 4.h),
+                              //Real-time peripheral metrics
+                              Text(
+                                'Real-time peripheral metrics',
+                                style: textTheme.bodyMedium?.copyWith(
+                                  fontSize: 18.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        //wifi_tethering_rounded
+                        Icon(
+                          Icons.wifi_tethering_rounded,
+                          size: 30.sp,
+                          color: AppColors.primary.withValues(alpha: 0.32),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 18.h),
+
+                    // ── SpO2 + Temperature cards — status-coloured ─────────
+                    Row(
+                      children: [
+                        MetricCard(
+                          icon: Icons.water_drop_rounded,
+                          iconColor: const Color(0xFF0F766E),
+                          iconBackgroundColor: const Color(0xFFD7F3EF),
+                          value: spo2,
+                          label: 'SPO2 (%)',
+                          statusColor: spo2CardColor,
+                        ),
+                        SizedBox(width: 14.w),
+                        MetricCard(
+                          icon: Icons.device_thermostat_rounded,
+                          iconColor: AppColors.primary,
+                          iconBackgroundColor: const Color(0xFFE4EEFD),
+                          value: temp,
+                          label: 'BODY TEMP',
+                          statusColor: tempCardColor,
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 24.h),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Heart-rate ring ──────────────────────────────────────────────────────────
+
+class _HardwareSyncBanner extends StatelessWidget {
+  const _HardwareSyncBanner({required this.message, required this.isLoading});
+
+  final String message;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.fromLTRB(18.w, 10.h, 18.w, 0),
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+      decoration: BoxDecoration(
+        color: isLoading ? const Color(0xFFE8F5FF) : const Color(0xFFFFF4E5),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: isLoading ? const Color(0xFF90CAF9) : const Color(0xFFFFD08A),
+        ),
+      ),
+      child: Row(
+        children: [
+          if (isLoading)
+            SizedBox(
+              width: 16.r,
+              height: 16.r,
+              child: const CircularProgressIndicator(strokeWidth: 2),
+            )
+          else
+            Icon(
+              Icons.info_outline_rounded,
+              color: const Color(0xFF8A5200),
+              size: 18.r,
+            ),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: isLoading
+                    ? const Color(0xFF0D47A1)
+                    : const Color(0xFF8A5200),
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeartRateRing extends StatelessWidget {
+  final String bpm;
+
+  /// When non-null, the ring border animates to this colour (300 ms).
+  final Color? statusColor;
+
+  const _HeartRateRing({required this.bpm, this.statusColor});
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final ringColor = statusColor ?? const Color(0xFFE6E8EE);
+
+    return Align(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        width: 280.w,
+        height: 280.w,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: ringColor,
+            width: statusColor != null ? 16.w : 14.w,
+          ),
+          boxShadow: statusColor != null
+              ? [
+                  BoxShadow(
+                    color: statusColor!.withValues(alpha: 0.25),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                  ),
+                ]
+              : null,
+        ),
+        child: Center(
+          child: Container(
+            width: 214.w,
+            height: 214.w,
+            decoration: const BoxDecoration(
+              color: AppColors.cardBackground,
+              shape: BoxShape.circle,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: Icon(
+                    Icons.favorite,
+                    key: ValueKey(statusColor),
+                    color: statusColor ?? AppColors.primary,
+                    size: 36.sp,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    bpm,
+                    style: textTheme.displayMedium?.copyWith(
+                      fontSize: bpm.length > 3 ? 64.sp : 78.sp,
+                      height: 1.0,
+                      fontWeight: FontWeight.w800,
+                      color: statusColor ?? AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 3.h),
+                Text(
+                  'BPM',
+                  style: textTheme.labelLarge?.copyWith(
+                    fontSize: 22.sp,
+                    letterSpacing: 1.2,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Device status info item ──────────────────────────────────────────────────
+
+class _StatusInfoItem extends StatelessWidget {
+  final String title;
+  final String value;
+  final Color? valueColor;
+
+  const _StatusInfoItem({
+    required this.title,
+    required this.value,
+    this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: textTheme.bodyMedium?.copyWith(
+            fontSize: 14.sp,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        SizedBox(height: 5.h),
+        Text(
+          value,
+          style: textTheme.titleMedium?.copyWith(
+            fontSize: 20.sp,
+            color: valueColor ?? AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+}

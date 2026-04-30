@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:vitaguard_app/components/custem_background.dart';
-import 'package:vitaguard_app/components/custem_text.dart';
+import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
+import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
 
 class SimpleHeader extends StatelessWidget implements PreferredSizeWidget {
   final String title;

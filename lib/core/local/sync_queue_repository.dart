@@ -1,8 +1,15 @@
 import 'dart:convert';
-
 import 'package:drift/drift.dart';
 import 'package:vitaguard_app/core/local/vitaguard_local_database.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:vitaguard_app/core/utils/uuid.dart';
+
+part 'sync_queue_repository.g.dart';
+
+@Riverpod(keepAlive: true)
+SyncQueueRepository syncQueueRepository(Ref ref) {
+  return SyncQueueRepository(ref.watch(vitaGuardLocalDatabaseProvider));
+}
 
 class SyncQueueRepository {
   SyncQueueRepository(this._database);

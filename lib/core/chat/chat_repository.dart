@@ -1,8 +1,15 @@
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
-import 'package:vitaguard_app/models/message_model.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:vitaguard_app/data/models/message_model.dart';
+
+part 'chat_repository.g.dart';
+
+@riverpod
+ChatRepository chatRepository(Ref ref) {
+  return ChatRepository(supabase: ref.watch(supabaseServiceProvider));
+}
 
 class ChatRepository {
   ChatRepository({SupabaseService? supabase})

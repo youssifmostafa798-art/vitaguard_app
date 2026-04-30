@@ -1,11 +1,10 @@
 import 'dart:io';
 import 'dart:math' as math;
-
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
-import 'package:vitaguard_app/patient/models/patient_models.dart';
+import 'package:vitaguard_app/data/models/patient/patient_models.dart';
 
 // ─────────────────────────────────────────────────────────────
 // Softmax helper
@@ -108,9 +107,10 @@ class XrayInferenceService {
   static final XrayInferenceService instance = XrayInferenceService._();
 
   Interpreter? _interpreter;
+  IsolateInterpreter? _isolateInterpreter;
   bool _isInitializing = false;
 
-  bool get isReady => _interpreter != null;
+  bool get isReady => _interpreter != null && _isolateInterpreter != null;
 
   final _supabase = SupabaseService.instance;
 
@@ -162,6 +162,7 @@ class XrayInferenceService {
       }
 
       _interpreter = interp;
+      _isolateInterpreter = await IsolateInterpreter.create(address: interp.address);
 
       // ── Tensor shape verification ────────────────────────
       final initialInShape = _interpreter!.getInputTensor(0).shape;
@@ -225,7 +226,7 @@ class XrayInferenceService {
     try {
       // Step 2 — ensure interpreter is ready
       await ensureLoaded();
-      if (_interpreter == null) {
+      if (_interpreter == null || _isolateInterpreter == null) {
         throw StateError('TFLite interpreter failed to initialize.');
       }
 
@@ -246,7 +247,7 @@ class XrayInferenceService {
         // (CrossEntropyLoss export — softmax not baked in).
         // Exported class order is fixed: [NORMAL, PNEUMONIA].
         final output = [List.filled(2, 0.0)];
-        _interpreter!.run(inputTensor, output);
+        await _isolateInterpreter!.run(inputTensor, output);
         final z0 = output[0][0]; // NORMAL logit
         final z1 = output[0][1]; // PNEUMONIA logit
         final probs = _toProbs(z0, z1);
@@ -255,14 +256,14 @@ class XrayInferenceService {
       } else if (outShape.length == 2 && outShape[1] == 1) {
         // Sigmoid single-output head: [1, 1] → P(PNEUMONIA)
         final output = [List.filled(1, 0.0)];
-        _interpreter!.run(inputTensor, output);
+        await _isolateInterpreter!.run(inputTensor, output);
         final sigmoid = output[0][0];
         probPneumonia = sigmoid;
         probNormal = 1.0 - sigmoid;
       } else {
         // Unexpected shape — try flat list as last resort
         final flat = List.filled(outShape.reduce((a, b) => a * b), 0.0);
-        _interpreter!.run(inputTensor, flat);
+        await _isolateInterpreter!.run(inputTensor, flat);
         if (flat.length >= 2) {
           final probs = _toProbs(flat[0], flat[1]);
           probNormal = probs[0];

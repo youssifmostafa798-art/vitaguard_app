@@ -1,26 +1,40 @@
-import 'package:flutter/material.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:vitaguard_app/core/ai/xray_inference_service.dart';
 
-class HealthProvider with ChangeNotifier {
-  bool _isAiOnline = false;
-  String _aiMessage = 'Checking AI status...';
+part 'health_provider.g.dart';
 
-  bool get isAiOnline => _isAiOnline;
-  String get aiMessage => _aiMessage;
+class HealthState {
+  final bool isAiOnline;
+  final String aiMessage;
 
-  HealthProvider() {
-    checkHealth();
+  HealthState({
+    this.isAiOnline = false,
+    this.aiMessage = 'Checking AI status...',
+  });
+}
+
+@riverpod
+class HealthController extends _$HealthController {
+  @override
+  HealthState build() {
+    _init();
+    return HealthState();
+  }
+
+  Future<void> _init() async {
+    await checkHealth();
   }
 
   Future<void> checkHealth() async {
     try {
       await XrayInferenceService.instance.ensureLoaded();
-      _isAiOnline = XrayInferenceService.instance.isReady;
-      _aiMessage = _isAiOnline ? 'AI model loaded' : 'AI model not available';
+      final ready = XrayInferenceService.instance.isReady;
+      state = HealthState(
+        isAiOnline: ready,
+        aiMessage: ready ? 'AI model loaded' : 'AI model not available',
+      );
     } catch (e) {
-      _isAiOnline = false;
-      _aiMessage = 'AI model error';
+      state = HealthState(isAiOnline: false, aiMessage: 'AI model error');
     }
-    notifyListeners();
   }
 }

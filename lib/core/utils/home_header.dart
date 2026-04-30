@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/components/custem_background.dart';
-import 'package:vitaguard_app/components/custem_text.dart';
-import 'package:vitaguard_app/core/providers.dart';
+import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
+import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:vitaguard_app/core/network/health_provider.dart';
 
 class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
   final String name_;
@@ -18,7 +18,7 @@ class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final health = ref.watch(healthProvider);
+    final health = ref.watch(healthControllerProvider);
 
     return AppBar(
       elevation: 0,
@@ -48,7 +48,7 @@ class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
                         width: 14.r,
                         height: 14.r,
                         decoration: BoxDecoration(
-                          color: health.isAiOnline ? Colors.green : Colors.red,
+                          color: ref.read(healthControllerProvider).isAiOnline ? Colors.green : Colors.red,
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
                         ),
@@ -77,11 +77,11 @@ class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
                           ),
                           Gap(2.w),
                           Tooltip(
-                            message: health.aiMessage,
+                            message: ref.read(healthControllerProvider).aiMessage,
                             child: Icon(
                               Icons.bolt,
                               size: 16.r,
-                              color: health.isAiOnline
+                              color: ref.read(healthControllerProvider).isAiOnline
                                   ? Colors.orange
                                   : Colors.grey,
                             ),

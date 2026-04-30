@@ -1,7 +1,15 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'vitaguard_local_database.g.dart';
+
+@Riverpod(keepAlive: true)
+VitaGuardLocalDatabase vitaGuardLocalDatabase(Ref ref) {
+  final database = VitaGuardLocalDatabase();
+  ref.onDispose(database.close);
+  return database;
+}
 
 class CachedProfiles extends Table {
   TextColumn get id => text()();

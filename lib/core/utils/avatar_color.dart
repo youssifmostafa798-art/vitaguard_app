@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:vitaguard_app/models/message_model.dart';
+import 'package:vitaguard_app/data/models/message_model.dart';
 
 Color getAvatarColor(MessageSender sender) {
   switch (sender) {

@@ -1,19 +1,18 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vitaguard_app/ai_chat/data/ai_chat_models.dart';
-import 'package:vitaguard_app/ai_chat/data/ai_chat_repository.dart';
-import 'package:vitaguard_app/ai_chat/data/ai_response_sanitizer.dart';
-import 'package:vitaguard_app/ai_chat/screen/ai_chat_screen.dart';
-import 'package:vitaguard_app/ai_chat/ui/ai_chat_provider.dart';
+import 'package:vitaguard_app/data/models/chatbot/ai_chat_models.dart';
+import 'package:vitaguard_app/data/repositories/chatbot/ai_chat_repository.dart';
+import 'package:vitaguard_app/features/chatbot/data/ai_response_sanitizer.dart';
+import 'package:vitaguard_app/presentation/screens/chatbot/ai_chat_screen.dart';
+import 'package:vitaguard_app/presentation/controllers/chatbot/ai_chat_provider.dart';
 import 'package:vitaguard_app/core/chat/chat_repository.dart';
 import 'package:vitaguard_app/core/utils/screen_util_helper.dart';
-import 'package:vitaguard_app/doctor/chat/screen/chat_list_dr.dart';
-import 'package:vitaguard_app/models/message_model.dart';
-import 'package:vitaguard_app/patient/chat/screen/chat_list_patient.dart';
+import 'package:vitaguard_app/presentation/screens/doctor/chat_list_dr.dart';
+import 'package:vitaguard_app/data/models/message_model.dart';
+import 'package:vitaguard_app/presentation/screens/patient/chat_list_patient.dart';
 
 void main() {
   group('AiChatProvider', () {

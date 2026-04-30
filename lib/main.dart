@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/core/alerts/alert_notification_service.dart';
 import 'package:vitaguard_app/core/utils/screen_util_helper.dart';
-import 'package:vitaguard_app/splash_screen.dart';
+import 'package:vitaguard_app/presentation/screens/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

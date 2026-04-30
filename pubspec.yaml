@@ -31,6 +31,8 @@ dependencies:
   lucide_icons: ^0.257.0
   flutter_markdown: ^0.7.7+1
   tflite_flutter: ^0.12.1
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.11.0
 
 dev_dependencies:
   flutter_test:
@@ -40,6 +42,8 @@ dev_dependencies:
   drift_dev: any
   riverpod_generator: any
   flutter_launcher_icons: "^0.14.4"  
+  freezed: ^3.2.5
+  json_serializable: ^6.13.0
 
 # ✅ بلوك مستقل في الـ root (مش جوه dev_dependencies)
 flutter_launcher_icons:

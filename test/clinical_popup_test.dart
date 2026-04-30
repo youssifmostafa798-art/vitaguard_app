@@ -1,15 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vitaguard_app/core/utils/screen_util_helper.dart';
-import 'package:vitaguard_app/patient/models/patient_models.dart';
-import 'package:vitaguard_app/x_ray_model/screen/ai_xray_result_screen.dart';
-import 'package:vitaguard_app/x_ray_model/widgets/clinical_popup.dart';
+import 'package:vitaguard_app/data/models/patient/patient_models.dart';
+import 'package:vitaguard_app/presentation/screens/xray/ai_xray_result_screen.dart';
+import 'package:vitaguard_app/presentation/widgets/xray/clinical_popup.dart';
 
 void main() {
   testWidgets('ClinicalPopupHost shows and auto-dismisses a popup', (

@@ -1,7 +1,14 @@
 import 'dart:convert';
-
 import 'package:drift/drift.dart';
 import 'package:vitaguard_app/core/local/vitaguard_local_database.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'local_cache_repository.g.dart';
+
+@Riverpod(keepAlive: true)
+LocalCacheRepository localCacheRepository(Ref ref) {
+  return LocalCacheRepository(ref.watch(vitaGuardLocalDatabaseProvider));
+}
 
 class LocalCacheRepository {
   LocalCacheRepository(this._database);

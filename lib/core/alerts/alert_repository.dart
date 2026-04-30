@@ -1,6 +1,14 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/core/alerts/alert_model.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'alert_repository.g.dart';
+
+@riverpod
+AlertRepository alertRepository(Ref ref) {
+  return AlertRepository(supabase: ref.watch(supabaseServiceProvider));
+}
 
 class AlertRepository {
   AlertRepository({SupabaseService? supabase})

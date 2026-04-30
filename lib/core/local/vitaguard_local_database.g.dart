@@ -1,6 +1,8 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+
 
 part of 'vitaguard_local_database.dart';
+
+// GENERATED CODE - DO NOT MODIFY BY HAND
 
 // ignore_for_file: type=lint
 class $CachedProfilesTable extends CachedProfiles
@@ -9271,3 +9273,58 @@ class $VitaGuardLocalDatabaseManager {
   $$SyncConflictsTableTableManager get syncConflicts =>
       $$SyncConflictsTableTableManager(_db, _db.syncConflicts);
 }
+
+// **************************************************************************
+// RiverpodGenerator
+// **************************************************************************
+
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+
+@ProviderFor(vitaGuardLocalDatabase)
+final vitaGuardLocalDatabaseProvider = VitaGuardLocalDatabaseProvider._();
+
+final class VitaGuardLocalDatabaseProvider
+    extends
+        $FunctionalProvider<
+          VitaGuardLocalDatabase,
+          VitaGuardLocalDatabase,
+          VitaGuardLocalDatabase
+        >
+    with $Provider<VitaGuardLocalDatabase> {
+  VitaGuardLocalDatabaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'vitaGuardLocalDatabaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$vitaGuardLocalDatabaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<VitaGuardLocalDatabase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  VitaGuardLocalDatabase create(Ref ref) {
+    return vitaGuardLocalDatabase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(VitaGuardLocalDatabase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<VitaGuardLocalDatabase>(value),
+    );
+  }
+}
+
+String _$vitaGuardLocalDatabaseHash() =>
+    r'0b752dbd81b3db23d2c9163edd1fa3b27a5e7d1e';

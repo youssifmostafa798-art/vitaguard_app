@@ -1,6 +1,13 @@
 import 'dart:typed_data';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'supabase_service.g.dart';
+
+@Riverpod(keepAlive: true)
+SupabaseService supabaseService(Ref ref) {
+  return SupabaseService.instance;
+}
 
 class SupabaseRealtimeSubscription {
   SupabaseRealtimeSubscription(this._channel);

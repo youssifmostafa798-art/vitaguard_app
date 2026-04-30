@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:vitaguard_app/core/sync/offline_sync_service.dart';
 

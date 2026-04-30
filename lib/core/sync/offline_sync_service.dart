@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:vitaguard_app/core/local/sync_queue_repository.dart';
 import 'package:vitaguard_app/core/local/vitaguard_local_database.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
