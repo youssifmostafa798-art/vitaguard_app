@@ -21,28 +21,9 @@ class _MedicalReportsState extends ConsumerState<MedicalReports> {
   final _phoneController = TextEditingController();
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
-
-  // Fixed: was [const bool _isLoading = false] — a compile-time constant that
-  // could never be mutated, permanently breaking the loading indicator.
   bool _isLoading = false;
   bool _isPicking = false;
   File? _selectedFile;
-
-  Future<void> _pickImage() async {
-    if (_isPicking) return;
-    setState(() => _isPicking = true);
-    try {
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        setState(() {
-          _selectedFile = File(pickedFile.path);
-        });
-      }
-    } finally {
-      setState(() => _isPicking = false);
-    }
-  }
 
   Future<void> _handleConfirm() async {
     final phone = _phoneController.text.trim();
@@ -52,11 +33,11 @@ class _MedicalReportsState extends ConsumerState<MedicalReports> {
     setState(() => _isLoading = true);
 
     final success = await ref.read(doctorControllerProvider.notifier).uploadMedicalReport(
-          patientPhone: phone,
-          patientName: name,
-          description: desc,
-          imageFile: _selectedFile,
-        );
+      patientPhone: phone,
+      patientName: name,
+      description: desc,
+      imageFile: _selectedFile,
+    );
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -72,6 +53,22 @@ class _MedicalReportsState extends ConsumerState<MedicalReports> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errMsg)),
       );
+    }
+  }
+
+  Future<void> _pickImage() async {
+    if (_isPicking) return;
+    setState(() => _isPicking = true);
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        setState(() {
+          _selectedFile = File(pickedFile.path);
+        });
+      }
+    } finally {
+      setState(() => _isPicking = false);
     }
   }
 
