@@ -99,7 +99,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         final role = await notifier.getUserRole();
         if (!mounted) return;
 
-        final name = notifier.userName;
+        // SAFE: read the name from the cached AsyncValue via the widget's ref.
+        // DO NOT use `notifier.userName` here — it accesses the provider's
+        // internal Ref (via `state`), which can be disposed between async gaps
+        // even with keepAlive() in certain edge cases (hot-restart, rebuild).
+        // `ref.read(authControllerProvider)` goes through the widget ref, which
+        // is always valid as long as `mounted` is true.
+        final name =
+            ref.read(authControllerProvider).value?['name'] as String? ??
+            'User';
+
         Widget nextScreen;
         switch (role) {
           case 'doctor':

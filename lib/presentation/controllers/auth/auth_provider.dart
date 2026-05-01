@@ -13,6 +13,13 @@ class AuthController extends _$AuthController {
 
   @override
   AsyncValue<Map<String, dynamic>?> build() {
+    // CRITICAL: Keep this provider alive for the entire app session.
+    // Without keepAlive(), Riverpod auto-disposes the provider whenever no widget
+    // is actively *watching* it (e.g., between async gaps in SplashScreen).
+    // Accessing `state` on a disposed notifier throws:
+    //   "Cannot use the Ref of authControllerProvider after it has been disposed"
+    ref.keepAlive();
+
     // Initial state: try to load the current user
     _init();
 
