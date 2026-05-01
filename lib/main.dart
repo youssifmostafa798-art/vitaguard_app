@@ -9,14 +9,18 @@ import 'package:vitaguard_app/presentation/screens/splash_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Start heavy initialization in background
-  Future.microtask(() async {
-    await Supabase.initialize(
-      url: 'https://sumgvbdgucrjyiztmzyn.supabase.co',
-      anonKey: 'sb_publishable_mn_LuYvFSEJBx4Kqt07Xpg_6mHktGkV',
-    );
-    await AlertNotificationService.instance.initialize();
-  });
+  // CRITICAL: Supabase MUST be fully initialized before runApp().
+  // Running it in a microtask/unawaited future caused a race condition where
+  // SplashScreen accessed `currentUser` before the client was ready,
+  // throwing "Bad state: No authenticated user".
+  await Supabase.initialize(
+    url: 'https://sumgvbdgucrjyiztmzyn.supabase.co',
+    anonKey: 'sb_publishable_mn_LuYvFSEJBx4Kqt07Xpg_6mHktGkV',
+  );
+
+  // Initialize alert service after Supabase is ready (it may need the client).
+  // Fire-and-forget is acceptable here since it is non-critical to first frame.
+  AlertNotificationService.instance.initialize().catchError((_) {});
 
   runApp(const ProviderScope(child: MyApp()));
 }

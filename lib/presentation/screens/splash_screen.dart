@@ -82,21 +82,25 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (_navigated || !mounted) return;
 
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     final rememberMe = prefs.getBool('remember_me') ?? false;
 
-    // Check if we have an active session
-    final authState = ref.read(authControllerProvider.notifier);
-    final hasSession = authState.currentUser != null;
+    // Safely read the current user — Supabase is guaranteed initialized at this
+    // point because main() awaits Supabase.initialize() before runApp(), but we
+    // still use the nullable accessor to be defensive.
+    final notifier = ref.read(authControllerProvider.notifier);
+    final currentUser = notifier.currentUser; // nullable — never throws
+
+    final hasSession = currentUser != null;
 
     if (hasSession) {
       if (rememberMe) {
-        // Auto-login bypassing the login screen
-        final role = await ref.read(authControllerProvider.notifier).getUserRole();
+        // Auto-login: resolve role from cached or fetched profile.
+        final role = await notifier.getUserRole();
         if (!mounted) return;
 
+        final name = notifier.userName;
         Widget nextScreen;
-        final name = ref.read(authControllerProvider.notifier).userName;
-
         switch (role) {
           case 'doctor':
             nextScreen = MainDoctor(name: name);
@@ -111,6 +115,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             nextScreen = MainPatient(name: name);
         }
 
+        if (!mounted) return;
         _navigated = true;
         Navigator.pushReplacement(
           context,
@@ -118,8 +123,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         );
         return;
       } else {
-        // If they did not want to be remembered, clear the session
-        await ref.read(authControllerProvider.notifier).logout();
+        // User previously logged in but did NOT want to be remembered.
+        // Clear the session before sending them back to onboarding.
+        await notifier.logout();
+        if (!mounted) return;
       }
     }
 

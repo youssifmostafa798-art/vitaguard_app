@@ -103,6 +103,11 @@ class XRayImageWithOptionalHeatmap extends StatelessWidget {
         break;
     }
 
+    // IMPORTANT: ColorFiltered must wrap only the base image, NOT the heatmap.
+    // The HeatmapOverlayPlaceholder painter uses BlendMode.screen which requires
+    // real pixel data beneath it. When ColorFiltered wraps the entire Stack it
+    // creates an isolated compositing layer, and screen-blend has nothing to
+    // blend with — the heatmap becomes completely invisible.
     return ClipRRect(
       borderRadius: BorderRadius.circular(16.r),
       child: InteractiveViewer(
@@ -110,12 +115,13 @@ class XRayImageWithOptionalHeatmap extends StatelessWidget {
         minScale: 1.0,
         maxScale: 5.0,
         panEnabled: true,
-        child: ColorFiltered(
-          colorFilter: filter,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Image.file(
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // ── Base image (color filter applied here only) ─────────────
+            ColorFiltered(
+              colorFilter: filter,
+              child: Image.file(
                 imageFile,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) => ColoredBox(
@@ -125,49 +131,54 @@ class XRayImageWithOptionalHeatmap extends StatelessWidget {
                   ),
                 ),
               ),
-              if (showHeatmapOverlay)
-                Positioned.fill(
-                  child: HeatmapOverlayPlaceholder(emphasis: heatmapEmphasis),
-                ),
-              if (showHeatmapOverlay && (heatmapLabel ?? '').isNotEmpty)
-                Positioned(
-                  top: 12.h,
-                  left: 12.w,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 10.w,
-                      vertical: 6.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.58),
-                      borderRadius: BorderRadius.circular(999.r),
-                      border: Border.all(
-                        color: Colors.orangeAccent.withValues(alpha: 0.55),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.auto_awesome,
-                          size: 14.sp,
-                          color: Colors.orangeAccent,
-                        ),
-                        Gap(6.w),
-                        Text(
-                          heatmapLabel!,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11.sp,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+            ),
+
+            // ── AI heatmap overlay (outside ColorFiltered so BlendMode.screen
+            //    composites directly against the rendered image pixels) ────
+            if (showHeatmapOverlay)
+              Positioned.fill(
+                child: HeatmapOverlayPlaceholder(emphasis: heatmapEmphasis),
+              ),
+
+            // ── Heatmap annotation label ─────────────────────────────────
+            if (showHeatmapOverlay && (heatmapLabel ?? '').isNotEmpty)
+              Positioned(
+                top: 12.h,
+                left: 12.w,
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 6.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.58),
+                    borderRadius: BorderRadius.circular(999.r),
+                    border: Border.all(
+                      color: Colors.orangeAccent.withValues(alpha: 0.55),
                     ),
                   ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.auto_awesome,
+                        size: 14.sp,
+                        color: Colors.orangeAccent,
+                      ),
+                      Gap(6.w),
+                      Text(
+                        heatmapLabel!,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
