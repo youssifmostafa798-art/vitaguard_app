@@ -34,6 +34,8 @@ class FacilityController extends _$FacilityController {
 
   @override
   FacilityState build() {
+    // Keep alive for session: sets state after async Supabase calls.
+    ref.keepAlive();
     return FacilityState();
   }
 

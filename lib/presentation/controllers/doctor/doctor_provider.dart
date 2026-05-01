@@ -45,6 +45,9 @@ class DoctorController extends _$DoctorController {
 
   @override
   DoctorState build() {
+    // Keep alive: holds a Realtime subscription and runs async operations.
+    // Auto-disposal while a channel is open or between async gaps is unsafe.
+    ref.keepAlive();
     ref.onDispose(() {
       _reportsChannel?.unsubscribe();
     });

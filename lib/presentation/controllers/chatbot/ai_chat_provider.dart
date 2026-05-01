@@ -45,6 +45,9 @@ class AiChatController extends _$AiChatController {
 
   @override
   AiChatState build() {
+    // Keep alive for session: multi-step async ops set state between awaits.
+    // Chat state must also survive screen navigation without losing conversation.
+    ref.keepAlive();
     return AiChatState();
   }
 

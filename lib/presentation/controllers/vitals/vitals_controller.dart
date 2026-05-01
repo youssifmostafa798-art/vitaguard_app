@@ -33,6 +33,8 @@ class VitalsState {
 class VitalsController extends _$VitalsController {
   @override
   VitalsState build() {
+    // Keep alive for session: sets state after async Supabase calls.
+    ref.keepAlive();
     return const VitalsState();
   }
 

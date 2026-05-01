@@ -45,6 +45,10 @@ class PatientController extends _$PatientController {
 
   @override
   PatientState build() {
+    // Keep alive for the full session: this controller runs long async tasks
+    // (TFLite inference, Supabase uploads) that set state after awaits.
+    // Auto-disposal between those awaits throws "Cannot use the Ref after disposed".
+    ref.keepAlive();
     return PatientState();
   }
 

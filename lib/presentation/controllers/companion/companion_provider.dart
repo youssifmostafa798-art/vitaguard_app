@@ -39,6 +39,8 @@ class CompanionController extends _$CompanionController {
 
   @override
   CompanionState build() {
+    // Keep alive for session: sets state after async Supabase calls.
+    ref.keepAlive();
     return CompanionState();
   }
 
