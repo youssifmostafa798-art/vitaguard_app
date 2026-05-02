@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math';
+import 'package:cross_file/cross_file.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/data/models/auth/auth_models.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
@@ -56,7 +57,7 @@ class AuthRepository {
     required String password,
     required String phone,
     required String professionalId,
-    required File? idCardImage,
+    required XFile? idCardImage,
     String? gender,
     String? age,
   }) async {
@@ -81,7 +82,7 @@ class AuthRepository {
       if (size > 10 * 1024 * 1024) {
         throw StateError('Image too large. Maximum size is 10 MB.');
       }
-      final ext = _fileExtension(idCardImage);
+      final ext = _fileExtensionFromFile(idCardImage);
       final contentType = _contentTypeForExtension(ext);
       if (contentType == null) {
         throw StateError(
@@ -94,7 +95,7 @@ class AuthRepository {
           .from('doctor-verifications')
           .upload(
             path,
-            idCardImage,
+            File(idCardImage.path),
             fileOptions: FileOptions(upsert: true, contentType: contentType),
           );
 
@@ -116,10 +117,7 @@ class AuthRepository {
     final response = await _supabase.signUp(
       email: email,
       password: password,
-      data: {
-        'role': UserRole.companion.value,
-        'name': name,
-      },
+      data: {'role': UserRole.companion.value, 'name': name},
     );
 
     final uid = response.user?.id;
@@ -152,7 +150,7 @@ class AuthRepository {
     required String phone,
     required String address,
     required String facilityType,
-    required File? recordImage,
+    required XFile? recordImage,
   }) async {
     final response = await _supabase.signUp(
       email: email,
@@ -172,7 +170,7 @@ class AuthRepository {
       if (size > 10 * 1024 * 1024) {
         throw StateError('File too large. Maximum size is 10 MB.');
       }
-      final ext = _fileExtension(recordImage);
+      final ext = _fileExtensionFromFile(recordImage);
       final contentType = _contentTypeForExtension(ext);
       if (contentType == null) {
         throw StateError(
@@ -184,7 +182,7 @@ class AuthRepository {
           .from('facility-records')
           .upload(
             path,
-            recordImage,
+            File(recordImage.path),
             fileOptions: FileOptions(upsert: true, contentType: contentType),
           );
 
@@ -329,7 +327,7 @@ class AuthRepository {
     ).join();
   }
 
-  String _fileExtension(File file) {
+  String _fileExtensionFromFile(XFile file) {
     final parts = file.path.split('.');
     if (parts.length < 2) return '';
     return '.${parts.last.toLowerCase()}';

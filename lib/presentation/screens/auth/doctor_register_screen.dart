@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cross_file/cross_file.dart';
 import 'package:vitaguard_app/presentation/screens/auth/create_account_screen.dart';
 import 'package:vitaguard_app/presentation/widgets/auth/professional_id.dart';
 import 'package:vitaguard_app/presentation/widgets/auth/signup_success_dialog.dart';
@@ -23,7 +24,7 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
   final _phoneController = TextEditingController();
   final _genderController = TextEditingController();
   final _professionalIdController = TextEditingController();
-  File? _selectedIdCardImage;
+  XFile? _selectedIdCardImage;
   String? _localError;
 
   @override
@@ -82,13 +83,16 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
             final result = await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) =>
-                    ProfessionalId(initialImage: _selectedIdCardImage),
+                builder: (_) => ProfessionalId(
+                  initialImage: _selectedIdCardImage != null
+                      ? File(_selectedIdCardImage!.path)
+                      : null,
+                ),
               ),
             );
             if (result != null && result is File) {
               setState(() {
-                _selectedIdCardImage = result;
+                _selectedIdCardImage = XFile(result.path);
                 _professionalIdController.text = result.path.split('/').last;
               });
             }
@@ -132,7 +136,9 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
         } else {
           if (!context.mounted) return;
           setState(
-            () => _localError = ref.read(authControllerProvider).error?.toString() ?? 'Registration failed',
+            () => _localError =
+                ref.read(authControllerProvider).error?.toString() ??
+                'Registration failed',
           );
         }
       },

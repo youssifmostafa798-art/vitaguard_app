@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cross_file/cross_file.dart';
 import 'package:vitaguard_app/presentation/screens/auth/create_account_screen.dart';
 import 'package:vitaguard_app/presentation/widgets/auth/image_of_the_record.dart';
 import 'package:vitaguard_app/presentation/widgets/auth/signup_success_dialog.dart';
@@ -24,7 +25,7 @@ class _FacilityRegisterScreenState
   final _phoneController = TextEditingController();
   final _typeController = TextEditingController();
   final _attachimageController = TextEditingController();
-  File? _selectedRecordImage;
+  XFile? _selectedRecordImage;
   String? _localError;
 
   @override
@@ -83,13 +84,16 @@ class _FacilityRegisterScreenState
             final result = await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) =>
-                    ImageOfTheRecord(initialImage: _selectedRecordImage),
+                builder: (_) => ImageOfTheRecord(
+                  initialImage: _selectedRecordImage != null
+                      ? File(_selectedRecordImage!.path)
+                      : null,
+                ),
               ),
             );
             if (result != null && result is File) {
               setState(() {
-                _selectedRecordImage = result;
+                _selectedRecordImage = XFile(result.path);
                 _attachimageController.text = result.path.split('/').last;
               });
             }
@@ -133,7 +137,9 @@ class _FacilityRegisterScreenState
         } else {
           if (!context.mounted) return;
           setState(
-            () => _localError = ref.read(authControllerProvider).error?.toString() ?? 'Registration failed',
+            () => _localError =
+                ref.read(authControllerProvider).error?.toString() ??
+                'Registration failed',
           );
         }
       },

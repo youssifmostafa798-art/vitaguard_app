@@ -1,5 +1,6 @@
-import 'dart:io';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:cross_file/cross_file.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:vitaguard_app/data/repositories/auth/auth_repository.dart';
@@ -10,34 +11,93 @@ part 'auth_provider.g.dart';
 @riverpod
 class AuthController extends _$AuthController {
   AuthRepository get _repository => ref.read(authRepositoryProvider);
+  StreamSubscription<AuthState>? _authSubscription;
 
   @override
   AsyncValue<Map<String, dynamic>?> build() {
     // CRITICAL: Keep this provider alive for the entire app session.
-    // Without keepAlive(), Riverpod auto-disposes the provider whenever no widget
-    // is actively *watching* it (e.g., between async gaps in SplashScreen).
-    // Accessing `state` on a disposed notifier throws:
-    //   "Cannot use the Ref of authControllerProvider after it has been disposed"
     ref.keepAlive();
+
+    debugPrint('[AUTH] AuthController initialized');
+
+    // Subscribe to Supabase auth state changes (reactive auth)
+    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen(
+      _handleAuthStateChange,
+      onError: _handleAuthError,
+    );
+
+    // Clean up subscription on dispose
+    ref.onDispose(() {
+      debugPrint('[AUTH] Disposing AuthController subscription');
+      _authSubscription?.cancel();
+      _authSubscription = null;
+    });
 
     // Initial state: try to load the current user
     _init();
 
-    // Set up disposal callback
-    ref.onDispose(() {
-      // Cleanup if needed
-    });
-
     return const AsyncValue.loading();
+  }
+
+  void _handleAuthStateChange(AuthState authState) {
+    final event = authState.event;
+    final session = authState.session;
+
+    debugPrint('[AUTH] Auth state change: $event, user: ${session?.user.id}');
+
+    if (!ref.mounted) return;
+
+    switch (event) {
+      case AuthChangeEvent.signedIn:
+      case AuthChangeEvent.tokenRefreshed:
+        if (session != null) {
+          debugPrint('[STATE] User signed in, loading user data');
+          _loadUserData();
+        }
+        break;
+      case AuthChangeEvent.signedOut:
+        debugPrint('[STATE] User signed out, clearing state');
+        state = const AsyncValue.data(null);
+        break;
+      case AuthChangeEvent.passwordRecovery:
+        debugPrint('[STATE] Password recovery initiated');
+        // Password recovery flow can be handled here (e.g., navigation to reset screen)
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _handleAuthError(Object error) {
+    debugPrint('[ERROR] Auth stream error: $error');
+    if (!ref.mounted) return;
+    state = AsyncValue.error(error, StackTrace.current);
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final user = await _repository.getMe();
+      if (ref.mounted) {
+        debugPrint('[STATE] User data loaded: ${user['name']}');
+        state = AsyncValue.data(user);
+      }
+    } catch (e, st) {
+      debugPrint('[ERROR] Failed to load user data: $e');
+      if (ref.mounted) {
+        state = AsyncValue.error(e, st);
+      }
+    }
   }
 
   Future<void> _init() async {
     try {
       final user = await _repository.getMe();
       if (ref.mounted) {
+        debugPrint('[STATE] Initial user data loaded: ${user['name']}');
         state = AsyncValue.data(user);
       }
     } catch (e, st) {
+      debugPrint('[ERROR] Failed to load initial user data: $e');
       if (ref.mounted) {
         state = AsyncValue.error(e, st);
       }
@@ -49,6 +109,7 @@ class AuthController extends _$AuthController {
   String get userName => state.value?['name'] ?? 'User';
 
   Future<bool> login(String email, String password) async {
+    debugPrint('[AUTH] Attempting login for: $email');
     state = const AsyncValue.loading();
     try {
       await _repository.login(email, password);
@@ -56,11 +117,12 @@ class AuthController extends _$AuthController {
 
       final user = await _repository.getMe();
       if (ref.mounted) {
+        debugPrint('[STATE] Login successful for: ${user['name']}');
         state = AsyncValue.data(user);
       }
       return true;
     } catch (e, st) {
-      debugPrint('Auth login error: $e');
+      debugPrint('[ERROR] Login failed: $e');
       if (ref.mounted) {
         state = AsyncValue.error(ErrorMapper.map(e), st);
       }
@@ -76,6 +138,7 @@ class AuthController extends _$AuthController {
     String? gender,
     String? age,
   }) async {
+    debugPrint('[AUTH] Registering patient: $fullName');
     state = const AsyncValue.loading();
     try {
       final response = await _repository.registerPatient(
@@ -91,12 +154,13 @@ class AuthController extends _$AuthController {
       if (response.session != null) {
         final user = await _repository.getMe();
         if (ref.mounted) {
+          debugPrint('[STATE] Patient registered: $fullName');
           state = AsyncValue.data(user);
         }
       }
       return true;
     } catch (e, st) {
-      debugPrint('Auth register patient error: $e');
+      debugPrint('[ERROR] Patient registration failed: $e');
       if (ref.mounted) {
         state = AsyncValue.error(ErrorMapper.map(e), st);
       }
@@ -110,10 +174,11 @@ class AuthController extends _$AuthController {
     required String password,
     required String phone,
     required String professionalId,
-    required File? idCardImage,
+    required XFile? idCardImage,
     String? gender,
     String? age,
   }) async {
+    debugPrint('[AUTH] Registering doctor: $fullName');
     state = const AsyncValue.loading();
     try {
       final response = await _repository.registerDoctor(
@@ -131,12 +196,13 @@ class AuthController extends _$AuthController {
       if (response.session != null) {
         final user = await _repository.getMe();
         if (ref.mounted) {
+          debugPrint('[STATE] Doctor registered: $fullName');
           state = AsyncValue.data(user);
         }
       }
       return true;
     } catch (e, st) {
-      debugPrint('Auth register doctor error: $e');
+      debugPrint('[ERROR] Doctor registration failed: $e');
       if (ref.mounted) {
         state = AsyncValue.error(ErrorMapper.map(e), st);
       }
@@ -150,6 +216,7 @@ class AuthController extends _$AuthController {
     required String password,
     required String companionCode,
   }) async {
+    debugPrint('[AUTH] Registering companion: $name');
     state = const AsyncValue.loading();
     try {
       final response = await _repository.registerCompanion(
@@ -163,12 +230,13 @@ class AuthController extends _$AuthController {
       if (response.session != null) {
         final user = await _repository.getMe();
         if (ref.mounted) {
+          debugPrint('[STATE] Companion registered: $name');
           state = AsyncValue.data(user);
         }
       }
       return true;
     } catch (e, st) {
-      debugPrint('Auth register companion error: $e');
+      debugPrint('[ERROR] Companion registration failed: $e');
       if (ref.mounted) {
         state = AsyncValue.error(ErrorMapper.map(e), st);
       }
@@ -183,8 +251,9 @@ class AuthController extends _$AuthController {
     required String phone,
     required String address,
     required String facilityType,
-    required File? recordImage,
+    required XFile? recordImage,
   }) async {
+    debugPrint('[AUTH] Registering facility: $name');
     state = const AsyncValue.loading();
     try {
       final response = await _repository.registerFacility(
@@ -201,12 +270,13 @@ class AuthController extends _$AuthController {
       if (response.session != null) {
         final user = await _repository.getMe();
         if (ref.mounted) {
+          debugPrint('[STATE] Facility registered: $name');
           state = AsyncValue.data(user);
         }
       }
       return true;
     } catch (e, st) {
-      debugPrint('Auth register facility error: $e');
+      debugPrint('[ERROR] Facility registration failed: $e');
       if (ref.mounted) {
         state = AsyncValue.error(ErrorMapper.map(e), st);
       }
@@ -234,8 +304,15 @@ class AuthController extends _$AuthController {
   }
 
   Future<void> logout() async {
+    debugPrint('[AUTH] Logging out user');
     await _repository.logout();
     if (!ref.mounted) return;
+
+    // Clear state
     state = const AsyncValue.data(null);
+
+    // Invalidate all user-scoped providers to prevent stale data
+    debugPrint('[STATE] Invalidating all providers on logout');
+    ref.invalidateSelf();
   }
 }

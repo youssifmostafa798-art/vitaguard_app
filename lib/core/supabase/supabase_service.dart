@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -92,7 +92,12 @@ class SupabaseService {
   }
 
   Future<void> signOut() {
-    return track('auth.signOut', () => client.auth.signOut().timeout(const Duration(seconds: 5)));
+    return track(
+      'auth.signOut',
+      () => client.auth
+          .signOut(scope: SignOutScope.global)
+          .timeout(const Duration(seconds: 5)),
+    );
   }
 
   Future<AuthResponse> refreshSession() {
@@ -106,46 +111,50 @@ class SupabaseService {
     );
   }
 
-  Future<T> rpc<T>(
-    String functionName, {
-    Map<String, dynamic>? params,
-  }) {
+  Future<T> rpc<T>(String functionName, {Map<String, dynamic>? params}) {
     return track(
       'rpc.$functionName',
       () async => await client.rpc(functionName, params: params) as T,
     );
   }
 
-  Future<FunctionResponse> invokeFunction(
-    String functionName, {
-    Object? body,
-  }) {
-    return track(
-      'functions.$functionName',
-      () => client.functions.invoke(functionName, body: body),
-    );
+  Future<FunctionResponse> invokeFunction(String functionName, {Object? body}) {
+    debugPrint('[FUNCTION] Invoking: $functionName with body: $body');
+    return track('functions.$functionName', () {
+      final future = client.functions.invoke(functionName, body: body);
+      future.then(
+        (response) {
+          debugPrint(
+            '[FUNCTION] Response from $functionName: '
+            '${response.status} ${response.data}',
+          );
+        },
+        onError: (error) {
+          debugPrint('[ERROR] Function $functionName failed: $error');
+        },
+      );
+      return future;
+    });
   }
 
   Future<Map<String, dynamic>?> latestPatientLiveVitals(String patientId) {
-    return track(
-      'patient_live_vitals.latest',
-      () async {
-        final row = await client
-            .from('patient_live_vitals')
-            .select()
-            .eq('patient_id', patientId)
-            .order('recorded_at', ascending: false)
-            .limit(1)
-            .maybeSingle();
-        return row == null ? null : Map<String, dynamic>.from(row);
-      },
-    );
+    return track('patient_live_vitals.latest', () async {
+      final row = await client
+          .from('patient_live_vitals')
+          .select()
+          .eq('patient_id', patientId)
+          .order('recorded_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+      return row == null ? null : Map<String, dynamic>.from(row);
+    });
   }
 
   SupabaseRealtimeSubscription subscribeToPatientLiveVitals({
     required String patientId,
     required void Function(Map<String, dynamic> record) onInsert,
   }) {
+    debugPrint('[REALTIME] Subscribing to patient_live_vitals for: $patientId');
     final subscription = channel('hw_vitals_$patientId')
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
@@ -156,16 +165,18 @@ class SupabaseService {
             column: 'patient_id',
             value: patientId,
           ),
-          callback: (payload) => onInsert(payload.newRecord),
+          callback: (payload) {
+            debugPrint('[REALTIME] New vital recorded for patient: $patientId');
+            onInsert(payload.newRecord);
+          },
         )
-        .subscribe();
+        .subscribe((status, [error]) {
+          debugPrint('[REALTIME] Subscription status: $status, error: $error');
+        });
     return SupabaseRealtimeSubscription(subscription);
   }
 
-  Future<T> track<T>(
-    String operation,
-    Future<T> Function() action,
-  ) async {
+  Future<T> track<T>(String operation, Future<T> Function() action) async {
     final stopwatch = Stopwatch()..start();
     try {
       final result = await action();
