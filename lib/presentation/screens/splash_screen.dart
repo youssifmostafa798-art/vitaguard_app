@@ -1,155 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:vitaguard_app/features/patient/main_patient.dart';
-import 'package:vitaguard_app/features/doctor/main_doctor.dart';
-import 'package:vitaguard_app/features/companion/main_companion.dart';
-import 'package:vitaguard_app/features/facility/main_facility.dart';
-import 'package:vitaguard_app/presentation/screens/onboarding/onboarding_screen.dart';
-import 'package:vitaguard_app/presentation/controllers/auth/auth_provider.dart';
 
-class SplashScreen extends ConsumerStatefulWidget {
+/// Simplified SplashScreen that only shows branding/loading.
+/// All navigation logic has been moved to AuthGate.
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
   @override
-  ConsumerState<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends ConsumerState<SplashScreen>
-    with TickerProviderStateMixin {
-  bool _navigated = false;
-
-  // Primary controller (logo + dots fade-in)
-  late final AnimationController _ctrl;
-
-  // Looping controller (dot bounce)
-  late final AnimationController _dotsCtrl;
-
-  late final List<Animation<double>> _dotBounce;
-
-  // Loading dots entrance fade
-  late final Animation<double> _dotsFade;
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Total delay = animation duration (2s) + wait (1s) = 3s
-    Future.delayed(const Duration(seconds: 3), _navigateToOnboarding);
-
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..forward();
-
-    _dotsCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat(reverse: true);
-
-    // Dots entrance: fade 0% → 100% between 60% and 100% of _ctrl
-    _dotsFade = CurvedAnimation(
-      parent: _ctrl,
-      curve: const Interval(0.60, 1.0, curve: Curves.easeIn),
-    );
-
-    // Three dots with staggered bounce offsets (0, 0.33, 0.66)
-    _dotBounce = List.generate(3, (i) {
-      final offset = i * 0.33;
-      return Tween<double>(begin: 0.0, end: -10.0).animate(
-        CurvedAnimation(
-          parent: _dotsCtrl,
-          curve: Interval(
-            offset,
-            (offset + 0.40).clamp(0.0, 1.0),
-            curve: Curves.easeInOut,
-          ),
-        ),
-      );
-    });
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    _dotsCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _navigateToOnboarding() async {
-    if (_navigated || !mounted) return;
-
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    final rememberMe = prefs.getBool('remember_me') ?? false;
-
-    // Safely read the current user — Supabase is guaranteed initialized at this
-    // point because main() awaits Supabase.initialize() before runApp(), but we
-    // still use the nullable accessor to be defensive.
-    final notifier = ref.read(authControllerProvider.notifier);
-    final currentUser = notifier.currentUser; // nullable — never throws
-
-    final hasSession = currentUser != null;
-
-    if (hasSession) {
-      if (rememberMe) {
-        // Auto-login: resolve role from cached or fetched profile.
-        final role = await notifier.getUserRole();
-        if (!mounted) return;
-
-        // SAFE: read the name from the cached AsyncValue via the widget's ref.
-        // DO NOT use `notifier.userName` here — it accesses the provider's
-        // internal Ref (via `state`), which can be disposed between async gaps
-        // even with keepAlive() in certain edge cases (hot-restart, rebuild).
-        // `ref.read(authControllerProvider)` goes through the widget ref, which
-        // is always valid as long as `mounted` is true.
-        final name =
-            ref.read(authControllerProvider).value?['name'] as String? ??
-            'User';
-
-        Widget nextScreen;
-        switch (role) {
-          case 'doctor':
-            nextScreen = MainDoctor(name: name);
-            break;
-          case 'companion':
-            nextScreen = MainCompanion(name: name);
-            break;
-          case 'facility':
-            nextScreen = MainFacility(name: name);
-            break;
-          default:
-            nextScreen = MainPatient(name: name);
-        }
-
-        if (!mounted) return;
-        _navigated = true;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => nextScreen),
-        );
-        return;
-      } else {
-        // User previously logged in but did NOT want to be remembered.
-        // Clear the session before sending them back to onboarding.
-        await notifier.logout();
-        if (!mounted) return;
-      }
-    }
-
-    if (mounted) {
-      _navigated = true;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
-      );
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final logoSize = 200.r;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -168,102 +29,94 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Expanded(child: SizedBox.shrink()),
-              _buildLogoWithGlow(),
+              // Animated Logo with glow effect
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Glow effect
+                  Container(
+                    width: logoSize + 65,
+                    height: logoSize + 65,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.cyanAccent.withValues(alpha: 0.6),
+                          blurRadius: 50.r,
+                          spreadRadius: 15.r,
+                        ),
+                        BoxShadow(
+                          color: Colors.tealAccent.withValues(alpha: 0.5),
+                          blurRadius: 30.r,
+                          spreadRadius: 5.r,
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Logo
+                  Image.asset(
+                        'assets/Logo/Vita Guard 2.png',
+                        width: logoSize,
+                        height: logoSize,
+                        fit: BoxFit.contain,
+                      )
+                      .animate()
+                      .fadeIn(duration: 2.seconds, curve: Curves.easeOut)
+                      .scale(
+                        duration: 2.seconds,
+                        begin: const Offset(0.5, 0.5),
+                        end: const Offset(1.0, 1.0),
+                        curve: Curves.easeOutCubic,
+                      ),
+                ],
+              ),
               const Expanded(child: SizedBox.shrink()),
+              // Loading indicator
               Padding(
                 padding: EdgeInsets.only(bottom: 48.h),
-                child: AnimatedBuilder(
-                  animation: Listenable.merge([_ctrl, _dotsCtrl]),
-                  builder: (context, _) =>
-                      _buildLoadingDots(), // Fixed: rebuild every frame to ensure smooth animation updates and prevent stuttering in loading dots
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(3, (i) {
+                    return Container(
+                          margin: EdgeInsets.symmetric(horizontal: 5.w),
+                          width: 7.r,
+                          height: 7.r,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: i == 1
+                                ? const Color(0xFF00C8FF)
+                                : const Color(
+                                    0xFF00C8FF,
+                                  ).withValues(alpha: 0.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF00C8FF,
+                                ).withValues(alpha: 0.6),
+                                blurRadius: 6.r,
+                                spreadRadius: 1.r,
+                              ),
+                            ],
+                          ),
+                        )
+                        .animate(
+                          onPlay: (controller) =>
+                              controller.repeat(reverse: true),
+                        )
+                        .fadeIn(
+                          duration: 900.ms,
+                          curve: Interval(
+                            i * 0.33,
+                            (i * 0.33 + 0.4).clamp(0.0, 1.0),
+                            curve: Curves.easeInOut,
+                          ),
+                        );
+                  }),
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildLogoWithGlow() {
-    final logoSize = 200.r;
-
-    return Center(
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Glow effect
-          Container(
-            width: logoSize + 65,
-            height: logoSize + 65,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.cyanAccent.withValues(alpha: 0.6),
-                  blurRadius: 50.r,
-                  spreadRadius: 15.r,
-                ),
-                BoxShadow(
-                  color: Colors.tealAccent.withValues(alpha: 0.5),
-                  blurRadius: 30.r,
-                  spreadRadius: 5.r,
-                ),
-              ],
-            ),
-          ),
-          // Animated Logo (Fade + Scale) – fixed: removed onPlay to prevent animation conflicts and ensure proper fade-in and scale effects
-          Opacity(
-            opacity: 0.6,
-            child:
-                Image.asset(
-                      'assets/Logo/Vita Guard 2.png',
-                      width: logoSize,
-                      height: logoSize,
-                      fit: BoxFit.contain,
-                    )
-                    .animate()
-                    .fadeIn(duration: 2.seconds, curve: Curves.easeOut)
-                    .scale(
-                      duration: 2.seconds,
-                      begin: const Offset(0.5, 0.5),
-                      end: const Offset(1.0, 1.0),
-                      curve: Curves.easeOutCubic,
-                    ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoadingDots() {
-    return Opacity(
-      opacity: _dotsFade.value,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(3, (i) {
-          return Transform.translate(
-            offset: Offset(0, _dotBounce[i].value),
-            child: Container(
-              margin: EdgeInsets.symmetric(horizontal: 5.w),
-              width: 7.r,
-              height: 7.r,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: i == 1
-                    ? const Color(0xFF00C8FF)
-                    : const Color(0xFF00C8FF).withValues(alpha: 0.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF00C8FF).withValues(alpha: 0.6),
-                    blurRadius: 6.r,
-                    spreadRadius: 1.r,
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
       ),
     );
   }

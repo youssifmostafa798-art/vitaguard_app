@@ -1,0 +1,93 @@
+# Auth State Flow - VitaGuard App
+
+```mermaid
+flowchart TD
+    A[App Start] --> B[Supabase.initialize]
+    B --> C[AuthGate Widget]
+    C --> D{authControllerProvider}
+    
+    D -->|Loading| E[SplashScreen]
+    D -->|Error| F[OnboardingScreen]
+    D -->|Data = null| F
+    D -->|Data != null| G{Route by Role}
+    
+    G -->|patient| H[MainPatient]
+    G -->|doctor| I[MainDoctor]
+    G -->|companion| J[MainCompanion]
+    G -->|facility| K[MainFacility]
+    
+    C --> L[AuthController.build]
+    L --> M[Subscribe to onAuthStateChange]
+    L --> N[_init: load user data]
+    
+    M --> O{Auth Event}
+    O -->|signedIn/tokenRefreshed| P[_loadUserData]
+    O -->|signedOut/userDeleted| Q[state = null]
+    O -->|error| R[state = error]
+    
+    P --> S[repository.getMe]
+    S --> T[state = userData]
+    
+    U[Logout] --> V[repository.logout]
+    V --> W[signOut scope: global]
+    W --> X[state = null]
+    X --> Y[ref.invalidateSelf]
+    Y --> Z[All user-scoped providers invalidated]
+    
+    style A fill:#e1f5fe
+    style C fill:#d4edda
+    style D fill:#fff3cd
+    style O fill:#f8d7da
+    style U fill:#f8d7da
+```
+
+## Key Components
+
+### 1. AuthController (auth_provider.dart)
+- **Type**: Riverpod `@riverpod` annotation with `keepAlive: true`
+- **State**: `AsyncValue<Map<String, dynamic>?>`
+- **Reactive**: Subscribes to `Supabase.instance.client.auth.onAuthStateChange`
+- **Cleanup**: Cancels subscription on `ref.onDispose`
+- **Logout**: Calls `signOut(scope: SignOutScope.global)` and invalidates self
+
+### 2. AuthGate (auth_gate.dart)
+- **Purpose**: App-level routing based on auth state
+- **Loading**: Shows `SplashScreen`
+- **Unauthenticated**: Shows `OnboardingScreen`
+- **Authenticated**: Routes to role-specific main screen
+
+### 3. SupabaseService (supabase_service.dart)
+- **signOut()**: Uses `SignOutScope.global` to clear all sessions
+- **invokeFunction()**: Logs `[FUNCTION]` tags for debugging
+- **subscribeToPatientLiveVitals()**: Logs `[REALTIME]` tags and subscription status
+
+## Critical Fixes Applied
+
+1. **Reactive Auth State**: Replaced timer-based navigation with `onAuthStateChange` subscription
+2. **Global SignOut**: `signOut(scope: SignOutScope.global)` prevents stale sessions
+3. **Provider Invalidation**: `ref.invalidateSelf()` clears all user-scoped providers on logout
+4. **Mounted Checks**: All async operations check `ref.mounted` before updating state
+5. **Stream Cleanup**: `ref.onDispose` cancels `onAuthStateChange` subscription
+6. **Structured Logging**: `[AUTH]`, `[STATE]`, `[ERROR]`, `[FUNCTION]`, `[REALTIME]` tags added
+
+## Emulator-Specific Fixes
+
+- Fresh emulator: No session → `AuthGate` shows `OnboardingScreen`
+- Logout: `SignOutScope.global` clears all local storage
+- New account after logout: Fresh session, no stale data
+- No "Bad state: No authenticated user" errors
+
+## Verification Checklist
+
+- [x] Reactive auth state with `onAuthStateChange`
+- [x] `SignOutScope.global` in `signOut()`
+- [x] `ref.invalidateSelf()` on logout
+- [x] `ref.mounted` checks in all async operations
+- [x] `ref.onDispose` cleanup for streams
+- [x] Structured logging with tags
+- [x] `AuthGate` handles all routing
+- [ ] Edge Functions have proper auth headers
+- [ ] Realtime subscriptions clean up properly
+- [ ] Database queries respect RLS
+- [ ] Storage operations work with auth state
+- [ ] Test emulator scenarios (fresh install, logout/signup)

@@ -33,6 +33,13 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Generated files - should not be committed
+*.g.dart
+
+# Roo configuration - may contain secrets
+.roo/
+.roomodes
+
 # Symbolication related
 app.*.symbols
 
@@ -43,3 +50,102 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# macOS
+.DS_Store
+*.orig
+
+# Linux
+*.dart_analysis/
+*.packages
+
+# Windows
+*.suo
+*.user
+*.sln.docstates/
+*.sln.docstates/
+*.aps
+*.bak
+*.cache
+*.ilk
+*.log
+*.obj
+*.pdb
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.vs/
+*.vsp
+*.vspx
+*.sbr
+*.scc
+*.webinfo
+_ReSharper*/
+[Tt]emp/
+AnkhSVN/
+*.resharper
+*.psess
+*.vspx
+*.vspscc
+*.vssscc
+*.pidb
+*.pdb
+*.suo
+*_i.c
+*_p.c
+*.ilk
+*.obj
+*.pch
+*.res
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.rsp
+*.pgc
+*.pgd
+*.meta
+*.tlog
+*.lastbuildstate
+*.idb
+*.pch
+*.woff
+*.woff2
+*.eot
+*.ttf
+*.otf
+
+# Flutter
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/Flutter-Generated.xcconfig
+**/ios/Runner/GeneratedPluginRegistrant.swift
+**/android/generated_plugin_registrant.*
+**/linux/generated_plugin_registrant.*
+**/windows/generated_plugin_registrant.*
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/web/generated_plugin_registrant.dart
+
+# Firebase
+**/firebase/**
+
+# Assets
+**/assets/**
+
+# Localization
+**/l10n/**
+
+# Coverage
+**/coverage/**
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

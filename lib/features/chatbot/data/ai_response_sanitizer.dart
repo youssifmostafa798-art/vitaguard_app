@@ -32,10 +32,7 @@ class AiResponseSanitizer {
       caseSensitive: false,
       multiLine: true,
     );
-    final inlinePlan = RegExp(
-      r'Plan:\s*[^\n]+\n?',
-      caseSensitive: false,
-    );
+    final inlinePlan = RegExp(r'Plan:\s*[^\n]+\n?', caseSensitive: false);
     String result = text.replaceAll(planBlock, '');
     result = result.replaceAll(inlinePlan, '');
     return result;
@@ -58,13 +55,9 @@ class AiResponseSanitizer {
     if (prompt.length < 4) return text;
     final escaped = RegExp.escape(prompt);
     final patterns = <RegExp>[
+      RegExp('^$escaped\\s+', caseSensitive: false, multiLine: false),
       RegExp(
-        '^' + escaped + r'\s+',
-        caseSensitive: false,
-        multiLine: false,
-      ),
-      RegExp(
-        r'(?:The user (?:said|asked|wrote|typed)\s+[' + "'" + r'"]\s*)' + escaped,
+        '(?:The user (?:said|asked|wrote|typed)\\s+["\']\\s*)$escaped',
         caseSensitive: false,
       ),
     ];
@@ -79,15 +72,27 @@ class AiResponseSanitizer {
 
   static String _stripSystemPromptLeakage(String text) {
     final patterns = <RegExp>[
-      RegExp(r'Clinical A[Ii] assistant for VitaGuard\.?[^\n]*\n?',  caseSensitive: false),
-      RegExp(r'Provide expert healthcare answers[^\n]*\n?',  caseSensitive: false),
-      RegExp(r'Concise,?\s*professional,?\s*expert\.?[^\n]*\n?',  caseSensitive: false),
-      RegExp(r'No repeating input[^\n]*\n?',  caseSensitive: false),
-      RegExp(r'use standard markdown[^\n]*\n?',  caseSensitive: false),
-      RegExp(r'use \* for bullets[^\n]*\n?',  caseSensitive: false),
-      RegExp(r'STRICT RULES[^\n]*\n?',  caseSensitive: false),
-      RegExp(r'NEVER VIOLATE[^\n]*\n?',  caseSensitive: false),
-      RegExp(r'Respond ONLY with your final answer[^\n]*\n?',  caseSensitive: false),
+      RegExp(
+        r'Clinical A[Ii] assistant for VitaGuard\.?[^\n]*\n?',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'Provide expert healthcare answers[^\n]*\n?',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'Concise,?\s*professional,?\s*expert\.?[^\n]*\n?',
+        caseSensitive: false,
+      ),
+      RegExp(r'No repeating input[^\n]*\n?', caseSensitive: false),
+      RegExp(r'use standard markdown[^\n]*\n?', caseSensitive: false),
+      RegExp(r'use \* for bullets[^\n]*\n?', caseSensitive: false),
+      RegExp(r'STRICT RULES[^\n]*\n?', caseSensitive: false),
+      RegExp(r'NEVER VIOLATE[^\n]*\n?', caseSensitive: false),
+      RegExp(
+        r'Respond ONLY with your final answer[^\n]*\n?',
+        caseSensitive: false,
+      ),
       RegExp(r'Never repeat or echo[^\n]*\n?', caseSensitive: false),
       RegExp(r'No space inside bold markers[^\n]*\n?', caseSensitive: false),
     ];
@@ -102,8 +107,16 @@ class AiResponseSanitizer {
 
   static String _stripInternalAnnotations(String text) {
     final patterns = <RegExp>[
-      RegExp(r'^\s*Step\s+\d+:\s*[^\n]*\n?', caseSensitive: false, multiLine: true),
-      RegExp(r'^\s*Note:\s*(internal|hidden|private)[^\n]*\n?', caseSensitive: false, multiLine: true),
+      RegExp(
+        r'^\s*Step\s+\d+:\s*[^\n]*\n?',
+        caseSensitive: false,
+        multiLine: true,
+      ),
+      RegExp(
+        r'^\s*Note:\s*(internal|hidden|private)[^\n]*\n?',
+        caseSensitive: false,
+        multiLine: true,
+      ),
       RegExp(r'\[internal\][^\n]*\n?', caseSensitive: false),
       RegExp(r'\[thinking\][^\n]*\n?', caseSensitive: false),
     ];
