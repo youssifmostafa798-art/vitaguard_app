@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 import 'package:cross_file/cross_file.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/data/models/auth/auth_models.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
@@ -195,83 +196,122 @@ class AuthRepository {
   }
 
   Future<Map<String, dynamic>> getMe() async {
-    final uid = _supabase.currentUid;
-    final profileSnapshot = await _client
-        .from('profiles')
-        .select()
-        .eq('id', uid)
-        .limit(1);
-    final profile = profileSnapshot.isNotEmpty
-        ? Map<String, dynamic>.from(profileSnapshot.first as Map)
-        : <String, dynamic>{};
-    profile['uid'] = uid;
+    // Retry logic to handle race condition where database triggers haven't completed yet
+    const maxRetries = 3;
+    const retryDelay = Duration(milliseconds: 500);
 
-    final role = profile['role'];
-    if (role == UserRole.patient.value) {
-      final patientSnapshot = await _client
-          .from('patients')
-          .select()
-          .eq('id', uid)
-          .limit(1);
-      if (patientSnapshot.isNotEmpty) {
-        profile.addAll(Map<String, dynamic>.from(patientSnapshot.first as Map));
-      } else {
-        // Mitigation: If patient record is missing, try to auto-repair if it's a legacy user
-        try {
-          await _client.from('patients').insert({
-            'id': uid,
-            'gender': 'male',
-            'age': 20,
-          });
-          final retrySnapshot = await _client
+    for (var attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        final uid = _supabase.currentUid;
+        final profileSnapshot = await _client
+            .from('profiles')
+            .select()
+            .eq('id', uid)
+            .limit(1);
+
+        if (profileSnapshot.isEmpty) {
+          // Profile not found yet, wait and retry
+          if (attempt < maxRetries - 1) {
+            debugPrint(
+              '[AUTH] Profile not found, retrying... (attempt ${attempt + 1})',
+            );
+            await Future.delayed(retryDelay);
+            continue;
+          }
+        }
+
+        final profile = profileSnapshot.isNotEmpty
+            ? Map<String, dynamic>.from(profileSnapshot.first as Map)
+            : <String, dynamic>{};
+        profile['uid'] = uid;
+
+        final role = profile['role'];
+        if (role == UserRole.patient.value) {
+          final patientSnapshot = await _client
               .from('patients')
               .select()
               .eq('id', uid)
               .limit(1);
-          if (retrySnapshot.isNotEmpty) {
+          if (patientSnapshot.isNotEmpty) {
             profile.addAll(
-              Map<String, dynamic>.from(retrySnapshot.first as Map),
+              Map<String, dynamic>.from(patientSnapshot.first as Map),
+            );
+          } else {
+            // Mitigation: If patient record is missing, try to auto-repair if it's a legacy user
+            try {
+              await _client.from('patients').insert({
+                'id': uid,
+                'gender': 'male',
+                'age': 20,
+              });
+              final retrySnapshot = await _client
+                  .from('patients')
+                  .select()
+                  .eq('id', uid)
+                  .limit(1);
+              if (retrySnapshot.isNotEmpty) {
+                profile.addAll(
+                  Map<String, dynamic>.from(retrySnapshot.first as Map),
+                );
+              }
+            } catch (e) {
+              // ignore: avoid_print
+              print('Auto-repair failed for patient record: $e');
+            }
+          }
+        } else if (role == UserRole.doctor.value) {
+          final doctorSnapshot = await _client
+              .from('doctors')
+              .select()
+              .eq('id', uid)
+              .limit(1);
+          if (doctorSnapshot.isNotEmpty) {
+            profile.addAll(
+              Map<String, dynamic>.from(doctorSnapshot.first as Map),
             );
           }
-        } catch (e) {
-          // ignore: avoid_print
-          print('Auto-repair failed for patient record: $e');
+        } else if (role == UserRole.companion.value) {
+          final companionSnapshot = await _client
+              .from('companions')
+              .select()
+              .eq('id', uid)
+              .limit(1);
+          if (companionSnapshot.isNotEmpty) {
+            profile.addAll(
+              Map<String, dynamic>.from(companionSnapshot.first as Map),
+            );
+          }
+        } else if (role == UserRole.facility.value) {
+          final facilitySnapshot = await _client
+              .from('facilities')
+              .select()
+              .eq('id', uid)
+              .limit(1);
+          if (facilitySnapshot.isNotEmpty) {
+            profile.addAll(
+              Map<String, dynamic>.from(facilitySnapshot.first as Map),
+            );
+          }
         }
-      }
-    } else if (role == UserRole.doctor.value) {
-      final doctorSnapshot = await _client
-          .from('doctors')
-          .select()
-          .eq('id', uid)
-          .limit(1);
-      if (doctorSnapshot.isNotEmpty) {
-        profile.addAll(Map<String, dynamic>.from(doctorSnapshot.first as Map));
-      }
-    } else if (role == UserRole.companion.value) {
-      final companionSnapshot = await _client
-          .from('companions')
-          .select()
-          .eq('id', uid)
-          .limit(1);
-      if (companionSnapshot.isNotEmpty) {
-        profile.addAll(
-          Map<String, dynamic>.from(companionSnapshot.first as Map),
-        );
-      }
-    } else if (role == UserRole.facility.value) {
-      final facilitySnapshot = await _client
-          .from('facilities')
-          .select()
-          .eq('id', uid)
-          .limit(1);
-      if (facilitySnapshot.isNotEmpty) {
-        profile.addAll(
-          Map<String, dynamic>.from(facilitySnapshot.first as Map),
-        );
+
+        return profile;
+      } catch (e) {
+        if (attempt < maxRetries - 1 &&
+            (e is StateError ||
+                e.toString().contains('no authenticated user') ||
+                e.toString().contains('JWT'))) {
+          debugPrint(
+            '[AUTH] getMe() attempt ${attempt + 1} failed, retrying...',
+          );
+          await Future.delayed(retryDelay);
+          continue;
+        }
+        rethrow;
       }
     }
 
-    return profile;
+    // If all retries failed, throw a clear error
+    throw StateError('Unable to load user profile. Please try again.');
   }
 
   Future<void> logout() async {
