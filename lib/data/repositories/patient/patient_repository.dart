@@ -97,10 +97,7 @@ class PatientRepository {
       'updated_at': DateTime.now().toIso8601String(),
     };
 
-    await _localCache?.cacheMedicalHistory(
-      patientId: patientId,
-      row: payload,
-    );
+    await _localCache?.cacheMedicalHistory(patientId: patientId, row: payload);
 
     if (await _shouldQueueWrite()) {
       await _syncQueue!.enqueue(

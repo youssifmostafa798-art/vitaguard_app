@@ -23,16 +23,12 @@ class AiMessageBubble extends StatelessWidget {
     final localTime = createdAt.toLocal();
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final msgDay = DateTime(
-      localTime.year,
-      localTime.month,
-      localTime.day,
-    );
+    final msgDay = DateTime(localTime.year, localTime.month, localTime.day);
     final timeStr = DateFormat('HH:mm').format(localTime);
-    if (msgDay == today) return 'Today ' + timeStr;
+    if (msgDay == today) return 'Today $timeStr';
     final yesterday = today.subtract(const Duration(days: 1));
-    if (msgDay == yesterday) return 'Yesterday ' + timeStr;
-    return DateFormat('MMM d, y').format(localTime) + ' ' + timeStr;
+    if (msgDay == yesterday) return 'Yesterday $timeStr';
+    return '${DateFormat('MMM d, y').format(localTime)} $timeStr';
   }
 
   // ── Content ────────────────────────────────────────────────────
@@ -61,33 +57,33 @@ class AiMessageBubble extends StatelessWidget {
     return const Color(0xFF0D3B66);
   }
 
-  Color _textColor() =>
-      message.isUser ? Colors.white : const Color(0xFF1B263B);
+  Color _textColor() => message.isUser ? Colors.white : const Color(0xFF1B263B);
 
   BorderRadius _bubbleBorderRadius() => BorderRadius.only(
-        topLeft: Radius.circular(20.r),
-        topRight: Radius.circular(20.r),
-        bottomLeft: Radius.circular(message.isUser ? 20.r : 6.r),
-        bottomRight: Radius.circular(message.isUser ? 6.r : 20.r),
-      );
+    topLeft: Radius.circular(20.r),
+    topRight: Radius.circular(20.r),
+    bottomLeft: Radius.circular(message.isUser ? 20.r : 6.r),
+    bottomRight: Radius.circular(message.isUser ? 6.r : 20.r),
+  );
 
   // ── Build ──────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    final isUser      = message.isUser;
+    final isUser = message.isUser;
     final displayText = _prepareDisplayText();
-    final timeText    = _formatTime(message.createdAt);
+    final timeText = _formatTime(message.createdAt);
 
     return Padding(
       padding: EdgeInsets.only(
-        left:  isUser ? 52.w : 16.w,
+        left: isUser ? 52.w : 16.w,
         right: isUser ? 16.w : 52.w,
-        top:   isPreviousSameSender ? 6.h : 16.h,
+        top: isPreviousSameSender ? 6.h : 16.h,
       ),
       child: Row(
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isUser) _buildAvatar(),
@@ -118,11 +114,7 @@ class AiMessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildBubble(
-    String displayText,
-    String timeText,
-    bool isUser,
-  ) {
+  Widget _buildBubble(String displayText, String timeText, bool isUser) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       decoration: BoxDecoration(
@@ -193,11 +185,7 @@ class AiMessageBubble extends StatelessWidget {
     if (isUser) {
       return Text(
         displayText,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 15.sp,
-          height: 1.4,
-        ),
+        style: TextStyle(color: Colors.white, fontSize: 15.sp, height: 1.4),
       );
     }
     return MarkdownBody(
@@ -205,11 +193,7 @@ class AiMessageBubble extends StatelessWidget {
       shrinkWrap: true,
       softLineBreak: true,
       styleSheet: MarkdownStyleSheet(
-        p: TextStyle(
-          color: _textColor(),
-          fontSize: 15.sp,
-          height: 1.4,
-        ),
+        p: TextStyle(color: _textColor(), fontSize: 15.sp, height: 1.4),
         strong: TextStyle(
           color: _textColor(),
           fontWeight: FontWeight.bold,
@@ -220,10 +204,7 @@ class AiMessageBubble extends StatelessWidget {
           fontStyle: FontStyle.italic,
           fontSize: 15.sp,
         ),
-        listBullet: TextStyle(
-          color: _textColor(),
-          fontSize: 15.sp,
-        ),
+        listBullet: TextStyle(color: _textColor(), fontSize: 15.sp),
         blockquote: TextStyle(
           color: const Color(0xFF51617A),
           fontSize: 14.sp,

@@ -15,7 +15,10 @@ AiChatRepository aiChatRepository(Ref ref) {
 abstract class AiChatRepository {
   String? get currentUserIdOrNull;
 
-  Future<AiConversation> ensureConversation([String? conversationId, bool forceNew = false]);
+  Future<AiConversation> ensureConversation([
+    String? conversationId,
+    bool forceNew = false,
+  ]);
 
   Future<List<AiConversation>> fetchConversationHistory();
 
@@ -59,7 +62,10 @@ class SupabaseAiChatRepository implements AiChatRepository {
   }
 
   @override
-  Future<AiConversation> ensureConversation([String? conversationId, bool forceNew = false]) async {
+  Future<AiConversation> ensureConversation([
+    String? conversationId,
+    bool forceNew = false,
+  ]) async {
     if (conversationId != null) {
       final existing = await _client
           .from('ai_conversations')
