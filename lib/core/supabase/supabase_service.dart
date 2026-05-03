@@ -30,6 +30,9 @@ class SupabaseService {
 
   String? get currentUidOrNull => currentUser?.id;
 
+  /// Checks if there is an active authenticated session.
+  bool get isAuthenticated => currentSession != null && currentUser != null;
+
   String get currentUid {
     final user = currentUser;
     if (user == null) {

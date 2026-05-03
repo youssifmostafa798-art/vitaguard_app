@@ -50,9 +50,64 @@ class AuthGate extends ConsumerWidget {
       },
       error: (error, stackTrace) {
         debugPrint('[ERROR] Auth state error: $error');
-        // On error, show onboarding so user can try again
-        return const OnboardingScreen();
+        // On error, show error screen with retry option
+        return _AuthErrorScreen(
+          error: error,
+          onRetry: () {
+            // Invalidate the provider to trigger a retry
+            ref.invalidate(authControllerProvider);
+          },
+        );
       },
+    );
+  }
+}
+
+/// Error screen shown when auth initialization fails.
+class _AuthErrorScreen extends StatelessWidget {
+  const _AuthErrorScreen({required this.error, required this.onRetry});
+
+  final Object error;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 24),
+              const Text(
+                'Authentication Error',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                error.toString(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () {
+                  // Navigate to onboarding as fallback
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+                    (route) => false,
+                  );
+                },
+                child: const Text('Go to Login'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

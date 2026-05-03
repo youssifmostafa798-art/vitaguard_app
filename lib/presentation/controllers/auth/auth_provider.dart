@@ -33,7 +33,7 @@ class AuthController extends _$AuthController {
       _authSubscription = null;
     });
 
-    // Initial state: try to load the current user
+    // Initial state: try to load the current user with session restoration wait
     _init();
 
     return const AsyncValue.loading();
@@ -78,8 +78,15 @@ class AuthController extends _$AuthController {
     try {
       final user = await _repository.getMe();
       if (ref.mounted) {
-        debugPrint('[STATE] User data loaded: ${user['name']}');
-        state = AsyncValue.data(user);
+        if (user != null) {
+          debugPrint('[STATE] User data loaded: ${user['name'] ?? 'Unknown'}');
+          state = AsyncValue.data(user);
+        } else {
+          debugPrint(
+            '[STATE] No user data found (user may not be authenticated)',
+          );
+          state = const AsyncValue.data(null);
+        }
       }
     } catch (e, st) {
       debugPrint('[ERROR] Failed to load user data: $e');
@@ -91,17 +98,72 @@ class AuthController extends _$AuthController {
 
   Future<void> _init() async {
     try {
+      // Wait for Supabase to restore session (up to 2 seconds)
+      await _waitForSessionRestoration();
+
       final user = await _repository.getMe();
       if (ref.mounted) {
-        debugPrint('[STATE] Initial user data loaded: ${user['name']}');
-        state = AsyncValue.data(user);
+        if (user != null) {
+          debugPrint(
+            '[STATE] Initial user data loaded: ${user['name'] ?? 'Unknown'}',
+          );
+          state = AsyncValue.data(user);
+        } else {
+          debugPrint('[STATE] No authenticated user found on init');
+          state = const AsyncValue.data(null);
+        }
       }
-    } catch (e, st) {
+    } catch (e) {
       debugPrint('[ERROR] Failed to load initial user data: $e');
       if (ref.mounted) {
-        state = AsyncValue.error(e, st);
+        // Don't set error state - just set to null (not authenticated)
+        state = const AsyncValue.data(null);
       }
     }
+  }
+
+  /// Waits for Supabase to restore the session from persistent storage.
+  /// This handles the race condition where the app initializes before session is restored.
+  Future<void> _waitForSessionRestoration({
+    Duration timeout = const Duration(seconds: 2),
+  }) async {
+    final stopwatch = Stopwatch()..start();
+
+    // Check immediately if session exists
+    if (Supabase.instance.client.auth.currentSession != null) {
+      debugPrint('[AUTH] Session already restored');
+      return;
+    }
+
+    debugPrint('[AUTH] Waiting for session restoration...');
+
+    // Listen for auth state changes with timeout
+    final completer = Completer<void>();
+    StreamSubscription<AuthState>? subscription;
+
+    subscription = Supabase.instance.client.auth.onAuthStateChange.listen((
+      authState,
+    ) {
+      if (authState.session != null && !completer.isCompleted) {
+        debugPrint('[AUTH] Session restored via auth state change');
+        completer.complete();
+      }
+    });
+
+    try {
+      await completer.future.timeout(timeout);
+    } catch (e) {
+      debugPrint(
+        '[AUTH] Session restoration timeout after ${timeout.inMilliseconds}ms',
+      );
+    } finally {
+      await subscription.cancel();
+    }
+
+    stopwatch.stop();
+    debugPrint(
+      '[AUTH] Session restoration check took ${stopwatch.elapsedMilliseconds}ms',
+    );
   }
 
   User? get currentUser => _repository.currentUser;
@@ -117,8 +179,15 @@ class AuthController extends _$AuthController {
 
       final user = await _repository.getMe();
       if (ref.mounted) {
-        debugPrint('[STATE] Login successful for: ${user['name']}');
-        state = AsyncValue.data(user);
+        if (user != null) {
+          debugPrint(
+            '[STATE] Login successful for: ${user['name'] ?? 'Unknown'}',
+          );
+          state = AsyncValue.data(user);
+        } else {
+          debugPrint('[ERROR] Login succeeded but no user data found');
+          state = const AsyncValue.data(null);
+        }
       }
       return true;
     } catch (e, st) {
@@ -152,10 +221,17 @@ class AuthController extends _$AuthController {
       if (!ref.mounted) return false;
 
       if (response.session != null) {
+        // User is immediately authenticated (email confirmation may be disabled)
         final user = await _repository.getMe();
         if (ref.mounted) {
           debugPrint('[STATE] Patient registered: $fullName');
           state = AsyncValue.data(user);
+        }
+      } else {
+        // Email confirmation required - show onboarding with message
+        if (ref.mounted) {
+          debugPrint('[STATE] Patient registered, email confirmation required');
+          state = const AsyncValue.data(null);
         }
       }
       return true;
@@ -194,10 +270,17 @@ class AuthController extends _$AuthController {
       if (!ref.mounted) return false;
 
       if (response.session != null) {
+        // User is immediately authenticated
         final user = await _repository.getMe();
         if (ref.mounted) {
           debugPrint('[STATE] Doctor registered: $fullName');
           state = AsyncValue.data(user);
+        }
+      } else {
+        // Email confirmation required
+        if (ref.mounted) {
+          debugPrint('[STATE] Doctor registered, email confirmation required');
+          state = const AsyncValue.data(null);
         }
       }
       return true;
@@ -228,10 +311,19 @@ class AuthController extends _$AuthController {
       if (!ref.mounted) return false;
 
       if (response.session != null) {
+        // User is immediately authenticated
         final user = await _repository.getMe();
         if (ref.mounted) {
           debugPrint('[STATE] Companion registered: $name');
           state = AsyncValue.data(user);
+        }
+      } else {
+        // Email confirmation required
+        if (ref.mounted) {
+          debugPrint(
+            '[STATE] Companion registered, email confirmation required',
+          );
+          state = const AsyncValue.data(null);
         }
       }
       return true;
@@ -268,10 +360,19 @@ class AuthController extends _$AuthController {
       if (!ref.mounted) return false;
 
       if (response.session != null) {
+        // User is immediately authenticated
         final user = await _repository.getMe();
         if (ref.mounted) {
           debugPrint('[STATE] Facility registered: $name');
           state = AsyncValue.data(user);
+        }
+      } else {
+        // Email confirmation required
+        if (ref.mounted) {
+          debugPrint(
+            '[STATE] Facility registered, email confirmation required',
+          );
+          state = const AsyncValue.data(null);
         }
       }
       return true;
@@ -296,8 +397,11 @@ class AuthController extends _$AuthController {
       final user = await _repository.getMe();
       if (!ref.mounted) return null;
 
-      state = AsyncValue.data(user);
-      return user['role'] as String?;
+      if (user != null) {
+        state = AsyncValue.data(user);
+        return user['role'] as String?;
+      }
+      return null;
     } catch (_) {
       return null;
     }

@@ -195,14 +195,25 @@ class AuthRepository {
     return response;
   }
 
-  Future<Map<String, dynamic>> getMe() async {
+  Future<Map<String, dynamic>?> getMe() async {
+    // First check if user is authenticated
+    if (!_supabase.isAuthenticated) {
+      debugPrint('[AUTH] No authenticated user found in getMe()');
+      return null;
+    }
+
     // Retry logic to handle race condition where database triggers haven't completed yet
     const maxRetries = 3;
     const retryDelay = Duration(milliseconds: 500);
 
     for (var attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        final uid = _supabase.currentUid;
+        final uid = _supabase.currentUidOrNull;
+        if (uid == null) {
+          debugPrint('[AUTH] User ID is null, user may not be authenticated');
+          return null;
+        }
+
         final profileSnapshot = await _client
             .from('profiles')
             .select()
