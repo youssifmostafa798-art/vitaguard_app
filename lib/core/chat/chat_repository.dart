@@ -1,8 +1,8 @@
-import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:vitaguard_app/data/models/message_model.dart';
+import 'package:vitaguard_app/core/utils/date_formatter.dart';
 
 part 'chat_repository.g.dart';
 
@@ -37,7 +37,7 @@ class ChatRepository {
             return ChatMessage(
               id: row['id']?.toString() ?? '',
               content: row['content']?.toString() ?? '',
-              time: DateFormat('HH:mm').format(createdAt),
+              time: formatChatTime(createdAt),
               sender: senderId == _uid ? MessageSender.user : otherSender,
               isRead: row['is_read'] == true,
             );
@@ -122,9 +122,7 @@ class ChatRepository {
           name: name,
           avatarInitials: name.isNotEmpty ? name[0].toUpperCase() : 'U',
           lastMessage: lastMessage,
-          time: lastMessage.isNotEmpty
-              ? DateFormat('HH:mm').format(lastAt)
-              : '',
+          time: lastMessage.isNotEmpty ? formatChatTime(lastAt) : '',
           sender: sender,
           status: MessageStatus.active,
         ),

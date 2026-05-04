@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:gap/gap.dart';
 import 'package:vitaguard_app/core/chat/chat_repository.dart';
 import 'package:vitaguard_app/core/utils/chat_header.dart';
 import 'package:vitaguard_app/presentation/widgets/patient/message_patient_bubble.dart';
@@ -30,7 +31,8 @@ class _ChatPatientDetailState extends State<ChatPatientDetail> {
   final List<ChatMessage> _demoMessages = [
     ChatMessage(
       id: '1',
-      content: "Hello Hussain. I noticed a breathing irregularity warning from your VitaGuard monitor earlier. Have you used your inhaler?",
+      content:
+          "Hello Hussain. I noticed a breathing irregularity warning from your VitaGuard monitor earlier. Have you used your inhaler?",
       time: '1 hour ago',
       sender: MessageSender.doctor,
       isRead: true,
@@ -44,7 +46,8 @@ class _ChatPatientDetailState extends State<ChatPatientDetail> {
     ),
     ChatMessage(
       id: '3',
-      content: "Good. The system shows your oxygen level is back to 98% which is normal.",
+      content:
+          "Good. The system shows your oxygen level is back to 98% which is normal.",
       time: '50 minutes ago',
       sender: MessageSender.doctor,
       isRead: true,
@@ -58,21 +61,24 @@ class _ChatPatientDetailState extends State<ChatPatientDetail> {
     ),
     ChatMessage(
       id: '5',
-      content: "We received an alert from your device showing an elevated heart rate (110 BPM) for the last 15 minutes. Were you exercising?",
+      content:
+          "We received an alert from your device showing an elevated heart rate (110 BPM) for the last 15 minutes. Were you exercising?",
       time: '20 minutes ago',
       sender: MessageSender.doctor,
       isRead: true,
     ),
     ChatMessage(
       id: '6',
-      content: "Yes, I was climbing the stairs. I stopped and took deep breaths.",
+      content:
+          "Yes, I was climbing the stairs. I stopped and took deep breaths.",
       time: '18 minutes ago',
       sender: MessageSender.user,
       isRead: true,
     ),
     ChatMessage(
       id: '7',
-      content: "Your recent temperature log showed a slight fever (37.8°C). Take a paracetamol and drink plenty of water.",
+      content:
+          "Your recent temperature log showed a slight fever (37.8°C). Take a paracetamol and drink plenty of water.",
       time: '15 minutes ago',
       sender: MessageSender.doctor,
       isRead: true,
@@ -86,14 +92,16 @@ class _ChatPatientDetailState extends State<ChatPatientDetail> {
     ),
     ChatMessage(
       id: '9',
-      content: "Also, please keep your VitaGuard wristband on while sleeping so we can track your oxygen level continuously.",
+      content:
+          "Also, please keep your VitaGuard wristband on while sleeping so we can track your oxygen level continuously.",
       time: '5 minutes ago',
       sender: MessageSender.doctor,
       isRead: true,
     ),
     ChatMessage(
       id: '10',
-      content: "Yes, I understand. I will keep monitoring my heart rate and rest.",
+      content:
+          "Yes, I understand. I will keep monitoring my heart rate and rest.",
       time: '2 minutes ago',
       sender: MessageSender.user,
       isRead: true,
@@ -109,28 +117,33 @@ class _ChatPatientDetailState extends State<ChatPatientDetail> {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
     _messageController.clear();
-    
+
     if (_isDemoMode) {
       setState(() {
-        _demoMessages.add(ChatMessage(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          content: text,
-          time: 'Just now',
-          sender: MessageSender.user,
-          isRead: true,
-        ));
+        _demoMessages.add(
+          ChatMessage(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            content: text,
+            time: DateTime.now().toIso8601String(),
+            sender: MessageSender.user,
+            isRead: true,
+          ),
+        );
       });
 
       Future.delayed(const Duration(seconds: 2), () {
         if (!mounted) return;
         setState(() {
-          _demoMessages.add(ChatMessage(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            content: "Please stay calm. I'm checking your readings now. If the pain increases, call emergency services.",
-            time: 'Just now',
-            sender: MessageSender.doctor,
-            isRead: true,
-          ));
+          _demoMessages.add(
+            ChatMessage(
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
+              content:
+                  "Please stay calm. I'm checking your readings now. If the pain increases, call emergency services.",
+              time: DateTime.now().toIso8601String(),
+              sender: MessageSender.doctor,
+              isRead: true,
+            ),
+          );
         });
       });
     } else {
@@ -181,7 +194,7 @@ class _ChatPatientDetailState extends State<ChatPatientDetail> {
                         });
                       }
                     });
-                    
+
                     final messages = _isDemoMode ? _demoMessages : realMessages;
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
@@ -199,8 +212,12 @@ class _ChatPatientDetailState extends State<ChatPatientDetail> {
                     return ListView.builder(
                       reverse: true,
                       padding: EdgeInsets.symmetric(horizontal: 8.w),
-                      itemCount: messages.length,
+                      itemCount: messages.length + 1,
                       itemBuilder: (context, index) {
+                        if (index == messages.length) {
+                          return Gap(10.h);
+                        }
+
                         final message = messages[messages.length - 1 - index];
                         final isPreviousSameSender =
                             index < messages.length - 1 &&
@@ -218,6 +235,7 @@ class _ChatPatientDetailState extends State<ChatPatientDetail> {
                   },
                 ),
               ),
+              Gap(10.h),
               MessageInput(
                 controller: _messageController,
                 onSend: _sendMessage,

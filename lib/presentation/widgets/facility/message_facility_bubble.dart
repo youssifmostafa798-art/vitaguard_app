@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/data/models/message_model.dart';
+import 'package:vitaguard_app/core/utils/date_formatter.dart';
 
 import '../../../core/utils/custem_text.dart';
 
@@ -113,7 +114,7 @@ class MessageFacilityBubble extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       CustemText(
-                        text: message.time,
+                        text: parseAndFormatChatTime(message.time),
                         size: 10,
                         color: isUser ? Colors.white70 : Colors.grey.shade600,
                       ),

@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/core/utils/avatar_color.dart';
 import 'package:vitaguard_app/data/models/message_model.dart';
+import 'package:vitaguard_app/core/utils/date_formatter.dart';
 
 import 'custem_text.dart';
 
@@ -49,7 +50,7 @@ class ChatPreviewCard extends StatelessWidget {
                         color: Color(0xff003F6B),
                       ),
                       CustemText(
-                        text: chat.time,
+                        text: parseAndFormatChatTime(chat.time),
                         size: 12,
                         color: Colors.grey.shade600,
                       ),
