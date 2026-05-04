@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
 import 'package:vitaguard_app/features/patient/data/home_categories_patient.dart';
 import 'package:vitaguard_app/presentation/widgets/patient/category_item.dart';
+
+import '../../../core/utils/custem_text.dart';
 
 class CategoryGridPatient extends StatelessWidget {
   final String patientName;
   final String searchQuery;
 
-  const CategoryGridPatient({super.key, required this.patientName, this.searchQuery = ''});
+  const CategoryGridPatient({
+    super.key,
+    required this.patientName,
+    this.searchQuery = '',
+  });
 
   @override
   Widget build(BuildContext context) {

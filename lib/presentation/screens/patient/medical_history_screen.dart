@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_bottom.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_field.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/data/models/patient/patient_models.dart';
 import 'package:vitaguard_app/data/models/patient/medical_history_view_model.dart';
 import 'package:vitaguard_app/presentation/widgets/patient/name_card.dart';
+
+import '../../../core/utils/custem_background.dart';
+import '../../../core/utils/custem_bottom.dart';
+import '../../../core/utils/custem_field.dart';
 
 class MedicalHistoryScreen extends StatefulWidget {
   const MedicalHistoryScreen._({
@@ -22,14 +23,12 @@ class MedicalHistoryScreen extends StatefulWidget {
   final String? patientId;
   final MedicalHistory? initialHistory;
 
-  const MedicalHistoryScreen.forPatient({
-    Key? key,
-    required String patientName,
-  }) : this._(
-         key: key,
-         patientName: patientName,
-         mode: MedicalHistoryAccessMode.patient,
-       );
+  const MedicalHistoryScreen.forPatient({Key? key, required String patientName})
+    : this._(
+        key: key,
+        patientName: patientName,
+        mode: MedicalHistoryAccessMode.patient,
+      );
 
   const MedicalHistoryScreen.forCompanion({
     Key? key,
@@ -206,10 +205,7 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
                       if (_viewModel.isLoading || !_isInitialized)
                         const Center(child: CircularProgressIndicator())
                       else if (!_viewModel.isReadOnly)
-                        Button(
-                          title: _buttonTitle,
-                          onTap: _handleSubmit,
-                        ),
+                        Button(title: _buttonTitle, onTap: _handleSubmit),
                       if ((_viewModel.error ?? '').isNotEmpty) ...[
                         const Gap(16),
                         Text(

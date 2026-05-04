@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:vitaguard_app/presentation/screens/facility/chat_list_facility.dart';
 import 'package:vitaguard_app/features/facility/report/reports.dart';
 import 'package:vitaguard_app/features/facility/offer/current_offers.dart';
-import 'package:vitaguard_app/presentation/widgets/special_bottom_nav.dart';
+
+import '../../core/utils/special_bottom_nav.dart';
 
 class MainFacility extends StatefulWidget {
   final String name;

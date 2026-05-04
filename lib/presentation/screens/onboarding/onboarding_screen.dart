@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
 import 'package:vitaguard_app/features/onboarding/model/onboarding_data.dart';
 import 'package:vitaguard_app/presentation/widgets/onboarding/onboarding_page.dart';
 import 'package:vitaguard_app/presentation/widgets/onboarding/onbording_actions.dart';
+
+import '../../../core/utils/custem_background.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
 import 'package:vitaguard_app/core/alerts/widgets/alert_card.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/core/alerts/alert_center_provider.dart';
+
+import '../../../core/utils/custem_background.dart';
 
 class Alarts extends ConsumerWidget {
   const Alarts({super.key});
@@ -27,18 +28,27 @@ class Alarts extends ConsumerWidget {
                 SizedBox(height: 24.h),
                 _AlertScreenHeader(
                   totalAlerts: alerts.length,
-                  activeAlerts: ref.read(alertControllerProvider).activeAlerts.length,
+                  activeAlerts: ref
+                      .read(alertControllerProvider)
+                      .activeAlerts
+                      .length,
                 ),
                 SizedBox(height: 18.h),
                 Expanded(
                   child: Builder(
                     builder: (context) {
-                      if (ref.read(alertControllerProvider).isLoading && alerts.isEmpty) {
+                      if (ref.read(alertControllerProvider).isLoading &&
+                          alerts.isEmpty) {
                         return const Center(child: CircularProgressIndicator());
                       }
 
                       if (alerts.isEmpty) {
-                        return _EmptyAlertState(error: ref.read(alertControllerProvider).error?.toString());
+                        return _EmptyAlertState(
+                          error: ref
+                              .read(alertControllerProvider)
+                              .error
+                              ?.toString(),
+                        );
                       }
 
                       return ListView.separated(
@@ -51,7 +61,9 @@ class Alarts extends ConsumerWidget {
                             showPatientName: false,
                             onAcknowledge: alert.isActive
                                 ? () {
-                                    ref.read(alertControllerProvider.notifier).acknowledgeAlert(alert.id);
+                                    ref
+                                        .read(alertControllerProvider.notifier)
+                                        .acknowledgeAlert(alert.id);
                                   }
                                 : null,
                           );

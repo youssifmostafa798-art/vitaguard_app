@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_bottom.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/data/models/patient/patient_models.dart';
+
+import '../../../core/utils/custem_background.dart';
+import '../../../core/utils/custem_bottom.dart';
+import '../../../core/utils/custem_text.dart';
 
 class RadiologyResult extends StatelessWidget {
   final XRayResult result;

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/features/companion/data/home_categories_companion.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
 import 'package:vitaguard_app/presentation/widgets/patient/category_item.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vitaguard_app/presentation/controllers/companion/companion_provider.dart';
+
+import '../../../core/utils/custem_text.dart';
 
 class CategoryGridCompanion extends ConsumerWidget {
   const CategoryGridCompanion({super.key});
@@ -31,7 +32,8 @@ class CategoryGridCompanion extends ConsumerWidget {
 
         const Gap(15),
 
-        if (companionState.error?.toString() != null && companionState.patientStatus == null)
+        if (companionState.error?.toString() != null &&
+            companionState.patientStatus == null)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(

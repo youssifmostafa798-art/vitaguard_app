@@ -4,13 +4,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/data/models/patient/patient_models.dart';
 import 'package:vitaguard_app/presentation/widgets/xray/ai_diagnosis_display_widgets.dart';
 import 'package:vitaguard_app/presentation/widgets/xray/clinical_popup.dart';
 import 'package:vitaguard_app/features/xray/data/doctor_two_phase_ai_view_data.dart';
+
+import '../../../core/utils/custem_background.dart';
 
 /// AI X-Ray Diagnosis: raw image always visible; AI overlays and text only when the user enables **AI Layer**.
 class AiXRayResultScreen extends ConsumerStatefulWidget {
@@ -67,151 +68,156 @@ class _AiXRayResultScreenState extends ConsumerState<AiXRayResultScreen> {
         child: SafeArea(
           child: AppBackground(
             child: Stack(
-            children: [
-              SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(20.w, 56.h, 20.w, 32.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    XRayImageWithOptionalHeatmap(
-                      imageFile: widget.imageFile,
-                      showHeatmapOverlay:
-                          _aiLayerOn && aiData.useHeatmapPlaceholder,
-                      wlMode: _wlMode,
-                      transformationController: _transformationController,
-                      heatmapEmphasis: aiData.heatmapEmphasis,
-                      heatmapLabel: aiData.heatmapLabel,
-                    ),
-                    Gap(16.h),
-                    Center(
-                      child: ClinicalToolbar(
-                        aiLayerOn: _aiLayerOn,
-                        onAiLayerChanged: (v) => setState(() => _aiLayerOn = v),
+              children: [
+                SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(20.w, 56.h, 20.w, 32.h),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      XRayImageWithOptionalHeatmap(
+                        imageFile: widget.imageFile,
+                        showHeatmapOverlay:
+                            _aiLayerOn && aiData.useHeatmapPlaceholder,
                         wlMode: _wlMode,
-                        onWlToggled: () =>
-                            setState(() => _wlMode = (_wlMode + 1) % 3),
-                        onZoomReset: () {
-                          _transformationController.value = Matrix4.identity();
-                        },
+                        transformationController: _transformationController,
+                        heatmapEmphasis: aiData.heatmapEmphasis,
+                        heatmapLabel: aiData.heatmapLabel,
                       ),
-                    ),
-                    Gap(24.h),
-
-                    if (aiData.isError)
-                      AiErrorDisplay(
-                        message: aiData.summary,
-                        advice: aiData.friendlyErrorAdvice ?? '',
-                        onRetry: () {
-                          if (widget.onRetry != null) {
-                            widget.onRetry!();
-                          }
-                        },
-                        onUploadNew: () => Navigator.pop(context),
-                      )
-                    else ...[
-                      DiagnosisBannerCard(
-                        isNormal: aiData.isNormal,
-                        title: aiData.diagnosisTitle,
-                      ),
-                      Gap(12.h),
-                      AiDiagnosisMetricRow(
-                        confidencePercentText: aiData.confidencePercentText,
-                        severityLabel: aiData.severityLabel,
-                      ),
-                      Gap(12.h),
-                      ProbabilityBarChart(
-                        probNormal: aiData.probNormDouble,
-                        probPneumonia: aiData.probPneuDouble,
-                      ),
-                      Gap(12.h),
-                      AiDiagnosisFindingsSection(labels: aiData.labels),
-                      Gap(12.h),
-                      AiDiagnosisSummaryCard(
-                        title: _overrideNote == null
-                            ? 'AI Summary'
-                            : 'Clinician Override',
-                        body: _overrideNote ?? aiData.summary,
+                      Gap(16.h),
+                      Center(
+                        child: ClinicalToolbar(
+                          aiLayerOn: _aiLayerOn,
+                          onAiLayerChanged: (v) =>
+                              setState(() => _aiLayerOn = v),
+                          wlMode: _wlMode,
+                          onWlToggled: () =>
+                              setState(() => _wlMode = (_wlMode + 1) % 3),
+                          onZoomReset: () {
+                            _transformationController.value =
+                                Matrix4.identity();
+                          },
+                        ),
                       ),
                       Gap(24.h),
-                      ActionCTARow(
-                        onAddToReport: () => _addToReport(aiData),
+
+                      if (aiData.isError)
+                        AiErrorDisplay(
+                          message: aiData.summary,
+                          advice: aiData.friendlyErrorAdvice ?? '',
+                          onRetry: () {
+                            if (widget.onRetry != null) {
+                              widget.onRetry!();
+                            }
+                          },
+                          onUploadNew: () => Navigator.pop(context),
+                        )
+                      else ...[
+                        DiagnosisBannerCard(
+                          isNormal: aiData.isNormal,
+                          title: aiData.diagnosisTitle,
+                        ),
+                        Gap(12.h),
+                        AiDiagnosisMetricRow(
+                          confidencePercentText: aiData.confidencePercentText,
+                          severityLabel: aiData.severityLabel,
+                        ),
+                        Gap(12.h),
+                        ProbabilityBarChart(
+                          probNormal: aiData.probNormDouble,
+                          probPneumonia: aiData.probPneuDouble,
+                        ),
+                        Gap(12.h),
+                        AiDiagnosisFindingsSection(labels: aiData.labels),
+                        Gap(12.h),
+                        AiDiagnosisSummaryCard(
+                          title: _overrideNote == null
+                              ? 'AI Summary'
+                              : 'Clinician Override',
+                          body: _overrideNote ?? aiData.summary,
+                        ),
+                        Gap(24.h),
+                        ActionCTARow(
+                          onAddToReport: () => _addToReport(aiData),
                           onFlagForReview: _flagForReview,
                           onMarkReviewed: _markReviewed,
                           onOverride: _overrideAnalysis,
-                        isAddedToReport: _addedToReport,
-                        isFlaggedForReview: _flaggedForReview,
-                        isReviewed: _reviewed,
-                        hasOverride: _overrideNote != null,
-                      ),
-                    ],
+                          isAddedToReport: _addedToReport,
+                          isFlaggedForReview: _flaggedForReview,
+                          isReviewed: _reviewed,
+                          hasOverride: _overrideNote != null,
+                        ),
+                      ],
 
-                    Gap(24.h),
+                      Gap(24.h),
 
-                    // The disclaimer and report issue link are ALWAYS at the bottom
-                    Container(
-                      padding: EdgeInsets.all(12.r),
-                      decoration: BoxDecoration(
-                        color: (aiData.isError ? Colors.amber : AppColors.error)
-                            .withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(8.r),
-                        border: Border.all(
+                      // The disclaimer and report issue link are ALWAYS at the bottom
+                      Container(
+                        padding: EdgeInsets.all(12.r),
+                        decoration: BoxDecoration(
                           color:
                               (aiData.isError ? Colors.amber : AppColors.error)
-                                  .withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            aiData.isError
-                                ? Icons.info_outline
-                                : Icons.warning_amber_rounded,
-                            size: 18.sp,
-                            color: aiData.isError
-                                ? Colors.amber.shade700
-                                : AppColors.error,
+                                  .withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(
+                            color:
+                                (aiData.isError
+                                        ? Colors.amber
+                                        : AppColors.error)
+                                    .withValues(alpha: 0.2),
                           ),
-                          Gap(8.w),
-                          Expanded(
-                            child: Text(
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
                               aiData.isError
-                                  ? 'The report is currently incomplete. Clinical judgment is required.'
-                                  : 'PRELIMINARY REPORT: Clinical correlation required. Not a final diagnosis.',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: aiData.isError
-                                        ? Colors.amber.shade900
-                                        : AppColors.error,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  ? Icons.info_outline
+                                  : Icons.warning_amber_rounded,
+                              size: 18.sp,
+                              color: aiData.isError
+                                  ? Colors.amber.shade700
+                                  : AppColors.error,
                             ),
-                          ),
-                        ],
+                            Gap(8.w),
+                            Expanded(
+                              child: Text(
+                                aiData.isError
+                                    ? 'The report is currently incomplete. Clinical judgment is required.'
+                                    : 'PRELIMINARY REPORT: Clinical correlation required. Not a final diagnosis.',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: aiData.isError
+                                          ? Colors.amber.shade900
+                                          : AppColors.error,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
 
-                    if (aiData.isError) ...[
-                      Gap(12.h),
-                      Center(
-                        child: TextButton(
-                          onPressed: _reportIssueFeedback,
-                          child: Text(
-                            'Report an issue with this analysis',
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              color: AppColors.textSecondary,
-                              decoration: TextDecoration.underline,
+                      if (aiData.isError) ...[
+                        Gap(12.h),
+                        Center(
+                          child: TextButton(
+                            onPressed: _reportIssueFeedback,
+                            child: Text(
+                              'Report an issue with this analysis',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: AppColors.textSecondary,
+                                decoration: TextDecoration.underline,
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           ),
         ),
       ),

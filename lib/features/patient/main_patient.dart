@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:vitaguard_app/presentation/screens/vitals/hardware_screen.dart';
 import 'package:vitaguard_app/presentation/screens/patient/chat_list_patient.dart';
 import 'package:vitaguard_app/presentation/screens/patient/patient_home.dart';
-import 'package:vitaguard_app/presentation/widgets/flexible_nav_bar.dart';
 import 'package:vitaguard_app/presentation/screens/xray/upload_x_ray.dart';
+
+import '../../core/utils/flexible_nav_bar.dart';
 
 class MainPatient extends StatefulWidget {
   final String name;

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/features/facility/offer/add_offer.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_bottom.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_field.dart';
+
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+import '../../../core/utils/custem_background.dart';
+import '../../../core/utils/custem_bottom.dart';
+import '../../../core/utils/custem_field.dart';
 
 class CurrentOffers extends StatefulWidget {
   const CurrentOffers({super.key});

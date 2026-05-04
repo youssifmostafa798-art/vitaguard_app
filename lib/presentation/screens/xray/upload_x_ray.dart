@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_bottom.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/presentation/screens/xray/ai_xray_result_screen.dart';
 import 'package:vitaguard_app/presentation/controllers/patient/patient_provider.dart';
+
+import '../../../core/utils/custem_background.dart';
+import '../../../core/utils/custem_bottom.dart';
+import '../../../core/utils/custem_text.dart';
 
 class UploadXRay extends ConsumerStatefulWidget {
   const UploadXRay({
@@ -79,7 +80,12 @@ class _UploadXRayState extends ConsumerState<UploadXRay> {
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(ref.read(patientControllerProvider).error?.toString() ?? 'Analysis failed')),
+        SnackBar(
+          content: Text(
+            ref.read(patientControllerProvider).error?.toString() ??
+                'Analysis failed',
+          ),
+        ),
       );
     }
   }

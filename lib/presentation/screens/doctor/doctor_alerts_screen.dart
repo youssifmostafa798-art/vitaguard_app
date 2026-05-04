@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
 import 'package:vitaguard_app/core/alerts/widgets/alert_card.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/core/alerts/alert_center_provider.dart';
+
+import '../../../core/utils/custem_background.dart';
 
 /// Doctor-facing alert center — shows only critical alerts (severity routing
 /// is enforced on the backend; this screen simply renders what the shared
@@ -16,7 +17,8 @@ class DoctorAlertsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final alertCenter = ref.watch(alertControllerProvider);
-    final alerts = alertCenter.alerts; // already severity-filtered to critical for doctor
+    final alerts =
+        alertCenter.alerts; // already severity-filtered to critical for doctor
 
     return Scaffold(
       appBar: const SimpleHeader(title: 'Critical Alerts'),
@@ -36,13 +38,13 @@ class DoctorAlertsScreen extends ConsumerWidget {
                   child: Builder(
                     builder: (context) {
                       if (alertCenter.isLoading && alerts.isEmpty) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
+                        return const Center(child: CircularProgressIndicator());
                       }
 
                       if (alerts.isEmpty) {
-                        return _EmptyDoctorAlerts(error: alertCenter.error?.toString());
+                        return _EmptyDoctorAlerts(
+                          error: alertCenter.error?.toString(),
+                        );
                       }
 
                       return ListView.separated(
@@ -55,7 +57,9 @@ class DoctorAlertsScreen extends ConsumerWidget {
                             showPatientName: true,
                             onAcknowledge: alert.isActive
                                 ? () {
-                                    ref.read(alertControllerProvider.notifier).acknowledgeAlert(alert.id);
+                                    ref
+                                        .read(alertControllerProvider.notifier)
+                                        .acknowledgeAlert(alert.id);
                                   }
                                 : null,
                           );
@@ -175,9 +179,7 @@ class _EmptyDoctorAlerts extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              hasError
-                  ? Icons.wifi_off_rounded
-                  : Icons.shield_outlined,
+              hasError ? Icons.wifi_off_rounded : Icons.shield_outlined,
               size: 60.r,
               color: hasError
                   ? const Color(0xFFD84315)

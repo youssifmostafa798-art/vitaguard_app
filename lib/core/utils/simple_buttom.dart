@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
+
+import 'custem_text.dart';
 
 class SimpleButtom extends StatelessWidget {
   final String text;

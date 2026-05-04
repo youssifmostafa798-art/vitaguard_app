@@ -2,12 +2,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_bottom.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_field.dart';
+
 import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/data/repositories/facility/facility_repository.dart';
+
+import '../../../core/utils/custem_background.dart';
+import '../../../core/utils/custem_bottom.dart';
+import '../../../core/utils/custem_field.dart';
 
 class AddOffer extends StatefulWidget {
   const AddOffer({super.key});

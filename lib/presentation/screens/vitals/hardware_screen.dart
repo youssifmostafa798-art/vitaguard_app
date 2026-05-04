@@ -5,11 +5,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vitaguard_app/presentation/screens/vitals/metric_card.dart';
 import 'package:vitaguard_app/features/vitals/service/alert_timer_service.dart';
 import 'package:vitaguard_app/presentation/widgets/vitals/vital_alert_banner.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
 import 'package:vitaguard_app/data/repositories/vitals/vitals_repository.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/data/models/doctor/vital_alert_model.dart';
 import 'package:vitaguard_app/presentation/controllers/auth/auth_provider.dart';
+
+import '../../../core/utils/custem_background.dart';
 
 class HardwareScreen extends ConsumerStatefulWidget {
   const HardwareScreen({
@@ -119,7 +120,9 @@ class _HardwareScreenState extends ConsumerState<HardwareScreen>
 
     // 1. Load the most recent row immediately so the screen is not blank.
     try {
-      final vitals = await ref.read(vitalsRepositoryProvider).getLatestVitals(patientId);
+      final vitals = await ref
+          .read(vitalsRepositoryProvider)
+          .getLatestVitals(patientId);
 
       if (vitals != null && mounted) {
         final record = vitals.toJson();
@@ -139,18 +142,19 @@ class _HardwareScreenState extends ConsumerState<HardwareScreen>
     }
 
     // 2. Real-time push — fires instantly when ESP32 inserts a new row.
-    _channel = ref.read(vitalsRepositoryProvider).subscribeToVitals(patientId).listen(
-      (vitals) {
-        if (mounted) {
-          final record = vitals.toJson();
-          setState(() {
-            _latestVitals = record;
-            _subscriptionError = null;
-          });
-          _evaluateVitals(record);
-        }
-      },
-    );
+    _channel = ref
+        .read(vitalsRepositoryProvider)
+        .subscribeToVitals(patientId)
+        .listen((vitals) {
+          if (mounted) {
+            final record = vitals.toJson();
+            setState(() {
+              _latestVitals = record;
+              _subscriptionError = null;
+            });
+            _evaluateVitals(record);
+          }
+        });
   }
 
   String? _effectivePatientId() {

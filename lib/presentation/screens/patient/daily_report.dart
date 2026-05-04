@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_bottom.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_field.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/data/models/patient/patient_models.dart';
 import 'package:vitaguard_app/presentation/controllers/patient/patient_provider.dart';
+
+import '../../../core/utils/custem_background.dart';
+import '../../../core/utils/custem_bottom.dart';
+import '../../../core/utils/custem_field.dart';
 
 class DailyReportScreen extends ConsumerStatefulWidget {
   const DailyReportScreen({super.key});
@@ -29,7 +30,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
       bloodPressure: _bpCtrl.text.trim(),
     );
 
-    final success = await ref.read(patientControllerProvider.notifier).submitDailyReport(report);
+    final success = await ref
+        .read(patientControllerProvider.notifier)
+        .submitDailyReport(report);
 
     if (success) {
       if (!mounted) return;
@@ -40,7 +43,12 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(ref.read(patientControllerProvider).error?.toString() ?? 'Failed to save report')),
+        SnackBar(
+          content: Text(
+            ref.read(patientControllerProvider).error?.toString() ??
+                'Failed to save report',
+          ),
+        ),
       );
     }
   }

@@ -3,22 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
 import 'package:vitaguard_app/presentation/screens/chatbot/ai_chat_screen.dart';
 import 'package:vitaguard_app/core/utils/home_header.dart';
 import 'package:vitaguard_app/presentation/screens/facility/chat_facility_detail.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
-import 'package:vitaguard_app/presentation/widgets/chat_preview_card.dart';
 import 'package:vitaguard_app/presentation/widgets/patient/home_search.dart';
 import 'package:vitaguard_app/data/models/message_model.dart';
 import 'package:vitaguard_app/presentation/screens/auth/role_screen.dart';
 import 'package:vitaguard_app/core/chat/chat_repository.dart';
 import 'package:vitaguard_app/presentation/controllers/auth/auth_provider.dart';
 
+import '../../../core/utils/chat_preview_card.dart';
+import '../../../core/utils/custem_background.dart';
+import '../../../core/utils/custem_text.dart';
+
 class ChatListFacility extends ConsumerStatefulWidget {
   final String name;
   final Widget? aiChatScreen;
-  const ChatListFacility({super.key, required this.name,this.aiChatScreen});
+  const ChatListFacility({super.key, required this.name, this.aiChatScreen});
 
   @override
   ConsumerState<ChatListFacility> createState() => _ChatListFacilityState();

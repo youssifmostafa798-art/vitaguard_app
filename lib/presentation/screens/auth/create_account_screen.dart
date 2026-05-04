@@ -3,8 +3,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/presentation/screens/auth/sign_in_screen.dart';
 import 'package:vitaguard_app/presentation/widgets/auth/auth_error_banner.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_bottom.dart';
+
+import '../../../core/utils/custem_background.dart';
+import '../../../core/utils/custem_bottom.dart';
 
 enum FieldType { normal, password, navigation, gender }
 

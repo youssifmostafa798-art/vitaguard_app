@@ -3,14 +3,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:vitaguard_app/presentation/screens/chatbot/ai_chat_screen.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
 import 'package:vitaguard_app/core/chat/chat_repository.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
-import 'package:vitaguard_app/presentation/widgets/chat_preview_card.dart';
 import 'package:vitaguard_app/data/models/message_model.dart';
 import 'package:vitaguard_app/presentation/screens/patient/chat_patient_detail.dart';
 import 'package:vitaguard_app/presentation/widgets/patient/home_search.dart';
+
+import '../../../core/utils/chat_preview_card.dart';
+import '../../../core/utils/custem_background.dart';
+import '../../../core/utils/custem_text.dart';
 
 class ChatListPatient extends StatefulWidget {
   final ChatRepository? repository;

@@ -4,11 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vitaguard_app/presentation/screens/vitals/hardware_screen.dart';
 import 'package:vitaguard_app/data/models/companion/companion_models.dart';
 import 'package:vitaguard_app/presentation/screens/companion/companion_home.dart';
-import 'package:vitaguard_app/presentation/widgets/flexible_nav_bar.dart';
 import 'package:vitaguard_app/presentation/screens/patient/chat_list_patient.dart';
 import 'package:vitaguard_app/presentation/screens/xray/upload_x_ray.dart';
 import 'package:vitaguard_app/core/alerts/alert_center_provider.dart';
 import 'package:vitaguard_app/presentation/controllers/companion/companion_provider.dart';
+
+import '../../core/utils/flexible_nav_bar.dart';
 
 class MainCompanion extends ConsumerStatefulWidget {
   final String name;

@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vitaguard_app/presentation/screens/vitals/hardware_screen.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/presentation/controllers/doctor/doctor_provider.dart';
+
+import '../../../core/utils/custem_background.dart';
 
 enum DailyReportStatus { normal, warning, critical }
 
@@ -49,7 +50,9 @@ class _DailyReportsState extends ConsumerState<DailyReports> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(doctorControllerProvider.notifier).fetchAllDailyReports().then((_) {
+      ref.read(doctorControllerProvider.notifier).fetchAllDailyReports().then((
+        _,
+      ) {
         ref.read(doctorControllerProvider.notifier).listenToLiveVitals();
       });
     });
@@ -61,7 +64,9 @@ class _DailyReportsState extends ConsumerState<DailyReports> {
     super.dispose();
   }
 
-  List<DailyReportModel> _getFilteredReports(List<Map<String, dynamic>> reports) {
+  List<DailyReportModel> _getFilteredReports(
+    List<Map<String, dynamic>> reports,
+  ) {
     final q = _searchController.text.trim().toLowerCase();
 
     final list = reports.map((e) {

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
 import 'package:vitaguard_app/data/models/message_model.dart';
+
+import '../../../core/utils/custem_text.dart';
 
 class MessageFacilityBubble extends StatelessWidget {
   final ChatMessage message;

@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
 import 'package:vitaguard_app/core/utils/simple_buttom.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/presentation/controllers/patient/patient_provider.dart';
+
+import '../../../core/utils/custem_background.dart';
+import '../../../core/utils/custem_text.dart';
 
 class CompanionCode extends ConsumerStatefulWidget {
   const CompanionCode({super.key});
@@ -25,7 +26,9 @@ class _CompanionCodeState extends ConsumerState<CompanionCode> {
   }
 
   Future<void> _regenerateCode() async {
-    final success = await ref.read(patientControllerProvider.notifier).regenerateCompanionCode();
+    final success = await ref
+        .read(patientControllerProvider.notifier)
+        .regenerateCompanionCode();
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -56,7 +59,6 @@ class _CompanionCodeState extends ConsumerState<CompanionCode> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 const Gap(50),
 
                 //Code

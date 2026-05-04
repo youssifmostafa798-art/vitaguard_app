@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
 import 'package:vitaguard_app/data/models/patient/guidance_video_model.dart';
+
+import '../../../core/utils/custem_text.dart';
 
 class GuidanceVideoCard extends StatelessWidget {
   final GuidanceVideoModel video;

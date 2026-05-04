@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_bottom.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
+
+import '../../../core/utils/custem_background.dart';
+import '../../../core/utils/custem_bottom.dart';
+import '../../../core/utils/custem_text.dart';
 
 class ProfessionalId extends StatefulWidget {
   final File? initialImage;
@@ -43,7 +44,7 @@ class _ProfessionalIdState extends State<ProfessionalId> {
       body: SafeArea(
         child: AppBackground(
           child: Padding(
-            padding:  EdgeInsets.all(25.h),
+            padding: EdgeInsets.all(25.h),
             child: Column(
               children: [
                 Gap(40.h),

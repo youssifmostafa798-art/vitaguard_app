@@ -3,14 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/presentation/screens/auth/role_screen.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
 import 'package:vitaguard_app/core/utils/home_header.dart';
 import 'package:vitaguard_app/presentation/widgets/patient/category_grid_patient.dart';
 import 'package:vitaguard_app/presentation/widgets/patient/home_search.dart';
 import 'package:vitaguard_app/presentation/screens/patient/chat_list_patient.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
 import 'package:vitaguard_app/presentation/controllers/auth/auth_provider.dart';
 import 'package:vitaguard_app/presentation/controllers/patient/patient_provider.dart';
+
+import '../../../core/utils/custem_background.dart';
+import '../../../core/utils/custem_text.dart';
 
 class PatientHome extends ConsumerStatefulWidget {
   final String name;
@@ -56,7 +57,10 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
                 ],
 
                 Gap(30.h),
-                CategoryGridPatient(patientName: widget.name, searchQuery: _searchQuery),
+                CategoryGridPatient(
+                  patientName: widget.name,
+                  searchQuery: _searchQuery,
+                ),
                 Gap(10.h),
               ],
             ),
@@ -119,10 +123,7 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(15.r),
                         boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 5.r,
-                          )
+                          BoxShadow(color: Colors.black12, blurRadius: 5.r),
                         ],
                       ),
                       child: Column(
@@ -130,8 +131,14 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
                         children: [
                           CircleAvatar(
                             radius: 30.r,
-                            backgroundColor: const Color(0xff003F6B).withValues(alpha: 0.1),
-                            child: Icon(Icons.person, color: const Color(0xff003F6B), size: 30.r),
+                            backgroundColor: const Color(
+                              0xff003F6B,
+                            ).withValues(alpha: 0.1),
+                            child: Icon(
+                              Icons.person,
+                              color: const Color(0xff003F6B),
+                              size: 30.r,
+                            ),
                           ),
                           Gap(10.h),
                           Text(

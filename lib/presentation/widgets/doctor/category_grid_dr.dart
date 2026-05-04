@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/features/doctor/data/home_categories_doctor.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
 import 'package:vitaguard_app/presentation/widgets/patient/category_item.dart';
+
+import '../../../core/utils/custem_text.dart';
 
 class CategoryGridDr extends StatelessWidget {
   final String drName;

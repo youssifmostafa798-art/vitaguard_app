@@ -5,13 +5,14 @@ import 'package:gap/gap.dart';
 import 'package:vitaguard_app/presentation/screens/auth/role_screen.dart';
 import 'package:vitaguard_app/presentation/screens/companion/alarts.dart';
 import 'package:vitaguard_app/presentation/widgets/companion/category_grid_companion.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
 import 'package:vitaguard_app/core/alerts/alert_model.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/home_header.dart';
 import 'package:vitaguard_app/presentation/widgets/patient/home_search.dart';
 import 'package:vitaguard_app/presentation/controllers/auth/auth_provider.dart';
 import 'package:vitaguard_app/core/alerts/alert_center_provider.dart';
+
+import '../../../core/utils/custem_background.dart';
 
 class CompanionHome extends ConsumerWidget {
   final String name;
@@ -49,9 +50,9 @@ class CompanionHome extends ConsumerWidget {
                     primaryAlert: criticalAlerts.first,
                     additionalCount: criticalAlerts.length - 1,
                     onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const Alarts()),
-                      );
+                      Navigator.of(
+                        context,
+                      ).push(MaterialPageRoute(builder: (_) => const Alarts()));
                     },
                   ),
                 ],

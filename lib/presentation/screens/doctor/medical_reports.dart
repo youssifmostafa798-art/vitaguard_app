@@ -4,11 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_bottom.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_field.dart';
+
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/presentation/controllers/doctor/doctor_provider.dart';
+
+import '../../../core/utils/custem_background.dart';
+import '../../../core/utils/custem_bottom.dart';
+import '../../../core/utils/custem_field.dart';
 
 class MedicalReports extends ConsumerStatefulWidget {
   const MedicalReports({super.key});
@@ -32,12 +34,14 @@ class _MedicalReportsState extends ConsumerState<MedicalReports> {
 
     setState(() => _isLoading = true);
 
-    final success = await ref.read(doctorControllerProvider.notifier).uploadMedicalReport(
-      patientPhone: phone,
-      patientName: name,
-      description: desc,
-      imageFile: _selectedFile,
-    );
+    final success = await ref
+        .read(doctorControllerProvider.notifier)
+        .uploadMedicalReport(
+          patientPhone: phone,
+          patientName: name,
+          description: desc,
+          imageFile: _selectedFile,
+        );
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -49,10 +53,11 @@ class _MedicalReportsState extends ConsumerState<MedicalReports> {
       Navigator.pop(context);
     } else {
       final errMsg =
-          ref.read(doctorControllerProvider).error?.toString() ?? 'Failed to upload report';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errMsg)),
-      );
+          ref.read(doctorControllerProvider).error?.toString() ??
+          'Failed to upload report';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(errMsg)));
     }
   }
 
@@ -147,17 +152,20 @@ class _MedicalReportsState extends ConsumerState<MedicalReports> {
                                       top: 8,
                                       right: 8,
                                       child: GestureDetector(
-                                        onTap: () =>
-                                            setState(() => _selectedFile = null),
+                                        onTap: () => setState(
+                                          () => _selectedFile = null,
+                                        ),
                                         child: Container(
                                           padding: const EdgeInsets.all(4),
                                           decoration: const BoxDecoration(
                                             color: Colors.white70,
                                             shape: BoxShape.circle,
                                           ),
-                                          child: const Icon(Icons.close,
-                                              size: 18,
-                                              color: Color(0xff0D3B66)),
+                                          child: const Icon(
+                                            Icons.close,
+                                            size: 18,
+                                            color: Color(0xff0D3B66),
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -190,10 +198,7 @@ class _MedicalReportsState extends ConsumerState<MedicalReports> {
                       if (_isLoading)
                         const Center(child: CircularProgressIndicator())
                       else
-                        Button(
-                          title: 'Confirm',
-                          onTap: _handleConfirm,
-                        ),
+                        Button(title: 'Confirm', onTap: _handleConfirm),
 
                       Gap(20.h),
                     ],

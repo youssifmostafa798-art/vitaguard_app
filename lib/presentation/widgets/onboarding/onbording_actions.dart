@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_bottom.dart';
 import 'package:vitaguard_app/presentation/screens/auth/role_screen.dart';
+
+import '../../../core/utils/custem_bottom.dart';
 
 class OnboardingActions extends StatelessWidget {
   final PageController controller;

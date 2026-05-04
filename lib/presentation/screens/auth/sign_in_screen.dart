@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
 import 'package:vitaguard_app/features/patient/main_patient.dart';
 import 'package:vitaguard_app/features/doctor/main_doctor.dart';
 import 'package:vitaguard_app/features/companion/main_companion.dart';
 import 'package:vitaguard_app/features/facility/main_facility.dart';
 import 'package:vitaguard_app/presentation/widgets/auth/auth_textfield.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_bottom.dart';
-import 'package:vitaguard_app/presentation/widgets/custom_logo.dart';
 import 'package:vitaguard_app/presentation/controllers/auth/auth_provider.dart';
+
+import '../../../core/utils/custem_background.dart';
+import '../../../core/utils/custem_bottom.dart';
+import '../../../core/utils/custem_text.dart';
+import '../../../core/utils/custom_logo.dart';
 
 // Import target screens
 
@@ -65,7 +66,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('remember_me', _rememberMe);
 
-      final role = await ref.read(authControllerProvider.notifier).getUserRole();
+      final role = await ref
+          .read(authControllerProvider.notifier)
+          .getUserRole();
       if (!mounted) return;
 
       Widget nextScreen;
@@ -92,9 +95,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       );
     } else {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(ref.read(authControllerProvider).error?.toString() ?? 'Login failed')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ref.read(authControllerProvider).error?.toString() ??
+                'Login failed',
+          ),
+        ),
+      );
     }
   }
 

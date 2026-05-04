@@ -4,10 +4,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vitaguard_app/presentation/widgets/auth/auth_error_banner.dart';
 import 'package:vitaguard_app/presentation/widgets/auth/auth_textfield.dart';
 import 'package:vitaguard_app/presentation/widgets/auth/signup_success_dialog.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_bottom.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
+
 import 'package:vitaguard_app/presentation/controllers/auth/auth_provider.dart';
+
+import '../../../core/utils/custem_background.dart';
+import '../../../core/utils/custem_bottom.dart';
+import '../../../core/utils/custem_text.dart';
 
 class CompanionRegisterScreen extends ConsumerStatefulWidget {
   const CompanionRegisterScreen({super.key});
@@ -56,7 +58,6 @@ class _CompanionRegisterScreenState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-
                       SizedBox(height: 40.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,

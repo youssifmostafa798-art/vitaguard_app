@@ -4,12 +4,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/data/models/chatbot/ai_chat_models.dart';
 import 'package:vitaguard_app/presentation/widgets/chatbot/ai_message_bubble.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
-import 'package:vitaguard_app/presentation/widgets/message_input.dart';
+
 import 'package:intl/intl.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 import 'package:vitaguard_app/presentation/screens/auth/sign_in_screen.dart';
 import 'package:vitaguard_app/presentation/controllers/chatbot/ai_chat_provider.dart';
+
+import '../../../core/utils/custem_background.dart';
+import '../../../core/utils/message_input.dart';
 
 class AiChatScreen extends ConsumerStatefulWidget {
   const AiChatScreen({super.key});
@@ -22,8 +24,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isHandlingQuickReply = false;
-
-
 
   @override
   void initState() {
@@ -45,7 +45,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     if (text.isEmpty) return;
 
     _messageController.clear();
-    final ok = await ref.read(aiChatControllerProvider.notifier).sendMessage(text);
+    final ok = await ref
+        .read(aiChatControllerProvider.notifier)
+        .sendMessage(text);
     if (!ok && mounted) {
       _messageController.text = text;
       // Removed SnackBar to avoid duplicate error display.
@@ -60,7 +62,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       child: Consumer(
         builder: (context, ref, _) {
           final provider = ref.watch(aiChatControllerProvider);
-          final title = ref.read(aiChatControllerProvider).conversation?.title ?? 'VitaGuard AI';
+          final title =
+              ref.read(aiChatControllerProvider).conversation?.title ??
+              'VitaGuard AI';
           final hasUser = SupabaseService.instance.currentSession?.user != null;
 
           // Full-screen lock ONLY if we have no local user session.
@@ -68,7 +72,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
           return Scaffold(
             appBar: AppBar(
-              title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18.sp, color: const Color(0xFF0D3B66))),
+              title: Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18.sp,
+                  color: const Color(0xFF0D3B66),
+                ),
+              ),
               backgroundColor: Colors.white,
               elevation: 0,
               centerTitle: true,
@@ -79,28 +90,34 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                     icon: const Icon(Icons.add_comment_rounded),
                     tooltip: 'Start New Chat',
                     onPressed: () {
-                      ref.read(aiChatControllerProvider.notifier).startNewChat();
+                      ref
+                          .read(aiChatControllerProvider.notifier)
+                          .startNewChat();
                     },
                   ),
               ],
-              bottom: isLocked ? null : TabBar(
-                labelColor: const Color(0xFF00A3FF),
-                unselectedLabelColor: const Color(0xFF51617A),
-                indicatorColor: const Color(0xFF00A3FF),
-                tabs: const [
-                  Tab(text: "Active Chat"),
-                  Tab(text: "History"),
-                ],
-              ),
+              bottom: isLocked
+                  ? null
+                  : TabBar(
+                      labelColor: const Color(0xFF00A3FF),
+                      unselectedLabelColor: const Color(0xFF51617A),
+                      indicatorColor: const Color(0xFF00A3FF),
+                      tabs: const [
+                        Tab(text: "Active Chat"),
+                        Tab(text: "History"),
+                      ],
+                    ),
             ),
             body: SafeArea(
               child: AppBackground(
-                child: isLocked ? _buildUnauthorizedOverlay() : TabBarView(
-                  children: [
-                    _buildActiveChatTab(provider),
-                    _buildHistoryTab(provider),
-                  ],
-                ),
+                child: isLocked
+                    ? _buildUnauthorizedOverlay()
+                    : TabBarView(
+                        children: [
+                          _buildActiveChatTab(provider),
+                          _buildHistoryTab(provider),
+                        ],
+                      ),
               ),
             ),
           );
@@ -116,11 +133,19 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.lock_outline, size: 80.r, color: const Color(0xFFC62828)),
+            Icon(
+              Icons.lock_outline,
+              size: 80.r,
+              color: const Color(0xFFC62828),
+            ),
             Gap(20.h),
             Text(
               'Authentication Required',
-              style: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0D3B66)),
+              style: TextStyle(
+                fontSize: 22.sp,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF0D3B66),
+              ),
             ),
             Gap(12.h),
             Text(
@@ -131,21 +156,33 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             Gap(30.h),
             ElevatedButton(
               onPressed: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const SignInScreen()),
-                );
+                await Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const SignInScreen()));
                 // When returning from login, check if we have a session and refresh
-                if (mounted && SupabaseService.instance.currentSession != null) {
-                  ref.read(aiChatControllerProvider.notifier).ensureConversation(forceRefresh: true);
+                if (mounted &&
+                    SupabaseService.instance.currentSession != null) {
+                  ref
+                      .read(aiChatControllerProvider.notifier)
+                      .ensureConversation(forceRefresh: true);
                 }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00A3FF),
                 padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 12.h),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24.r),
+                ),
               ),
-              child: Text('Log in now', style: TextStyle(fontSize: 16.sp, color: Colors.white, fontWeight: FontWeight.bold)),
-            )
+              child: Text(
+                'Log in now',
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -157,9 +194,16 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     String displayDate = '';
 
     if (ref.read(aiChatControllerProvider).conversation != null) {
-      final localTime = ref.read(aiChatControllerProvider).conversation!.createdAt.toLocal();
+      final localTime = ref
+          .read(aiChatControllerProvider)
+          .conversation!
+          .createdAt
+          .toLocal();
       final now = DateTime.now();
-      isHistorical = localTime.year != now.year || localTime.month != now.month || localTime.day != now.day;
+      isHistorical =
+          localTime.year != now.year ||
+          localTime.month != now.month ||
+          localTime.day != now.day;
       if (isHistorical) {
         displayDate = DateFormat('MMMM d, yyyy').format(localTime);
       }
@@ -180,7 +224,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               ),
               child: Text(
                 ref.read(aiChatControllerProvider).error?.toString() ?? '',
-                style: TextStyle(color: const Color(0xFF8A5200), fontSize: 13.sp),
+                style: TextStyle(
+                  color: const Color(0xFF8A5200),
+                  fontSize: 13.sp,
+                ),
               ),
             ),
           ),
@@ -196,28 +243,41 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 Expanded(
                   child: Text(
                     'Viewing Historical Session ($displayDate)',
-                    style: TextStyle(fontSize: 12.sp, color: const Color(0xFF1B5E20), fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: const Color(0xFF1B5E20),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 TextButton(
                   onPressed: () {
-                    ref.read(aiChatControllerProvider.notifier).ensureConversation(forceRefresh: true);
+                    ref
+                        .read(aiChatControllerProvider.notifier)
+                        .ensureConversation(forceRefresh: true);
                   },
                   style: TextButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 4.h,
+                    ),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     backgroundColor: const Color(0xFFC8E6C9),
                   ),
-                  child: Text('Return to Today', style: TextStyle(fontSize: 12.sp, color: const Color(0xFF1B5E20))),
-                )
+                  child: Text(
+                    'Return to Today',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: const Color(0xFF1B5E20),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
 
-        Expanded(
-          child: _buildMessages(provider),
-        ),
+        Expanded(child: _buildMessages(provider)),
         _buildQuickReplies(provider),
         if (ref.read(aiChatControllerProvider).isSending)
           Padding(
@@ -227,7 +287,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 SizedBox(
                   width: 14.r,
                   height: 14.r,
-                  child: const CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00A3FF)),
+                  child: const CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Color(0xFF00A3FF),
+                  ),
                 ),
               ],
             ),
@@ -235,7 +298,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         MessageInput(
           controller: _messageController,
           onSend: _sendMessage,
-          enabled: !ref.read(aiChatControllerProvider).isLoading && !ref.read(aiChatControllerProvider).isSending,
+          enabled:
+              !ref.read(aiChatControllerProvider).isLoading &&
+              !ref.read(aiChatControllerProvider).isSending,
         ),
       ],
     );
@@ -251,7 +316,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       future: ref.read(aiChatControllerProvider.notifier).fetchUserHistory(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFF00A3FF)));
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF00A3FF)),
+          );
         }
 
         if (snapshot.hasError) {
@@ -278,11 +345,18 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             final dateStr = DateFormat('MMMM d, yyyy').format(localTime);
             final timeStr = DateFormat('h:mm a').format(localTime);
 
-            final isCurrent = ref.read(aiChatControllerProvider).conversation?.id == conversation.id;
+            final isCurrent =
+                ref.read(aiChatControllerProvider).conversation?.id ==
+                conversation.id;
 
             return InkWell(
               onTap: () {
-                ref.read(aiChatControllerProvider.notifier).ensureConversation(conversationId: conversation.id, forceRefresh: true);
+                ref
+                    .read(aiChatControllerProvider.notifier)
+                    .ensureConversation(
+                      conversationId: conversation.id,
+                      forceRefresh: true,
+                    );
                 DefaultTabController.of(context).animateTo(0);
               },
               borderRadius: BorderRadius.circular(12.r),
@@ -291,13 +365,17 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 decoration: BoxDecoration(
                   color: isCurrent ? const Color(0xFFE3EEF7) : Colors.white,
                   borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(color: isCurrent ? const Color(0xFF00A3FF) : const Color(0xFFE2E8F0)),
+                  border: Border.all(
+                    color: isCurrent
+                        ? const Color(0xFF00A3FF)
+                        : const Color(0xFFE2E8F0),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
-                    )
+                    ),
                   ],
                 ),
                 child: Row(
@@ -309,7 +387,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         color: const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(12.r),
                       ),
-                      child: Icon(Icons.history, color: const Color(0xFF51617A), size: 24.r),
+                      child: Icon(
+                        Icons.history,
+                        color: const Color(0xFF51617A),
+                        size: 24.r,
+                      ),
                     ),
                     Gap(16.w),
                     Expanded(
@@ -318,17 +400,28 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         children: [
                           Text(
                             dateStr,
-                            style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: const Color(0xFF0D3B66)),
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF0D3B66),
+                            ),
                           ),
                           Gap(4.h),
                           Text(
                             'Session started at $timeStr',
-                            style: TextStyle(fontSize: 13.sp, color: const Color(0xFF64748B)),
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              color: const Color(0xFF64748B),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    Icon(Icons.chevron_right, color: const Color(0xFFCBD5E1), size: 24.r),
+                    Icon(
+                      Icons.chevron_right,
+                      color: const Color(0xFFCBD5E1),
+                      size: 24.r,
+                    ),
                   ],
                 ),
               ),
@@ -340,21 +433,20 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   }
 
   Widget _buildMessages(AiChatState provider) {
-    if (ref.read(aiChatControllerProvider).isLoading && ref.read(aiChatControllerProvider).conversation == null) {
+    if (ref.read(aiChatControllerProvider).isLoading &&
+        ref.read(aiChatControllerProvider).conversation == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (ref.read(aiChatControllerProvider).conversation == null || ref.read(aiChatControllerProvider).messageStream == null) {
+    if (ref.read(aiChatControllerProvider).conversation == null ||
+        ref.read(aiChatControllerProvider).messageStream == null) {
       return Center(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
           child: Text(
             'Open a conversation to ask about symptoms, reports, medications, or health guidance.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 15.sp,
-              color: const Color(0xFF51617A),
-            ),
+            style: TextStyle(fontSize: 15.sp, color: const Color(0xFF51617A)),
           ),
         ),
       );
@@ -399,7 +491,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
                 child: Column(
                   children: [
-                    Icon(Icons.health_and_safety, color: const Color(0xFF003F6B), size: 40.r),
+                    Icon(
+                      Icons.health_and_safety,
+                      color: const Color(0xFF003F6B),
+                      size: 40.r,
+                    ),
                     Gap(10.h),
                     Text(
                       'Welcome to VitaGuard AI',
@@ -428,7 +524,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             // Message logic
             final message = messages[index];
             // In a reversed list, the one "above" it has a HIGHER index (older)
-            final nextIsSame = index + 1 < messages.length && messages[index + 1].role == message.role;
+            final nextIsSame =
+                index + 1 < messages.length &&
+                messages[index + 1].role == message.role;
 
             return AiMessageBubble(
               key: ValueKey(message.id),
@@ -442,7 +540,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   }
 
   Widget _buildQuickReplies(AiChatState provider) {
-    if (ref.read(aiChatControllerProvider).conversation == null || ref.read(aiChatControllerProvider).isLoading || ref.read(aiChatControllerProvider).isSending) return const SizedBox.shrink();
+    if (ref.read(aiChatControllerProvider).conversation == null ||
+        ref.read(aiChatControllerProvider).isLoading ||
+        ref.read(aiChatControllerProvider).isSending)
+      return const SizedBox.shrink();
 
     final suggestions = [
       'Check my symptoms',
@@ -466,13 +567,22 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 suggestion,
                 overflow: TextOverflow.visible,
                 softWrap: false,
-                style: TextStyle(fontSize: 13.sp, color: const Color(0xFF003F6B)),
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  color: const Color(0xFF003F6B),
+                ),
               ),
               backgroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 4.w), // Reduce internal padding if needed
+              padding: EdgeInsets.symmetric(
+                horizontal: 4.w,
+              ), // Reduce internal padding if needed
               side: const BorderSide(color: Color(0xFF00A3FF)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
-              onPressed: _isHandlingQuickReply || ref.read(aiChatControllerProvider).isSending
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              onPressed:
+                  _isHandlingQuickReply ||
+                      ref.read(aiChatControllerProvider).isSending
                   ? null
                   : () async {
                       setState(() => _isHandlingQuickReply = true);

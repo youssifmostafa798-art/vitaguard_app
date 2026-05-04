@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_text.dart';
+
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:vitaguard_app/core/network/health_provider.dart';
+
+import 'custem_background.dart';
+import 'custem_text.dart';
 
 class HomeHeader extends ConsumerWidget implements PreferredSizeWidget {
   final String name_;

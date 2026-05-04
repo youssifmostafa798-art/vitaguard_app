@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/presentation/screens/auth/role_screen.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
 import 'package:vitaguard_app/core/alerts/widgets/app_alert_card.dart';
 import 'package:vitaguard_app/core/utils/home_header.dart';
 import 'package:vitaguard_app/presentation/widgets/doctor/category_grid_dr.dart';
@@ -11,6 +10,8 @@ import 'package:vitaguard_app/presentation/widgets/patient/home_search.dart';
 import 'package:vitaguard_app/presentation/controllers/doctor/doctor_provider.dart';
 import 'package:vitaguard_app/presentation/controllers/auth/auth_provider.dart';
 import 'package:vitaguard_app/core/alerts/alert_center_provider.dart';
+
+import '../../../core/utils/custem_background.dart';
 
 class DoctorHomes extends ConsumerWidget {
   final String name;
@@ -53,7 +54,9 @@ class DoctorHomes extends ConsumerWidget {
                             showPatientName: true,
                             compact: true,
                             onAcknowledge: () {
-                              ref.read(alertControllerProvider.notifier).acknowledgeAlert(alert.id);
+                              ref
+                                  .read(alertControllerProvider.notifier)
+                                  .acknowledgeAlert(alert.id);
                             },
                           ),
                         );

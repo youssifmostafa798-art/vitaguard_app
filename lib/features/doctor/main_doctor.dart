@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vitaguard_app/presentation/screens/doctor/chat_list_dr.dart';
 import 'package:vitaguard_app/presentation/screens/doctor/doctor_home.dart';
-import 'package:vitaguard_app/presentation/widgets/flexible_nav_bar.dart';
 import 'package:vitaguard_app/presentation/screens/xray/doctor_x_ray_review_entry_screen.dart';
 import 'package:vitaguard_app/presentation/controllers/doctor/doctor_provider.dart';
 import 'package:vitaguard_app/core/alerts/alert_center_provider.dart';
+
+import '../../core/utils/flexible_nav_bar.dart';
 
 class MainDoctor extends ConsumerStatefulWidget {
   final String name;
@@ -53,11 +54,12 @@ class _MainDoctorState extends ConsumerState<MainDoctor>
   }
 
   void _bootstrapAlertCenter(List<dynamic> assignedPatients) {
-    final patientIds = assignedPatients
-        .map((patient) => patient['patient_id']?.toString() ?? '')
-        .where((id) => id.isNotEmpty)
-        .toList(growable: false)
-      ..sort();
+    final patientIds =
+        assignedPatients
+            .map((patient) => patient['patient_id']?.toString() ?? '')
+            .where((id) => id.isNotEmpty)
+            .toList(growable: false)
+          ..sort();
 
     if (patientIds.isEmpty || listEquals(patientIds, _bootstrappedPatientIds)) {
       return;
@@ -78,21 +80,26 @@ class _MainDoctorState extends ConsumerState<MainDoctor>
 
     _bootstrappedPatientIds = patientIds;
     unawaited(
-      ref.read(alertControllerProvider.notifier).bootstrapForDoctor(
-        patientIds: patientIds,
-        patientNamesById: patientNamesById,
-      ),
+      ref
+          .read(alertControllerProvider.notifier)
+          .bootstrapForDoctor(
+            patientIds: patientIds,
+            patientNamesById: patientNamesById,
+          ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final assignedPatients = ref.watch(doctorControllerProvider).assignedPatients;
-    final patientIds = assignedPatients
-        .map((patient) => patient['patient_id']?.toString() ?? '')
-        .where((id) => id.isNotEmpty)
-        .toList(growable: false)
-      ..sort();
+    final assignedPatients = ref
+        .watch(doctorControllerProvider)
+        .assignedPatients;
+    final patientIds =
+        assignedPatients
+            .map((patient) => patient['patient_id']?.toString() ?? '')
+            .where((id) => id.isNotEmpty)
+            .toList(growable: false)
+          ..sort();
 
     if (patientIds.isNotEmpty &&
         !listEquals(patientIds, _bootstrappedPatientIds)) {

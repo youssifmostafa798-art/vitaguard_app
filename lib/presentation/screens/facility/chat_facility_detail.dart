@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:vitaguard_app/presentation/widgets/custem_background.dart';
 import 'package:vitaguard_app/core/chat/chat_repository.dart';
 import 'package:vitaguard_app/core/utils/chat_header.dart';
 import 'package:vitaguard_app/presentation/widgets/facility/message_facility_bubble.dart';
-import 'package:vitaguard_app/presentation/widgets/message_input.dart';
 import 'package:vitaguard_app/data/models/message_model.dart';
+
+import '../../../core/utils/custem_background.dart';
+import '../../../core/utils/message_input.dart';
 
 class ChatFacilityDetail extends StatefulWidget {
   final String chatName;
@@ -109,7 +110,7 @@ class _ChatFacilityDetailState extends State<ChatFacilityDetail> {
                         );
                       },
                     );
-                  }
+                  },
                 ),
               ),
 
