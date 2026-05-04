@@ -105,7 +105,54 @@ class _ChatListFacilityState extends ConsumerState<ChatListFacility> {
                                 );
                               }
 
-                              final chatsList = snapshot.data ?? [];
+                              final realChats = snapshot.data ?? [];
+                              final chatsList = realChats.isNotEmpty
+                                  ? realChats
+                                  : [
+                                      ChatPreview(
+                                        id: '1',
+                                        name: 'Dr Eslam Ahmed',
+                                        avatarInitials: 'EA',
+                                        lastMessage:
+                                            "Hussain, you're supposed to take your medication in the morning",
+                                        time: '28min',
+                                        sender: MessageSender.doctor,
+                                        status: MessageStatus.active,
+                                        unreadCount: 1,
+                                      ),
+                                      ChatPreview(
+                                        id: '2',
+                                        name: 'Mohamed Ahmed',
+                                        avatarInitials: 'MA',
+                                        lastMessage:
+                                            "Hussain, you're supposed to take your medication in the morning",
+                                        time: '25min',
+                                        sender: MessageSender.patient,
+                                        status: MessageStatus.active,
+                                        unreadCount: 0,
+                                      ),
+                                      ChatPreview(
+                                        id: '3',
+                                        name: 'Dr Ali Ahmed',
+                                        avatarInitials: 'AA',
+                                        lastMessage:
+                                            "Hussain, you're supposed to take your medication in the morning",
+                                        time: '12min',
+                                        sender: MessageSender.doctor,
+                                        status: MessageStatus.active,
+                                        unreadCount: 1,
+                                      ),
+                                      ChatPreview(
+                                        id: '4',
+                                        name: 'Ebrahim Ayman',
+                                        avatarInitials: 'EA',
+                                        lastMessage:
+                                            "Your test results are ready now, sir.",
+                                        time: '23min',
+                                        sender: MessageSender.patient,
+                                        status: MessageStatus.active,
+                                      ),
+                                    ];
 
                               if (chatsList.isEmpty) {
                                 return Padding(

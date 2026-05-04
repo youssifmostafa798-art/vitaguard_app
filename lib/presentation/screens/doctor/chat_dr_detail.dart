@@ -22,11 +22,111 @@ class _ChatDrDetailState extends State<ChatDrDetail> {
   final TextEditingController _messageController = TextEditingController();
   final ChatRepository _repository = ChatRepository();
 
+  bool _isDemoMode = true;
+  final List<ChatMessage> _demoMessages = [
+    ChatMessage(
+      id: '1',
+      content: "Hello Hussain. I noticed a breathing irregularity warning from your VitaGuard monitor earlier. Have you used your inhaler?",
+      time: '1 hour ago',
+      sender: MessageSender.user,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '2',
+      content: "I used the inhaler 30 minutes ago.",
+      time: '55 minutes ago',
+      sender: MessageSender.patient,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '3',
+      content: "Good. The system shows your oxygen level is back to 98% which is normal.",
+      time: '50 minutes ago',
+      sender: MessageSender.user,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '4',
+      content: "My breathing is better now, thank you.",
+      time: '45 minutes ago',
+      sender: MessageSender.patient,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '5',
+      content: "We received an alert from your device showing an elevated heart rate (110 BPM) for the last 15 minutes. Were you exercising?",
+      time: '20 minutes ago',
+      sender: MessageSender.user,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '6',
+      content: "Yes, I was climbing the stairs. I stopped and took deep breaths.",
+      time: '18 minutes ago',
+      sender: MessageSender.patient,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '7',
+      content: "Your recent temperature log showed a slight fever (37.8°C). Take a paracetamol and drink plenty of water.",
+      time: '15 minutes ago',
+      sender: MessageSender.user,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '8',
+      content: "Okay, I will take it right now.",
+      time: '10 minutes ago',
+      sender: MessageSender.patient,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '9',
+      content: "Also, please keep your VitaGuard wristband on while sleeping so we can track your oxygen level continuously.",
+      time: '5 minutes ago',
+      sender: MessageSender.user,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '10',
+      content: "Yes, I understand. I will keep monitoring my heart rate and rest.",
+      time: '2 minutes ago',
+      sender: MessageSender.patient,
+      isRead: true,
+    ),
+  ];
+
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
     _messageController.clear();
-    await _repository.sendMessage(widget.chatId, text);
+    
+    if (_isDemoMode) {
+      setState(() {
+        _demoMessages.add(ChatMessage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          content: text,
+          time: 'Just now',
+          sender: MessageSender.user,
+          isRead: true,
+        ));
+      });
+
+      Future.delayed(const Duration(seconds: 2), () {
+        if (!mounted) return;
+        setState(() {
+          _demoMessages.add(ChatMessage(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            content: "Received your message. Please make sure to follow the prescribed routine. Call emergency if symptoms worsen.",
+            time: 'Just now',
+            sender: MessageSender.patient,
+            isRead: true,
+          ));
+        });
+      });
+    } else {
+      await _repository.sendMessage(widget.chatId, text);
+    }
   }
 
   @override
@@ -64,7 +164,16 @@ class _ChatDrDetailState extends State<ChatDrDetail> {
                     otherSender: MessageSender.patient,
                   ),
                   builder: (context, snapshot) {
-                    final messages = snapshot.data ?? [];
+                    final realMessages = snapshot.data ?? [];
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted && _isDemoMode != realMessages.isEmpty) {
+                        setState(() {
+                          _isDemoMode = realMessages.isEmpty;
+                        });
+                      }
+                    });
+
+                    final messages = _isDemoMode ? _demoMessages : realMessages;
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
                     }

@@ -51,7 +51,63 @@ class _ChatListDrState extends State<ChatListDr> {
             StreamBuilder<List<ChatPreview>>(
               stream: _repository.streamConversations(),
               builder: (context, snapshot) {
-                final chats = snapshot.data ?? [];
+                final realChats = snapshot.data ?? [];
+                final chats = realChats.isNotEmpty
+                    ? realChats
+                    : [
+                      ChatPreview(
+                        id: '1',
+                        name: 'Eslam Ahmed',
+                        avatarInitials: 'EA',
+                        lastMessage:
+                            "Hussain, you're supposed to take your medication in the morning",
+                        time: '28min',
+                        sender: MessageSender.patient,
+                        status: MessageStatus.active,
+                        unreadCount: 1,
+                      ),
+                      ChatPreview(
+                        id: '2',
+                        name: 'Youssif Mostafa',
+                        avatarInitials: 'YM',
+                        lastMessage:
+                            "Hussain, you're supposed to take your medication in the morning",
+                        time: '25min',
+                        sender: MessageSender.patient,
+                        status: MessageStatus.active,
+                        unreadCount: 0,
+                      ),
+                      ChatPreview(
+                        id: '3',
+                        name: 'Mohamed Ahmed',
+                        avatarInitials: 'MA',
+                        lastMessage:
+                            "Hussain, you're supposed to take your medication in the morning",
+                        time: '12min',
+                        sender: MessageSender.patient,
+                        status: MessageStatus.active,
+                        unreadCount: 1,
+                      ),
+                      ChatPreview(
+                        id: '4',
+                        name: 'Medical Laboratory',
+                        avatarInitials: 'ML',
+                        lastMessage: "Your test results are ready now, sir",
+                        time: '23min',
+                        sender: MessageSender.facility,
+                        status: MessageStatus.active,
+                      ),
+                      ChatPreview(
+                        id: '5',
+                        name: 'Mohamed Ali',
+                        avatarInitials: 'MA',
+                        lastMessage:
+                            "Hussain, you're supposed to take your medication in the morning",
+                        time: '25min',
+                        sender: MessageSender.patient,
+                        status: MessageStatus.active,
+                      ),
+                    ];
 
                 return AppBackground(
                   child: LayoutBuilder(

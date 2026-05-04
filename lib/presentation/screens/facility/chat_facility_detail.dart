@@ -27,6 +27,82 @@ class _ChatFacilityDetailState extends State<ChatFacilityDetail> {
   late final Stream<List<ChatMessage>> _messageStream;
   final ChatRepository _repository = ChatRepository();
 
+  bool _isDemoMode = true;
+  // NOTE: For chat_facility_detail, the ListView renders messages[index], 
+  // so index 0 is at the bottom (newest). The demo messages must be ordered newest-first.
+  final List<ChatMessage> _demoMessages = [
+    ChatMessage(
+      id: '10',
+      content: "Perfect, I will check it right now and adjust his medication if needed.",
+      time: '2 minutes ago',
+      sender: MessageSender.doctor,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '9',
+      content: "Yes, doctor. The complete lab report has been uploaded and is now available for review in the portal.",
+      time: '10 minutes ago',
+      sender: MessageSender.user,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '8',
+      content: "Thank you for the detailed update. Have the full PDF reports been uploaded to the system?",
+      time: '20 minutes ago',
+      sender: MessageSender.doctor,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '7',
+      content: "WBC count is normal. No signs of severe infection.",
+      time: '35 minutes ago',
+      sender: MessageSender.user,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '6',
+      content: "I see. And the complete blood count (CBC)?",
+      time: '40 minutes ago',
+      sender: MessageSender.doctor,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '5',
+      content: "CRP is slightly elevated at 12 mg/L, which correlates with his recent fever.",
+      time: '45 minutes ago',
+      sender: MessageSender.user,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '4',
+      content: "That's good. How about the inflammatory markers?",
+      time: '50 minutes ago',
+      sender: MessageSender.doctor,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '3',
+      content: "The blood test analysis has been completed successfully. Most values are within the normal range.",
+      time: '55 minutes ago',
+      sender: MessageSender.user,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '2',
+      content: "Hello. Yes, I’m following up on those lab results. Is there any anomaly?",
+      time: '1 hour ago',
+      sender: MessageSender.doctor,
+      isRead: true,
+    ),
+    ChatMessage(
+      id: '1',
+      content: "Hello, this is VitaLab. We are contacting you regarding Hussain's recent blood test samples.",
+      time: '2 hours ago',
+      sender: MessageSender.user,
+      isRead: true,
+    ),
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -40,13 +116,37 @@ class _ChatFacilityDetailState extends State<ChatFacilityDetail> {
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
-
     _messageController.clear();
 
-    try {
-      await _repository.sendMessage(widget.chatId, text);
-    } catch (e) {
-      debugPrint('Error sending message: $e');
+    if (_isDemoMode) {
+      setState(() {
+        _demoMessages.insert(0, ChatMessage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          content: text,
+          time: 'Just now',
+          sender: MessageSender.user,
+          isRead: true,
+        ));
+      });
+
+      Future.delayed(const Duration(seconds: 2), () {
+        if (!mounted) return;
+        setState(() {
+          _demoMessages.insert(0, ChatMessage(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            content: "We received your message. A lab technician will review it shortly.",
+            time: 'Just now',
+            sender: MessageSender.doctor,
+            isRead: true,
+          ));
+        });
+      });
+    } else {
+      try {
+        await _repository.sendMessage(widget.chatId, text);
+      } catch (e) {
+        debugPrint('Error sending message: $e');
+      }
     }
   }
 
@@ -90,7 +190,16 @@ class _ChatFacilityDetailState extends State<ChatFacilityDetail> {
                       return const Center(child: CircularProgressIndicator());
                     }
 
-                    final messages = snapshot.data ?? [];
+                    final realMessages = snapshot.data ?? [];
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted && _isDemoMode != realMessages.isEmpty) {
+                        setState(() {
+                          _isDemoMode = realMessages.isEmpty;
+                        });
+                      }
+                    });
+
+                    final messages = _isDemoMode ? _demoMessages : realMessages;
 
                     return ListView.builder(
                       reverse: true,
