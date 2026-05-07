@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/data/models/chatbot/ai_chat_models.dart';
 import 'package:vitaguard_app/features/chatbot/data/ai_response_sanitizer.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
@@ -289,17 +290,11 @@ class SupabaseAiChatRepository implements AiChatRepository {
   }
 
   String? _extractErrorMessage(dynamic error) {
-    if (error is FunctionException) {
-      final msg = error.reasonPhrase ?? 'Function error (${error.status}).';
-      // If we have a status 401, it's definitely an auth/session issue
-      if (error.status == 401) {
-        return 'Session expired or unauthorized. Please log in again to continue.';
-      }
-      // If we have a status 400, try to return a more helpful message
-      if (error.status == 400) {
-        return 'Server error: $msg';
-      }
-      return msg;
+    if (error.runtimeType.toString().toLowerCase().contains('function')) {
+      return ErrorMapper.mapForUser(
+        error,
+        const ClinicalErrorContext(area: ClinicalErrorArea.chatbot),
+      ).message;
     }
     return null;
   }

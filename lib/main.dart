@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/core/alerts/alert_notification_service.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/core/utils/screen_util_helper.dart';
 import 'package:vitaguard_app/presentation/widgets/auth/auth_gate.dart';
 
@@ -21,11 +22,11 @@ Future<void> main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ScreenUtilInit(
       designSize: ScreenUtilHelper.designSize,
       minTextAdapt: true,
@@ -36,6 +37,14 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           theme: ThemeData(fontFamily: 'WixMadeforDisplay'),
+          navigatorObservers: [
+            ClinicalFeedbackNavigatorObserver(
+              ref.read(clinicalFeedbackControllerProvider),
+            ),
+          ],
+          builder: (context, child) {
+            return ClinicalFeedbackHost(child: child ?? const SizedBox());
+          },
           home: child,
         );
       },

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/data/models/chatbot/ai_chat_models.dart';
 import 'package:vitaguard_app/presentation/widgets/chatbot/ai_message_bubble.dart';
 
@@ -50,7 +52,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         .sendMessage(text);
     if (!ok && mounted) {
       _messageController.text = text;
-      // Removed SnackBar to avoid duplicate error display.
+      // Error is shown through the persistent clinical feedback panel.
       // Error is already shown in the persistent bubble above the message list.
     }
   }
@@ -211,24 +213,16 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
     return Column(
       children: [
-        if (ref.read(aiChatControllerProvider).error?.toString() != null)
+        if (ref.read(aiChatControllerProvider).error != null)
           Padding(
             padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 0),
-            child: Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(12.r),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF4E5),
-                borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: const Color(0xFFFFD08A)),
-              ),
-              child: Text(
-                ref.read(aiChatControllerProvider).error?.toString() ?? '',
-                style: TextStyle(
-                  color: const Color(0xFF8A5200),
-                  fontSize: 13.sp,
-                ),
-              ),
+            child: ClinicalFeedbackPanel(
+              type: ClinicalPopupType.warning,
+              title: 'VitaGuard AI Connection',
+              message: ErrorMapper.mapForUser(
+                ref.read(aiChatControllerProvider).error!,
+                const ClinicalErrorContext(area: ClinicalErrorArea.chatbot),
+              ).message,
             ),
           ),
 
@@ -307,7 +301,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   }
 
   Widget _buildHistoryTab(AiChatState provider) {
-    final errorStr = ref.read(aiChatControllerProvider).error?.toString() ?? '';
+    final errorStr = ref.read(aiChatControllerProvider).error == null
+        ? ''
+        : ErrorMapper.mapForUser(
+            ref.read(aiChatControllerProvider).error!,
+            const ClinicalErrorContext(area: ClinicalErrorArea.chatbot),
+          ).message;
     if (errorStr.isNotEmpty && errorStr.toLowerCase().contains('logged in')) {
       return const SizedBox.shrink(); // Prevent fetching if fully unauthorized
     }
@@ -542,8 +541,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   Widget _buildQuickReplies(AiChatState provider) {
     if (ref.read(aiChatControllerProvider).conversation == null ||
         ref.read(aiChatControllerProvider).isLoading ||
-        ref.read(aiChatControllerProvider).isSending)
+        ref.read(aiChatControllerProvider).isSending) {
       return const SizedBox.shrink();
+    }
 
     final suggestions = [
       'Check my symptoms',

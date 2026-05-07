@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/data/models/patient/patient_models.dart';
 import 'package:vitaguard_app/data/models/patient/medical_history_view_model.dart';
@@ -139,15 +141,26 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          success
-              ? 'Medical history saved successfully!'
-              : (_viewModel.error ?? 'Failed to update medical history'),
-        ),
-      ),
-    );
+    if (success) {
+      showClinicalPopup(
+        context,
+        type: ClinicalPopupType.success,
+        title: 'Medical History Saved',
+        message: 'Medical history saved successfully.',
+      );
+    } else {
+      final mapped = ErrorMapper.mapForUser(
+        _viewModel.error ?? 'Failed to update medical history',
+        const ClinicalErrorContext(area: ClinicalErrorArea.reports),
+      );
+      showClinicalPopup(
+        context,
+        type: ClinicalPopupType.error,
+        title: 'Medical History Not Saved',
+        message: mapped.message,
+        developerDiagnostics: mapped.developerDiagnostics,
+      );
+    }
   }
 
   @override
@@ -208,9 +221,15 @@ class _MedicalHistoryScreenState extends State<MedicalHistoryScreen> {
                         Button(title: _buttonTitle, onTap: _handleSubmit),
                       if ((_viewModel.error ?? '').isNotEmpty) ...[
                         const Gap(16),
-                        Text(
-                          _viewModel.error!,
-                          style: const TextStyle(color: Colors.redAccent),
+                        ClinicalFeedbackPanel(
+                          type: ClinicalPopupType.error,
+                          title: 'Medical History Unavailable',
+                          message: ErrorMapper.mapForUser(
+                            _viewModel.error!,
+                            const ClinicalErrorContext(
+                              area: ClinicalErrorArea.reports,
+                            ),
+                          ).message,
                         ),
                       ],
                       if (_viewModel.isReadOnly)

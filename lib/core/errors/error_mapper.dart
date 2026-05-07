@@ -1,63 +1,136 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+enum ClinicalErrorArea {
+  auth,
+  upload,
+  xrayAi,
+  chatbot,
+  reports,
+  alerts,
+  hardware,
+  network,
+  database,
+  storage,
+  unknown,
+}
+
+class ClinicalErrorContext {
+  const ClinicalErrorContext({
+    required this.area,
+    this.operation,
+    this.operationId,
+    this.resourceName,
+    this.allowRetry = true,
+  });
+
+  final ClinicalErrorArea area;
+  final String? operation;
+  final String? operationId;
+  final String? resourceName;
+  final bool allowRetry;
+}
+
+class ClinicalErrorMessage {
+  const ClinicalErrorMessage({
+    required this.message,
+    this.developerDiagnostics,
+  });
+
+  final String message;
+  final String? developerDiagnostics;
+}
 
 class ErrorMapper {
   static String map(Object error) {
+    return mapForUser(
+      error,
+      const ClinicalErrorContext(area: ClinicalErrorArea.unknown),
+    ).message;
+  }
+
+  static ClinicalErrorMessage mapForUser(
+    Object error,
+    ClinicalErrorContext context,
+  ) {
+    final developerDiagnostics = kDebugMode ? _diagnostic(error) : null;
+
     if (error is AuthException) {
-      final message = error.message;
       switch (error.statusCode) {
         case '400':
-          return message.isNotEmpty ? message : 'Authentication failed.';
+          return ClinicalErrorMessage(
+            message:
+                'We could not verify those credentials. Please check them and try again.',
+            developerDiagnostics: developerDiagnostics,
+          );
         case '429':
-          return 'Rate limit exceeded. Please wait a few minutes before trying again or use a different email.';
+          return ClinicalErrorMessage(
+            message:
+                'Too many attempts. Please wait a few minutes before trying again.',
+            developerDiagnostics: developerDiagnostics,
+          );
         default:
-          return message.isNotEmpty ? message : 'Authentication error.';
+          return ClinicalErrorMessage(
+            message:
+                'Authentication is unavailable right now. Please try again.',
+            developerDiagnostics: developerDiagnostics,
+          );
       }
     }
 
     if (error is PostgrestException) {
       if (error.code == '23503') {
-        return 'Profile Data Inconsistency: Your account profile is missing required internal records. Please contact support or try re-registering.';
+        return ClinicalErrorMessage(
+          message:
+              'Your profile is still being prepared. Please try again shortly or contact support.',
+          developerDiagnostics: developerDiagnostics,
+        );
       }
-      return error.message.isNotEmpty
-          ? error.message
-          : 'Database error (${error.code}).';
+      return ClinicalErrorMessage(
+        message: _messageForArea(context.area),
+        developerDiagnostics: developerDiagnostics,
+      );
     }
 
     if (error is StorageException) {
-      return error.message.isNotEmpty
-          ? error.message
-          : 'Storage error (${error.statusCode}).';
+      return ClinicalErrorMessage(
+        message:
+            'Unable to store this file right now. Please check the file and try again.',
+        developerDiagnostics: developerDiagnostics,
+      );
     }
 
-    if (error is FunctionException) {
-      final details = _functionDetails(error);
-      if (details != null && details.isNotEmpty) {
-        return details;
+    final maybeFunctionStatus = _functionStatus(error);
+    if (maybeFunctionStatus != null) {
+      if (maybeFunctionStatus == 401) {
+        return ClinicalErrorMessage(
+          message:
+              'Your session has expired. Please sign in again to continue.',
+          developerDiagnostics: developerDiagnostics,
+        );
       }
-
-      final msg = error.reasonPhrase ?? 'Function error (${error.status}).';
-      // If we have a status 401, it's definitely an auth/session issue
-      if (error.status == 401) {
-        return 'Session expired or unauthorized. Please log in again to continue.';
-      }
-      // If we have a status 400, try to return a more helpful message
-      if (error.status == 400) {
-        return 'Server error: $msg';
-      }
-      return msg;
+      return ClinicalErrorMessage(
+        message: _messageForArea(context.area),
+        developerDiagnostics: developerDiagnostics,
+      );
     }
 
     if (error is StateError) {
-      return error.message;
+      return ClinicalErrorMessage(
+        message: _sanitizeKnownUserMessage(error.message, context),
+        developerDiagnostics: developerDiagnostics,
+      );
     }
 
-    final errorStr = error.toString().toLowerCase();
+    final errorStr = _diagnostic(error).toLowerCase();
 
-    // Mask technical details / JSON / Gemini specific leakage
     if (errorStr.contains('unauthorized') ||
         errorStr.contains('invalid auth token') ||
         errorStr.contains('missing authorization')) {
-      return 'Session expired or unauthorized. Please log in again to continue.';
+      return ClinicalErrorMessage(
+        message: 'Your session has expired. Please sign in again to continue.',
+        developerDiagnostics: developerDiagnostics,
+      );
     }
 
     if (errorStr.contains('gemini') ||
@@ -65,44 +138,77 @@ class ErrorMapper {
         errorStr.contains('v1/') ||
         errorStr.contains('{') ||
         errorStr.contains('status:') ||
+        errorStr.contains('functionexception') ||
+        errorStr.contains('[object object]') ||
         errorStr.contains('bad request')) {
-      return 'Sorry, I\'m having trouble connecting right now. Please try again in a moment.';
+      return ClinicalErrorMessage(
+        message: _messageForArea(context.area),
+        developerDiagnostics: developerDiagnostics,
+      );
     }
 
-    return error.toString();
+    return ClinicalErrorMessage(
+      message: _sanitizeKnownUserMessage(_diagnostic(error), context),
+      developerDiagnostics: developerDiagnostics,
+    );
   }
 
-  static String? _functionDetails(FunctionException error) {
-    dynamic details;
+  static String _diagnostic(Object error) => '$error';
+
+  static int? _functionStatus(Object error) {
+    if (!error.runtimeType.toString().toLowerCase().contains('function')) {
+      return null;
+    }
     try {
-      details = (error as dynamic).details;
+      final status = (error as dynamic).status;
+      return status is int ? status : int.tryParse('$status');
     } catch (_) {
       return null;
     }
+  }
 
-    if (details is Map) {
-      final detailText = details['details']?.toString();
-      if (detailText != null &&
-          detailText.trim().isNotEmpty &&
-          detailText != '[object Object]') {
-        return detailText;
-      }
-
-      final errorText = details['error']?.toString();
-      if (errorText != null &&
-          errorText.trim().isNotEmpty &&
-          errorText != '[object Object]') {
-        return errorText;
-      }
+  static String _messageForArea(ClinicalErrorArea area) {
+    switch (area) {
+      case ClinicalErrorArea.auth:
+        return 'Unable to complete authentication right now. Please try again.';
+      case ClinicalErrorArea.upload:
+      case ClinicalErrorArea.storage:
+        return 'Unable to upload this file right now. Please try again.';
+      case ClinicalErrorArea.xrayAi:
+        return 'Unable to complete the AI analysis right now. Please try again.';
+      case ClinicalErrorArea.chatbot:
+        return 'VitaGuard AI is having trouble responding right now. Please try again.';
+      case ClinicalErrorArea.reports:
+        return 'Unable to save this clinical report right now. Please try again.';
+      case ClinicalErrorArea.alerts:
+        return 'Unable to update clinical alerts right now. Please try again.';
+      case ClinicalErrorArea.hardware:
+        return 'Unable to load hardware readings right now. Please check the connection.';
+      case ClinicalErrorArea.network:
+        return 'The network connection appears unstable. Please try again.';
+      case ClinicalErrorArea.database:
+      case ClinicalErrorArea.unknown:
+        return 'Unable to complete this request right now. Please try again.';
     }
+  }
 
-    final detailsText = details?.toString();
-    if (detailsText == null ||
-        detailsText.trim().isEmpty ||
-        detailsText.contains('[object Object]')) {
-      return null;
+  static String _sanitizeKnownUserMessage(
+    String message,
+    ClinicalErrorContext context,
+  ) {
+    final trimmed = message.trim();
+    final lower = trimmed.toLowerCase();
+    if (trimmed.isEmpty ||
+        lower.contains('exception') ||
+        lower.contains('stack') ||
+        lower.contains('supabase') ||
+        lower.contains('postgrest') ||
+        lower.contains('function') ||
+        lower.contains('[object object]') ||
+        lower.contains('{') ||
+        lower.contains('status:')) {
+      return _messageForArea(context.area);
     }
-
-    return detailsText;
+    return trimmed;
   }
 }

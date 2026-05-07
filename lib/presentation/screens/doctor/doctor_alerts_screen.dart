@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/core/alerts/alert_model.dart';
 import 'package:vitaguard_app/core/alerts/widgets/alert_card.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/core/alerts/alert_center_provider.dart';
@@ -49,7 +51,14 @@ class DoctorAlertsScreen extends ConsumerWidget {
                           Padding(
                             padding: EdgeInsets.symmetric(vertical: 20.h),
                             child: _EmptyDoctorAlerts(
-                              error: alertCenter.error?.toString(),
+                              error: alertCenter.error == null
+                                  ? null
+                                  : ErrorMapper.mapForUser(
+                                      alertCenter.error!,
+                                      const ClinicalErrorContext(
+                                        area: ClinicalErrorArea.alerts,
+                                      ),
+                                    ).message,
                             ),
                           ),
                         if (alerts.isNotEmpty)
@@ -66,7 +75,9 @@ class DoctorAlertsScreen extends ConsumerWidget {
                                 onAcknowledge: alert.isActive
                                     ? () {
                                         ref
-                                            .read(alertControllerProvider.notifier)
+                                            .read(
+                                              alertControllerProvider.notifier,
+                                            )
                                             .acknowledgeAlert(alert.id);
                                       }
                                     : null,
@@ -102,16 +113,14 @@ class DoctorAlertsScreen extends ConsumerWidget {
                             return AlertCard(
                               alert: alert,
                               showPatientName: true,
-                              onAcknowledge: alert.isActive && !alert.isAcknowledged
+                              onAcknowledge:
+                                  alert.isActive && !alert.isAcknowledged
                                   ? () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: const Text('Demo alert acknowledged!'),
-                                          behavior: SnackBarBehavior.floating,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10.r),
-                                          ),
-                                        ),
+                                      showClinicalPopup(
+                                        context,
+                                        type: ClinicalPopupType.success,
+                                        title: 'Alert Acknowledged',
+                                        message: 'Demo alert acknowledged.',
                                       );
                                     }
                                   : null,

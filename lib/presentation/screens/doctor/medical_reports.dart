@@ -5,6 +5,8 @@ import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/presentation/controllers/doctor/doctor_provider.dart';
 
@@ -47,17 +49,25 @@ class _MedicalReportsState extends ConsumerState<MedicalReports> {
     setState(() => _isLoading = false);
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Medical report uploaded successfully')),
+      showClinicalPopup(
+        context,
+        type: ClinicalPopupType.success,
+        title: 'Report Uploaded',
+        message: 'The medical report was uploaded successfully.',
       );
       Navigator.pop(context);
     } else {
-      final errMsg =
-          ref.read(doctorControllerProvider).error?.toString() ??
-          'Failed to upload report';
-      ScaffoldMessenger.of(
+      final mapped = ErrorMapper.mapForUser(
+        ref.read(doctorControllerProvider).error ?? 'Failed to upload report',
+        const ClinicalErrorContext(area: ClinicalErrorArea.upload),
+      );
+      showClinicalPopup(
         context,
-      ).showSnackBar(SnackBar(content: Text(errMsg)));
+        type: ClinicalPopupType.error,
+        title: 'Upload Failed',
+        message: mapped.message,
+        developerDiagnostics: mapped.developerDiagnostics,
+      );
     }
   }
 

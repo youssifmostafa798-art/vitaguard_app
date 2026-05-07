@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/presentation/screens/vitals/metric_card.dart';
 import 'package:vitaguard_app/features/vitals/service/alert_timer_service.dart';
 import 'package:vitaguard_app/presentation/widgets/vitals/vital_alert_banner.dart';
@@ -134,9 +136,13 @@ class _HardwareScreenState extends ConsumerState<HardwareScreen>
       }
     } catch (error) {
       if (mounted) {
+        final mapped = ErrorMapper.mapForUser(
+          error,
+          const ClinicalErrorContext(area: ClinicalErrorArea.hardware),
+        );
         setState(() {
           _isLoadingVitals = false;
-          _subscriptionError = 'Unable to load hardware readings: $error';
+          _subscriptionError = mapped.message;
         });
       }
     }
@@ -281,11 +287,16 @@ class _HardwareScreenState extends ConsumerState<HardwareScreen>
 
           // ── Main scrollable content ────────────────────────────────────────
           if (_subscriptionError != null || _isLoadingVitals)
-            _HardwareSyncBanner(
+            ClinicalFeedbackPanel(
+              type: _isLoadingVitals
+                  ? ClinicalPopupType.loading
+                  : ClinicalPopupType.warning,
+              title: _isLoadingVitals
+                  ? 'Connecting Hardware'
+                  : 'Hardware Sync Issue',
               message:
                   _subscriptionError ??
                   'Connecting to real-time hardware readings...',
-              isLoading: _isLoadingVitals,
             ),
           Expanded(
             child: AppBackground(
@@ -477,58 +488,6 @@ class _HardwareScreenState extends ConsumerState<HardwareScreen>
 }
 
 // ─── Heart-rate ring ──────────────────────────────────────────────────────────
-
-class _HardwareSyncBanner extends StatelessWidget {
-  const _HardwareSyncBanner({required this.message, required this.isLoading});
-
-  final String message;
-  final bool isLoading;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: EdgeInsets.fromLTRB(18.w, 10.h, 18.w, 0),
-      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-      decoration: BoxDecoration(
-        color: isLoading ? const Color(0xFFE8F5FF) : const Color(0xFFFFF4E5),
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(
-          color: isLoading ? const Color(0xFF90CAF9) : const Color(0xFFFFD08A),
-        ),
-      ),
-      child: Row(
-        children: [
-          if (isLoading)
-            SizedBox(
-              width: 16.r,
-              height: 16.r,
-              child: const CircularProgressIndicator(strokeWidth: 2),
-            )
-          else
-            Icon(
-              Icons.info_outline_rounded,
-              color: const Color(0xFF8A5200),
-              size: 18.r,
-            ),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: Text(
-              message,
-              style: TextStyle(
-                color: isLoading
-                    ? const Color(0xFF0D47A1)
-                    : const Color(0xFF8A5200),
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _HeartRateRing extends StatelessWidget {
   final String bpm;

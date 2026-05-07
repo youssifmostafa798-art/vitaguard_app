@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/data/models/patient/patient_models.dart';
 import 'package:vitaguard_app/presentation/widgets/xray/phase1_diagnosis_panel.dart';
@@ -96,14 +98,20 @@ class _DoctorTwoPhaseReviewScreenState
       _aiViewData = null;
     });
 
-    final ok = await ref.read(patientControllerProvider.notifier).analyzeXRay(widget.xRayFile);
+    final ok = await ref
+        .read(patientControllerProvider.notifier)
+        .analyzeXRay(widget.xRayFile);
 
     if (!mounted) return;
 
     if (!ok) {
+      final mapped = ErrorMapper.mapForUser(
+        ref.read(patientControllerProvider).error ?? 'Analysis failed',
+        const ClinicalErrorContext(area: ClinicalErrorArea.xrayAi),
+      );
       setState(() {
         _aiLoading = false;
-        _aiError = ref.read(patientControllerProvider).error?.toString() ?? 'Analysis failed';
+        _aiError = mapped.message;
       });
       return;
     }
@@ -120,12 +128,12 @@ class _DoctorTwoPhaseReviewScreenState
 
   void _onContinueToAi() {
     if (!_phase1Valid) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
+      showClinicalPopup(
+        context,
+        type: ClinicalPopupType.warning,
+        title: 'Clinical Review Needed',
+        message:
             'Select at least one finding or enter clinical notes before continuing.',
-          ),
-        ),
       );
       return;
     }
@@ -146,8 +154,11 @@ class _DoctorTwoPhaseReviewScreenState
     );
     if (!mounted) return;
     setState(() => _decisionBusy = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Final decision saved: Confirmed AI')),
+    showClinicalPopup(
+      context,
+      type: ClinicalPopupType.success,
+      title: 'Decision Saved',
+      message: 'Final decision saved: confirmed AI.',
     );
     widget.onDecisionRecorded?.call(_record!);
     widget.onReviewFinished?.call();
@@ -155,13 +166,13 @@ class _DoctorTwoPhaseReviewScreenState
 
   Future<void> _onOverrideAi() async {
     final reasonCtrl = TextEditingController();
-    final overrideText = await showDialog<String>(
+    final overrideText = await showClinicalActionDialog<String>(
       context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text('Override AI'),
-          content: Column(
+      type: ClinicalPopupType.warning,
+      title: 'Override AI',
+      content: StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          return Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -179,29 +190,22 @@ class _DoctorTwoPhaseReviewScreenState
                 ),
               ),
             ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final t = reasonCtrl.text.trim();
-                if (t.isEmpty) {
-                  ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(
-                      content: Text('Reason is required to override.'),
-                    ),
-                  );
-                  return;
-                }
-                Navigator.pop(ctx, t);
-              },
-              child: const Text('Save override'),
-            ),
-          ],
-        );
+          );
+        },
+      ),
+      primaryLabel: 'Save override',
+      onPrimary: () {
+        final t = reasonCtrl.text.trim();
+        if (t.isEmpty) {
+          showClinicalPopup(
+            context,
+            type: ClinicalPopupType.warning,
+            title: 'Override Reason Required',
+            message: 'Enter a clinical reason before saving the override.',
+          );
+          return;
+        }
+        Navigator.pop(context, t);
       },
     );
 
@@ -221,8 +225,11 @@ class _DoctorTwoPhaseReviewScreenState
     );
     if (!mounted) return;
     setState(() => _decisionBusy = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Final decision saved: Overridden')),
+    showClinicalPopup(
+      context,
+      type: ClinicalPopupType.success,
+      title: 'Override Saved',
+      message: 'Final decision saved: overridden.',
     );
     widget.onDecisionRecorded?.call(_record!);
     widget.onReviewFinished?.call();
@@ -270,13 +277,13 @@ class _DoctorTwoPhaseReviewScreenState
                 ),
               ),
             ] else if (_aiError != null) ...[
-              Icon(
-                Icons.error_outline,
-                color: Colors.red.shade700,
-                size: 40.sp,
+              ClinicalFeedbackPanel(
+                type: ClinicalPopupType.error,
+                title: 'AI Analysis Failed',
+                message: _aiError!,
+                actionLabel: 'Retry AI analysis',
+                onAction: _runAiAnalysis,
               ),
-              Gap(8.h),
-              Text(_aiError!, style: Theme.of(context).textTheme.bodyMedium),
               Gap(16.h),
               FilledButton.tonal(
                 onPressed: _runAiAnalysis,

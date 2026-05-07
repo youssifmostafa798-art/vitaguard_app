@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/presentation/screens/vitals/hardware_screen.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
@@ -578,11 +579,12 @@ class _DailyReportsState extends ConsumerState<DailyReports> {
             model: patient,
             isDemoData: true,
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('This is a demo report.'),
-                  duration: Duration(seconds: 2),
-                ),
+              showClinicalPopup(
+                context,
+                type: ClinicalPopupType.info,
+                title: 'Demo Report',
+                message: 'This is a demo report.',
+                duration: const Duration(seconds: 2),
               );
             },
           ),
@@ -698,7 +700,8 @@ class _DailyReportCard extends StatelessWidget {
                           _StatusBadge(status: model.status),
                         ],
                       ),
-                      if (model.notes.isNotEmpty && model.notes != 'No reports yet') ...[
+                      if (model.notes.isNotEmpty &&
+                          model.notes != 'No reports yet') ...[
                         Gap(10.h),
                         Text(
                           model.notes,
@@ -830,9 +833,7 @@ class _MetricTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFF8F9FB),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: AppColors.border.withValues(alpha: 0.4),
-        ),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/data/models/companion/companion_models.dart';
 import 'package:vitaguard_app/presentation/screens/companion/alarts.dart';
 import 'package:vitaguard_app/data/models/category_model.dart';
@@ -7,8 +8,7 @@ import 'package:vitaguard_app/presentation/screens/patient/daily_report.dart';
 import 'package:vitaguard_app/presentation/screens/patient/medical_history_screen.dart';
 
 List<CategoryModel> homeCategoriesCompanion(
-  BuildContext context,
-  {
+  BuildContext context, {
   LinkedPatientStatus? patientStatus,
 }) {
   return [
@@ -17,10 +17,11 @@ List<CategoryModel> homeCategoriesCompanion(
       title: "Medical history",
       onTap: () {
         if (patientStatus == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Link a patient account before opening medical history.'),
-            ),
+          showClinicalPopup(
+            context,
+            type: ClinicalPopupType.warning,
+            title: 'Patient Link Required',
+            message: 'Link a patient account before opening medical history.',
           );
           return;
         }

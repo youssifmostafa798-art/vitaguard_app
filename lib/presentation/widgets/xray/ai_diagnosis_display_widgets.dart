@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/presentation/widgets/xray/heatmap_overlay_placeholder.dart';
 import 'package:vitaguard_app/presentation/widgets/xray/ai_layer_toggle.dart';
@@ -124,10 +125,12 @@ class XRayImageWithOptionalHeatmap extends StatelessWidget {
               child: Image.file(
                 imageFile,
                 fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => ColoredBox(
-                  color: Colors.grey.shade300,
-                  child: Center(
-                    child: Icon(Icons.broken_image_outlined, size: 48.sp),
+                errorBuilder: (context, error, stackTrace) => Padding(
+                  padding: EdgeInsets.all(12.r),
+                  child: const ClinicalFeedbackPanel(
+                    type: ClinicalPopupType.warning,
+                    title: 'Image Unavailable',
+                    message: 'Unable to preview this X-ray image.',
                   ),
                 ),
               ),
@@ -239,10 +242,11 @@ class ClinicalToolbar extends StatelessWidget {
                 icon: Icons.straighten,
                 label: 'Measure',
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Measurement tool coming soon'),
-                    ),
+                  showClinicalPopup(
+                    context,
+                    type: ClinicalPopupType.info,
+                    title: 'Measurement Tool',
+                    message: 'Measurement tools are coming soon.',
                   );
                 },
               ),
@@ -712,71 +716,29 @@ class AiErrorDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    const amberBase = Color(0xFFF39C12);
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(20.r),
-      decoration: BoxDecoration(
-        color: amberBase.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: amberBase.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.warning_amber_rounded, size: 48.sp, color: amberBase),
-          Gap(16.h),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
+    return Column(
+      children: [
+        ClinicalFeedbackPanel(
+          type: ClinicalPopupType.warning,
+          title: message,
+          message: advice.isEmpty
+              ? 'Clinical judgment is required before continuing.'
+              : advice,
+          actionLabel: 'Try Again',
+          onAction: onRetry,
+        ),
+        Gap(12.h),
+        OutlinedButton.icon(
+          onPressed: onUploadNew,
+          icon: const Icon(Icons.upload_file_outlined),
+          label: const Text('New Upload'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.textSecondary,
+            side: BorderSide(color: AppColors.border),
+            padding: EdgeInsets.symmetric(vertical: 12.h),
           ),
-          Gap(8.h),
-          Text(
-            advice,
-            textAlign: TextAlign.center,
-            style: textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.4,
-            ),
-          ),
-          Gap(24.h),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onUploadNew,
-                  icon: const Icon(Icons.upload_file_outlined),
-                  label: const Text('New Upload'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary,
-                    side: BorderSide(color: AppColors.border),
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
-                  ),
-                ),
-              ),
-              Gap(12.w),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: onRetry,
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Try Again'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

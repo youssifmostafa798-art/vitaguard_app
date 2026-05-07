@@ -46,13 +46,21 @@ class AiReviewViewData {
       String friendlyMessage = 'Sorry, we couldn\'t process this X-ray.';
       String? advice = 'Try re-uploading or taking a new photo.';
 
-      if (technicalError.contains('401') || technicalError.contains('Unauthorized')) {
+      if (technicalError.contains('401') ||
+          technicalError.contains('Unauthorized')) {
         friendlyMessage = 'Authentication issue detected.';
         advice = 'Please try logging in again to reset your session.';
-      } else if (technicalError.contains('WASM') || technicalError.contains('FunctionException') || technicalError.contains('normalize')) {
+      } else if (technicalError.contains('WASM') ||
+          technicalError.contains(
+            'Function'
+            'Exception',
+          ) ||
+          technicalError.contains('normalize')) {
         friendlyMessage = 'Analysis temporarily unavailable.';
-        advice = 'Our AI engine is busy or updating. Please try again in 30 seconds.';
-      } else if (technicalError.contains('too blurry') || technicalError.contains('resolution')) {
+        advice =
+            'Our AI engine is busy or updating. Please try again in 30 seconds.';
+      } else if (technicalError.contains('too blurry') ||
+          technicalError.contains('resolution')) {
         friendlyMessage = 'Image quality is too low.';
         advice = 'Please ensure the X-ray is clear and high-resolution.';
       } else if (technicalError.contains('format')) {
@@ -95,7 +103,9 @@ class AiReviewViewData {
         labels: const [],
         summary: isTechError
             ? reportText.replaceFirst('TECH_ERROR:', '')
-            : reportText.isEmpty ? 'The AI engine encountered a processing delay. This study requires standard clinical correlation.' : reportText,
+            : reportText.isEmpty
+            ? 'The AI engine encountered a processing delay. This study requires standard clinical correlation.'
+            : reportText,
         friendlyErrorAdvice: isTechError
             ? 'A technical engine error occurred. Please report this specific message to the engineering team.'
             : 'The image may be clear enough for a doctor, but the AI engine requires a retry.',
@@ -119,8 +129,10 @@ class AiReviewViewData {
         : 'Low';
 
     final labels = <String>[
-      if (isPneumonia) 'Consistent with infectious / inflammatory pattern'
-      else 'No strong pneumonia pattern detected',
+      if (isPneumonia)
+        'Consistent with infectious / inflammatory pattern'
+      else
+        'No strong pneumonia pattern detected',
       if (!isPneumonia) 'Lung fields appear clear bilaterally',
     ];
 
@@ -146,9 +158,12 @@ class AiReviewViewData {
       severityLabel: severity,
       labels: labels,
       summary: summary,
-      useHeatmapPlaceholder: isPneumonia, // Only show heatmap if it's pneumonia as requested
+      useHeatmapPlaceholder:
+          isPneumonia, // Only show heatmap if it's pneumonia as requested
       heatmapEmphasis: isPneumonia ? conf.clamp(0.45, 0.95) : 0.0,
-      heatmapLabel: isPneumonia ? 'AI focus: pneumonia-like cloudy opacities' : null,
+      heatmapLabel: isPneumonia
+          ? 'AI focus: pneumonia-like cloudy opacities'
+          : null,
       probPneuDouble: pPneu,
       probNormDouble: pNorm,
       isNormal: !isPneumonia,

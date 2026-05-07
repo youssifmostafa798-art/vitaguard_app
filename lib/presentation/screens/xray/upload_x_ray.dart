@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/presentation/screens/xray/ai_xray_result_screen.dart';
 import 'package:vitaguard_app/presentation/controllers/patient/patient_provider.dart';
@@ -43,15 +45,21 @@ class _UploadXRayState extends ConsumerState<UploadXRay> {
   void _handleScan() async {
     if (widget.requiresPatientContext &&
         (widget.patientId == null || widget.patientId!.trim().isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Linked patient is still syncing.')),
+      showClinicalPopup(
+        context,
+        type: ClinicalPopupType.info,
+        title: 'Patient Syncing',
+        message: 'Linked patient information is still syncing.',
       );
       return;
     }
 
     if (_selectedImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select an X-ray image first')),
+      showClinicalPopup(
+        context,
+        type: ClinicalPopupType.warning,
+        title: 'X-Ray Required',
+        message: 'Please select an X-ray image before scanning.',
       );
       return;
     }
@@ -79,13 +87,16 @@ class _UploadXRayState extends ConsumerState<UploadXRay> {
       );
     } else {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            ref.read(patientControllerProvider).error?.toString() ??
-                'Analysis failed',
-          ),
-        ),
+      final mapped = ErrorMapper.mapForUser(
+        ref.read(patientControllerProvider).error ?? 'Analysis failed',
+        const ClinicalErrorContext(area: ClinicalErrorArea.xrayAi),
+      );
+      showClinicalPopup(
+        context,
+        type: ClinicalPopupType.error,
+        title: 'Analysis Failed',
+        message: mapped.message,
+        developerDiagnostics: mapped.developerDiagnostics,
       );
     }
   }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/features/patient/main_patient.dart';
 import 'package:vitaguard_app/features/doctor/main_doctor.dart';
 import 'package:vitaguard_app/features/companion/main_companion.dart';
@@ -54,8 +56,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     final password = passCtrl.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter your credentials")),
+      showClinicalPopup(
+        context,
+        type: ClinicalPopupType.warning,
+        title: 'Credentials Required',
+        message: 'Please enter your email and password to continue.',
       );
       return;
     }
@@ -95,13 +100,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       );
     } else {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            ref.read(authControllerProvider).error?.toString() ??
-                'Login failed',
-          ),
-        ),
+      final mapped = ErrorMapper.mapForUser(
+        ref.read(authControllerProvider).error ?? 'Login failed',
+        const ClinicalErrorContext(area: ClinicalErrorArea.auth),
+      );
+      showClinicalPopup(
+        context,
+        type: ClinicalPopupType.error,
+        title: 'Sign In Failed',
+        message: mapped.message,
+        developerDiagnostics: mapped.developerDiagnostics,
       );
     }
   }

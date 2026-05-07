@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cross_file/cross_file.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/presentation/screens/auth/create_account_screen.dart';
 import 'package:vitaguard_app/presentation/widgets/auth/image_of_the_record.dart';
 import 'package:vitaguard_app/presentation/widgets/auth/signup_success_dialog.dart';
@@ -34,7 +35,14 @@ class _FacilityRegisterScreenState
     return CreateAccountScreen(
       title: "Create Facility Account",
       buttonText: "Sign up",
-      errorMessage: _localError ?? authState.error?.toString(),
+      errorMessage:
+          _localError ??
+          (authState.error == null
+              ? null
+              : ErrorMapper.mapForUser(
+                  authState.error!,
+                  const ClinicalErrorContext(area: ClinicalErrorArea.auth),
+                ).message),
       fields: [
         {
           'hint': 'Name of Facility',
@@ -137,9 +145,10 @@ class _FacilityRegisterScreenState
         } else {
           if (!context.mounted) return;
           setState(
-            () => _localError =
-                ref.read(authControllerProvider).error?.toString() ??
-                'Registration failed',
+            () => _localError = ErrorMapper.mapForUser(
+              ref.read(authControllerProvider).error ?? 'Registration failed',
+              const ClinicalErrorContext(area: ClinicalErrorArea.auth),
+            ).message,
           );
         }
       },

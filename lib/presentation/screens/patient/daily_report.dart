@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/data/models/patient/patient_models.dart';
 import 'package:vitaguard_app/presentation/controllers/patient/patient_provider.dart';
@@ -36,19 +38,25 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
 
     if (success) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Report saved successfully')),
+      showClinicalPopup(
+        context,
+        type: ClinicalPopupType.success,
+        title: 'Report Saved',
+        message: 'Your daily report was saved successfully.',
       );
       Navigator.pop(context);
     } else {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            ref.read(patientControllerProvider).error?.toString() ??
-                'Failed to save report',
-          ),
-        ),
+      final mapped = ErrorMapper.mapForUser(
+        ref.read(patientControllerProvider).error ?? 'Failed to save report',
+        const ClinicalErrorContext(area: ClinicalErrorArea.reports),
+      );
+      showClinicalPopup(
+        context,
+        type: ClinicalPopupType.error,
+        title: 'Report Not Saved',
+        message: mapped.message,
+        developerDiagnostics: mapped.developerDiagnostics,
       );
     }
   }

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 
 /// Raw image only — no AI overlays (Phase 1).
 class RawXRayViewer extends StatelessWidget {
@@ -18,10 +19,12 @@ class RawXRayViewer extends StatelessWidget {
           child: Image.file(
             imageFile,
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => ColoredBox(
-              color: Colors.grey.shade300,
-              child: Center(
-                child: Icon(Icons.broken_image_outlined, size: 48.sp),
+            errorBuilder: (context, error, stackTrace) => Padding(
+              padding: EdgeInsets.all(12.r),
+              child: const ClinicalFeedbackPanel(
+                type: ClinicalPopupType.warning,
+                title: 'Image Unavailable',
+                message: 'Unable to preview this X-ray image.',
               ),
             ),
           ),

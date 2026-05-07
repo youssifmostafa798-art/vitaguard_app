@@ -4,6 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/data/repositories/facility/facility_repository.dart';
 
@@ -58,8 +59,11 @@ class _AddOfferState extends State<AddOffer> {
   Future<void> _saveOffer() async {
     if (nameController.text.trim().isEmpty ||
         detailsController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill name and details")),
+      showClinicalPopup(
+        context,
+        type: ClinicalPopupType.warning,
+        title: 'Offer Details Required',
+        message: 'Please fill in the offer name and details.',
       );
       return;
     }
@@ -79,16 +83,25 @@ class _AddOfferState extends State<AddOffer> {
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Offer created successfully")),
+      showClinicalPopup(
+        context,
+        type: ClinicalPopupType.success,
+        title: 'Offer Created',
+        message: 'The facility offer was created successfully.',
       );
       Navigator.pop(context, nameController.text);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Failed to create offer: ${ErrorMapper.map(e)}"),
-        ),
+      final mapped = ErrorMapper.mapForUser(
+        e,
+        const ClinicalErrorContext(area: ClinicalErrorArea.reports),
+      );
+      showClinicalPopup(
+        context,
+        type: ClinicalPopupType.error,
+        title: 'Offer Not Created',
+        message: mapped.message,
+        developerDiagnostics: mapped.developerDiagnostics,
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);

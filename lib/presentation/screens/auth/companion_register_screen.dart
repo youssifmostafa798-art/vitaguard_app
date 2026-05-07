@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/presentation/widgets/auth/auth_error_banner.dart';
 import 'package:vitaguard_app/presentation/widgets/auth/auth_textfield.dart';
 import 'package:vitaguard_app/presentation/widgets/auth/signup_success_dialog.dart';
@@ -42,7 +44,15 @@ class _CompanionRegisterScreenState
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final isLoading = authState.isLoading;
-    final effectiveError = _localError ?? authState.error?.toString() ?? '';
+    final effectiveError =
+        _localError ??
+        (authState.error == null
+            ? null
+            : ErrorMapper.mapForUser(
+                authState.error!,
+                const ClinicalErrorContext(area: ClinicalErrorArea.auth),
+              ).message) ??
+        '';
     final hasError = effectiveError.trim().isNotEmpty;
 
     return Scaffold(
@@ -75,20 +85,15 @@ class _CompanionRegisterScreenState
                               size: 24.r,
                             ),
                             onPressed: () {
-                              showDialog(
+                              showClinicalActionDialog<void>(
                                 context: context,
-                                builder: (ctx) => AlertDialog(
-                                  title: const Text("Companion Code"),
-                                  content: const Text(
-                                    "To monitor a patient's health, you must enter their unique 6-digit companion code.\n\nThe patient can find this code in their profile tab.",
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(ctx),
-                                      child: const Text("Got it"),
-                                    ),
-                                  ],
+                                type: ClinicalPopupType.info,
+                                title: 'Companion Code',
+                                content: const Text(
+                                  "To monitor a patient's health, enter their unique 6-digit companion code. The patient can find this code in their profile tab.",
                                 ),
+                                primaryLabel: 'Got it',
+                                onPrimary: () => Navigator.pop(context),
                               );
                             },
                           ),

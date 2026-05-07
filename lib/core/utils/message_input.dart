@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 
 class MessageInput extends StatelessWidget {
   final TextEditingController controller;
@@ -57,7 +58,9 @@ class MessageInput extends StatelessWidget {
               final isTyping = value.text.trim().isNotEmpty;
               return CircleAvatar(
                 radius: 24.r,
-                backgroundColor: enabled ? const Color(0xFF00A3FF) : Colors.grey,
+                backgroundColor: enabled
+                    ? const Color(0xFF00A3FF)
+                    : Colors.grey,
                 child: IconButton(
                   icon: Icon(
                     isTyping ? Icons.send : Icons.mic,
@@ -66,12 +69,15 @@ class MessageInput extends StatelessWidget {
                   ),
                   onPressed: enabled
                       ? (isTyping
-                          ? onSend
-                          : () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Voice input coming soon!')),
-                              );
-                            })
+                            ? onSend
+                            : () {
+                                showClinicalPopup(
+                                  context,
+                                  type: ClinicalPopupType.info,
+                                  title: 'Voice Input',
+                                  message: 'Voice input is coming soon.',
+                                );
+                              })
                       : null,
                 ),
               );

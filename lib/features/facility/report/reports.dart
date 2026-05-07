@@ -4,6 +4,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/data/repositories/facility/facility_repository.dart';
 
@@ -51,10 +53,11 @@ class _ReportsState extends State<Reports> {
 
   Future<void> _uploadReport() async {
     if (_phoneController.text.trim().isEmpty || _selectedFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please enter mobile number and select a file"),
-        ),
+      showClinicalPopup(
+        context,
+        type: ClinicalPopupType.warning,
+        title: 'Report Details Required',
+        message: 'Please enter the mobile number and select a report file.',
       );
       return;
     }
@@ -70,15 +73,26 @@ class _ReportsState extends State<Reports> {
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Report uploaded successfully")),
+      showClinicalPopup(
+        context,
+        type: ClinicalPopupType.success,
+        title: 'Report Uploaded',
+        message: 'The medical report was uploaded successfully.',
       );
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
+      final mapped = ErrorMapper.mapForUser(
+        e,
+        const ClinicalErrorContext(area: ClinicalErrorArea.upload),
+      );
+      showClinicalPopup(
         context,
-      ).showSnackBar(SnackBar(content: Text("Upload failed: $e")));
+        type: ClinicalPopupType.error,
+        title: 'Upload Failed',
+        message: mapped.message,
+        developerDiagnostics: mapped.developerDiagnostics,
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

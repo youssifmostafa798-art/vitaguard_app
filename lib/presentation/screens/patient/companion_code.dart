@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/core/utils/simple_buttom.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/presentation/controllers/patient/patient_provider.dart';
@@ -30,19 +32,23 @@ class _CompanionCodeState extends ConsumerState<CompanionCode> {
         .read(patientControllerProvider.notifier)
         .regenerateCompanionCode();
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Companion code regenerated successfully"),
-        ),
+      showClinicalPopup(
+        context,
+        type: ClinicalPopupType.success,
+        title: 'Code Regenerated',
+        message: 'Companion code regenerated successfully.',
       );
     }
   }
 
   void _copyToClipboard(String code) {
     Clipboard.setData(ClipboardData(text: code));
-    ScaffoldMessenger.of(
+    showClinicalPopup(
       context,
-    ).showSnackBar(const SnackBar(content: Text("Code copied to clipboard")));
+      type: ClinicalPopupType.success,
+      title: 'Code Copied',
+      message: 'Companion code copied to clipboard.',
+    );
   }
 
   @override
@@ -122,11 +128,15 @@ class _CompanionCodeState extends ConsumerState<CompanionCode> {
                   onTap: patient.isLoading ? null : _regenerateCode,
                 ),
 
-                if (patient.error?.toString() != null) ...[
+                if (patient.error != null) ...[
                   const Gap(10),
-                  Text(
-                    patient.error?.toString() ?? '',
-                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ClinicalFeedbackPanel(
+                    type: ClinicalPopupType.error,
+                    title: 'Companion Code Unavailable',
+                    message: ErrorMapper.mapForUser(
+                      patient.error!,
+                      const ClinicalErrorContext(area: ClinicalErrorArea.auth),
+                    ).message,
                   ),
                 ],
               ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vitaguard_app/presentation/screens/auth/create_account_screen.dart';
 import 'package:vitaguard_app/presentation/widgets/auth/signup_success_dialog.dart';
 import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/data/models/patient/patient_models.dart';
 import 'package:vitaguard_app/data/repositories/patient/patient_repository.dart';
 import 'package:vitaguard_app/presentation/screens/patient/medical_history_screen.dart';
@@ -50,17 +51,23 @@ class _PatientRegisterScreenState extends ConsumerState<PatientRegisterScreen> {
     );
 
     if (success) {
-      if (_draftHistory != null && await ref.read(authControllerProvider.notifier).isAuthenticated()) {
+      if (_draftHistory != null &&
+          await ref.read(authControllerProvider.notifier).isAuthenticated()) {
         try {
           await PatientRepository().updateMedicalHistory(_draftHistory!);
         } catch (e) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Account created, but medical history could not be saved: ${ErrorMapper.map(e)}',
-                ),
-              ),
+            final mapped = ErrorMapper.mapForUser(
+              e,
+              const ClinicalErrorContext(area: ClinicalErrorArea.reports),
+            );
+            showClinicalPopup(
+              context,
+              type: ClinicalPopupType.warning,
+              title: 'Medical History Not Saved',
+              message:
+                  'Your account was created, but medical history could not be saved. ${mapped.message}',
+              developerDiagnostics: mapped.developerDiagnostics,
             );
           }
         }
@@ -71,7 +78,11 @@ class _PatientRegisterScreenState extends ConsumerState<PatientRegisterScreen> {
       await showSignupSuccessDialog(context);
     } else {
       if (!mounted) return;
-      setState(() => _localError = ref.read(authControllerProvider).error?.toString() ?? 'Registration failed');
+      final mapped = ErrorMapper.mapForUser(
+        ref.read(authControllerProvider).error ?? 'Registration failed',
+        const ClinicalErrorContext(area: ClinicalErrorArea.auth),
+      );
+      setState(() => _localError = mapped.message);
     }
   }
 
@@ -81,7 +92,14 @@ class _PatientRegisterScreenState extends ConsumerState<PatientRegisterScreen> {
     return CreateAccountScreen(
       title: "Create Patient Account",
       buttonText: "sign up",
-      errorMessage: _localError ?? authState.error?.toString(),
+      errorMessage:
+          _localError ??
+          (authState.error == null
+              ? null
+              : ErrorMapper.mapForUser(
+                  authState.error!,
+                  const ClinicalErrorContext(area: ClinicalErrorArea.auth),
+                ).message),
       fields: [
         {
           'hint': 'User Name',

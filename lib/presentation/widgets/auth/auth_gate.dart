@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/presentation/controllers/auth/auth_provider.dart';
 import 'package:vitaguard_app/presentation/screens/onboarding/onboarding_screen.dart';
 import 'package:vitaguard_app/presentation/screens/splash_screen.dart';
@@ -72,6 +74,10 @@ class _AuthErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mapped = ErrorMapper.mapForUser(
+      error,
+      const ClinicalErrorContext(area: ClinicalErrorArea.auth),
+    );
     return Scaffold(
       body: Center(
         child: Padding(
@@ -79,17 +85,11 @@ class _AuthErrorScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 24),
-              const Text(
-                'Authentication Error',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                error.toString(),
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.grey),
+              ClinicalFeedbackPanel(
+                type: ClinicalPopupType.error,
+                title: 'Authentication Error',
+                message: mapped.message,
+                developerDiagnostics: mapped.developerDiagnostics,
               ),
               const SizedBox(height: 32),
               ElevatedButton(onPressed: onRetry, child: const Text('Retry')),

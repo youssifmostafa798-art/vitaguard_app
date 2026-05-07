@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:vitaguard_app/features/companion/data/home_categories_companion.dart';
+import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/presentation/widgets/patient/category_item.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vitaguard_app/presentation/controllers/companion/companion_provider.dart';
@@ -32,14 +34,17 @@ class CategoryGridCompanion extends ConsumerWidget {
 
         const Gap(15),
 
-        if (companionState.error?.toString() != null &&
+        if (companionState.error != null &&
             companionState.patientStatus == null)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              companionState.error?.toString() ?? '',
-              style: const TextStyle(color: Colors.redAccent),
-              textAlign: TextAlign.center,
+            child: ClinicalFeedbackPanel(
+              type: ClinicalPopupType.warning,
+              title: 'Patient Link Unavailable',
+              message: ErrorMapper.mapForUser(
+                companionState.error!,
+                const ClinicalErrorContext(area: ClinicalErrorArea.auth),
+              ).message,
             ),
           ),
 
