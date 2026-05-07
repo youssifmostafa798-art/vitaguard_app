@@ -47,20 +47,65 @@ class DoctorAlertsScreen extends ConsumerWidget {
                             padding: EdgeInsets.symmetric(vertical: 40),
                             child: Center(child: CircularProgressIndicator()),
                           ),
-                        if (alerts.isEmpty && !alertCenter.isLoading)
+                        if (alerts.isEmpty && !alertCenter.isLoading && alertCenter.error != null)
                           Padding(
                             padding: EdgeInsets.symmetric(vertical: 20.h),
                             child: _EmptyDoctorAlerts(
-                              error: alertCenter.error == null
-                                  ? null
-                                  : ErrorMapper.mapForUser(
-                                      alertCenter.error!,
-                                      const ClinicalErrorContext(
-                                        area: ClinicalErrorArea.alerts,
-                                      ),
-                                    ).message,
+                              error: ErrorMapper.mapForUser(
+                                alertCenter.error!,
+                                const ClinicalErrorContext(
+                                  area: ClinicalErrorArea.alerts,
+                                ),
+                              ).message,
                             ),
                           ),
+                        if (alerts.isEmpty && !alertCenter.isLoading && alertCenter.error == null) ...[
+                          Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 8.w),
+                            child: Row(
+                              children: [
+                                Icon(Icons.science_outlined, color: AppColors.primary, size: 20.sp),
+                                SizedBox(width: 8.w),
+                                Text(
+                                  'Sample Data (No active alerts)',
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _getDemoAlerts().length,
+                            separatorBuilder: (_, _) => SizedBox(height: 14.h),
+                            itemBuilder: (context, index) {
+                              final alert = _getDemoAlerts()[index];
+                              return Stack(
+                                children: [
+                                  AlertCard(
+                                    alert: alert,
+                                    showPatientName: true,
+                                    onAcknowledge:
+                                        alert.isActive && !alert.isAcknowledged
+                                        ? () {
+                                            showClinicalPopup(
+                                              context,
+                                              type: ClinicalPopupType.success,
+                                              title: 'Alert Acknowledged',
+                                              message: 'Demo alert acknowledged.',
+                                            );
+                                          }
+                                        : null,
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ],
                         if (alerts.isNotEmpty)
                           ListView.separated(
                             shrinkWrap: true,
@@ -84,32 +129,6 @@ class DoctorAlertsScreen extends ConsumerWidget {
                               );
                             },
                           ),
-
-                        SizedBox(height: 16.h),
-                        ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _getDemoAlerts().length,
-                          separatorBuilder: (_, _) => SizedBox(height: 14.h),
-                          itemBuilder: (context, index) {
-                            final alert = _getDemoAlerts()[index];
-                            return AlertCard(
-                              alert: alert,
-                              showPatientName: true,
-                              onAcknowledge:
-                                  alert.isActive && !alert.isAcknowledged
-                                  ? () {
-                                      showClinicalPopup(
-                                        context,
-                                        type: ClinicalPopupType.success,
-                                        title: 'Alert Acknowledged',
-                                        message: 'Demo alert acknowledged.',
-                                      );
-                                    }
-                                  : null,
-                            );
-                          },
-                        ),
                         SizedBox(height: 32.h),
                       ],
                     ),

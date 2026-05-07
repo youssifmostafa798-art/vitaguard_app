@@ -71,21 +71,21 @@ class FacilityRepository {
       ),
     );
 
-    final insertError = await _client.from('facility_tests').insert({
-      'id': reportId,
-      'facility_id': _uid,
-      'patient_id': resolvedPatientId,
-      'test_type': testType,
-      'file_path': storagePath,
-      'notes': notes,
-    }).then((_) => null, onError: (e) => e);
-
-    if (insertError != null) {
+    try {
+      await _client.from('facility_tests').insert({
+        'id': reportId,
+        'facility_id': _uid,
+        'patient_id': resolvedPatientId,
+        'test_type': testType,
+        'file_path': storagePath,
+        'notes': notes,
+      });
+    } catch (e) {
       // Best-effort cleanup — don't let a stale file linger.
       try {
         await _client.storage.from('lab-reports').remove([storagePath]);
       } catch (_) {}
-      throw insertError;
+      rethrow;
     }
   }
 
@@ -134,6 +134,29 @@ class FacilityRepository {
       );
 
       imagePath = storagePath;
+    }
+
+    // Ensure facility profile exists to prevent "Profile Data Inconsistency"
+    final facilityCheck = await _client
+        .from('facilities')
+        .select('id')
+        .eq('id', _uid)
+        .maybeSingle();
+
+    if (facilityCheck == null) {
+      // Recover missing facility row using profile data
+      final profileData = await _client
+          .from('profiles')
+          .select('name')
+          .eq('id', _uid)
+          .maybeSingle();
+          
+      final facilityName = profileData?['name'] ?? 'Unknown Facility';
+      
+      await _client.from('facilities').insert({
+        'id': _uid,
+        'name': facilityName,
+      });
     }
 
     await _client.from('facility_offers').insert({
