@@ -96,29 +96,64 @@ class _AlertScreenHeader extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.85),
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withValues(alpha: 0.9),
+            const Color(0xFFF6F8FF),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.85)),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Expanded(
-            child: _HeaderMetric(
-              label: 'Active now',
-              value: '$activeAlerts',
-              valueColor: const Color(0xFFD84315),
+          Container(
+            width: 44.w,
+            height: 44.w,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(14.r),
+            ),
+            child: Icon(
+              Icons.notifications_active_rounded,
+              color: AppColors.primary,
+              size: 22.r,
             ),
           ),
-          Container(
-            width: 1,
-            height: 42.h,
-            color: AppColors.border.withValues(alpha: 0.8),
-          ),
+          SizedBox(width: 14.w),
           Expanded(
-            child: _HeaderMetric(
-              label: 'Recent alerts',
-              value: '$totalAlerts',
-              valueColor: AppColors.primary,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$activeAlerts active',
+                  style: TextStyle(
+                    color: activeAlerts > 0
+                        ? const Color(0xFFD84315)
+                        : AppColors.textSecondary,
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  '$totalAlerts recent alerts',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -127,42 +162,6 @@ class _AlertScreenHeader extends StatelessWidget {
   }
 }
 
-class _HeaderMetric extends StatelessWidget {
-  const _HeaderMetric({
-    required this.label,
-    required this.value,
-    required this.valueColor,
-  });
-
-  final String label;
-  final String value;
-  final Color valueColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            color: valueColor,
-            fontSize: 24.sp,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        SizedBox(height: 4.h),
-        Text(
-          label,
-          style: TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class _EmptyAlertState extends StatelessWidget {
   const _EmptyAlertState({this.error});

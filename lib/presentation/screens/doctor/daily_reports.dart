@@ -607,134 +607,153 @@ class _DailyReportCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
+    // Status-based left-edge accent color.
+    final Color statusAccent;
+    switch (model.status) {
+      case DailyReportStatus.critical:
+        statusAccent = const Color(0xFFC62828);
+        break;
+      case DailyReportStatus.warning:
+        statusAccent = const Color(0xFFE65100);
+        break;
+      case DailyReportStatus.normal:
+        statusAccent = const Color(0xFF2E7D32);
+        break;
+    }
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16.r),
-        child: Card(
-          elevation: isDemoData ? 1 : 2,
-          shadowColor: isDemoData ? Colors.black12 : Colors.black26,
-          color: isDemoData
-              ? AppColors.cardBackground.withValues(alpha: 0.7)
-              : AppColors.cardBackground,
-          shape: RoundedRectangleBorder(
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDemoData
+                ? AppColors.cardBackground.withValues(alpha: 0.7)
+                : AppColors.cardBackground,
             borderRadius: BorderRadius.circular(16.r),
-            side: isDemoData
-                ? BorderSide(
+            border: isDemoData
+                ? Border.all(
                     color: AppColors.primary.withValues(alpha: 0.15),
                     width: 1.w,
                   )
-                : BorderSide.none,
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDemoData ? 0.04 : 0.06),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          child: Padding(
-            padding: EdgeInsets.all(16.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
+          child: Row(
+            children: [
+              // Status accent bar
+              Container(
+                width: 5.w,
+                height: 170.h,
+                decoration: BoxDecoration(
+                  color: statusAccent,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(16.r),
+                    bottomLeft: Radius.circular(16.r),
+                  ),
+                ),
+              ),
+              // Card content
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.all(16.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            model.patientName,
-                            style: textTheme.titleMedium?.copyWith(
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  model.patientName,
+                                  style: textTheme.titleMedium?.copyWith(
+                                    fontSize: 18.sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                Gap(4.h),
+                                Text(
+                                  model.date,
+                                  style: textTheme.labelSmall?.copyWith(
+                                    fontSize: 12.sp,
+                                    letterSpacing: 0.3,
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          Gap(6.h),
-                          Text(
-                            '${model.date} • ID ${model.id.toUpperCase()}',
-                            style: textTheme.labelSmall?.copyWith(
-                              fontSize: 11.sp,
-                              letterSpacing: 0.5,
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w500,
+                          _StatusBadge(status: model.status),
+                        ],
+                      ),
+                      if (model.notes.isNotEmpty && model.notes != 'No reports yet') ...[
+                        Gap(10.h),
+                        Text(
+                          model.notes,
+                          style: textTheme.bodySmall?.copyWith(
+                            fontSize: 13.sp,
+                            color: AppColors.textSecondary,
+                            height: 1.35,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                      Gap(14.h),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _MetricTile(
+                              icon: Icons.favorite_rounded,
+                              label: 'PULSE',
+                              value: model.pulse > 0 ? '${model.pulse}' : '--',
+                              unit: model.pulse > 0 ? 'bpm' : '',
+                              valueColor: AppColors.primary,
+                            ),
+                          ),
+                          Gap(8.w),
+                          Expanded(
+                            child: _MetricTile(
+                              icon: Icons.water_drop_rounded,
+                              label: 'SpO2',
+                              value: model.ppm > 0 ? '${model.ppm}' : '--',
+                              unit: model.ppm > 0 ? '%' : '',
+                              valueColor: const Color(0xFF0F766E),
+                            ),
+                          ),
+                          Gap(8.w),
+                          Expanded(
+                            child: _MetricTile(
+                              icon: Icons.device_thermostat_rounded,
+                              label: 'TEMP',
+                              value: model.temperature.replaceAll('°C', ''),
+                              unit: '°C',
+                              valueColor: AppColors.textPrimary,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    _StatusBadge(status: model.status),
-                  ],
-                ),
-                Gap(12.h),
-                Text(
-                  model.notes,
-                  style: textTheme.bodySmall?.copyWith(
-                    fontSize: 13.sp,
-                    color: AppColors.textSecondary,
-                    height: 1.35,
+                    ],
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                Gap(14.h),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _MetricTile(
-                        icon: Icons.favorite_rounded,
-                        label: 'PULSE',
-                        value: model.pulse > 0 ? '${model.pulse}' : '--',
-                        unit: model.pulse > 0 ? 'bpm' : '',
-                        valueColor: AppColors.primary,
-                      ),
-                    ),
-                    Gap(10.w),
-                    Expanded(
-                      child: _MetricTile(
-                        icon: Icons.blur_on_rounded,
-                        label: 'PPM',
-                        value: model.ppm > 0 ? '${model.ppm}' : '--',
-                        unit: '',
-                        valueColor: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-                Gap(10.h),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _MetricTile(
-                        icon: Icons.device_thermostat_rounded,
-                        label: 'TEMP',
-                        value: model.temperature.replaceAll('°F', ''),
-                        unit: '°F',
-                        valueColor: AppColors.textPrimary,
-                      ),
-                    ),
-                    Gap(10.w),
-                    Expanded(
-                      child: _MetricTile(
-                        icon: Icons.directions_walk_rounded,
-                        label: 'MOTION',
-                        value: model.motionStatus,
-                        unit: '',
-                        valueColor: _motionColor(model.motionStatus),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
-  }
-
-  Color _motionColor(String motion) {
-    final m = motion.toLowerCase();
-    if (m == 'high') return const Color(0xFFB8860B);
-    if (m == 'moderate') return AppColors.primary;
-    return AppColors.textPrimary;
   }
 }
 
@@ -807,18 +826,21 @@ class _MetricTile extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 12.h),
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
+        color: const Color(0xFFF8F9FB),
         borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: AppColors.border.withValues(alpha: 0.4),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 16.r, color: AppColors.textSecondary),
-              Gap(6.w),
+              Icon(icon, size: 14.r, color: AppColors.textSecondary),
+              Gap(5.w),
               Text(
                 label,
                 style: textTheme.labelSmall?.copyWith(
@@ -830,11 +852,11 @@ class _MetricTile extends StatelessWidget {
               ),
             ],
           ),
-          Gap(8.h),
+          Gap(6.h),
           RichText(
             text: TextSpan(
               style: textTheme.titleMedium?.copyWith(
-                fontSize: 18.sp,
+                fontSize: 17.sp,
                 fontWeight: FontWeight.w700,
                 color: valueColor,
               ),
@@ -844,9 +866,9 @@ class _MetricTile extends StatelessWidget {
                   TextSpan(
                     text: ' $unit',
                     style: textTheme.bodySmall?.copyWith(
-                      fontSize: 12.sp,
+                      fontSize: 11.sp,
                       fontWeight: FontWeight.w600,
-                      color: valueColor.withValues(alpha: 0.85),
+                      color: valueColor.withValues(alpha: 0.7),
                     ),
                   ),
               ],

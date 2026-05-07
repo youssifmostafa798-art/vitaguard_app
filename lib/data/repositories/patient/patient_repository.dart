@@ -49,7 +49,42 @@ class PatientRepository {
         .eq('role', 'doctor')
         .order('name', ascending: true);
 
-    return List<Map<String, dynamic>>.from(response);
+    final profiles = List<Map<String, dynamic>>.from(response);
+    if (profiles.isEmpty) return profiles;
+
+    // Enrich with verification status from doctors table.
+    // Wrapped in try-catch since the doctors table may not have all columns.
+    try {
+      final doctorIds = profiles.map((p) => p['id'] as String).toList();
+      final doctorRows = await _client
+          .from('doctors')
+          .select('id, verification_status, specialization')
+          .inFilter('id', doctorIds);
+
+      final doctorMap = <String, Map<String, dynamic>>{};
+      for (final row in doctorRows) {
+        final data = Map<String, dynamic>.from(row as Map);
+        doctorMap[data['id'] as String] = data;
+      }
+
+      return profiles.map((p) {
+        final doctorData = doctorMap[p['id']];
+        return {
+          ...p,
+          'verification_status':
+              doctorData?['verification_status'] ?? 'pending',
+          'specialization':
+              doctorData?['specialization'] ?? 'General Practitioner',
+        };
+      }).toList();
+    } catch (_) {
+      // If the doctors table query fails, return profiles with defaults.
+      return profiles.map((p) => {
+        ...p,
+        'verification_status': 'pending',
+        'specialization': 'General Practitioner',
+      }).toList();
+    }
   }
 
   Future<void> submitDailyReport(DailyReport report) async {

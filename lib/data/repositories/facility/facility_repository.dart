@@ -1,5 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -54,19 +54,39 @@ class FacilityRepository {
       throw StateError('Invalid file type. Please upload a JPEG, PNG, or PDF.');
     }
 
-    await _supabase.invokeFunction(
-      'upload_lab_report',
-      body: {
-        'facility_id': _uid,
-        'patient_id': resolvedPatientId,
-        'test_type': testType,
-        'notes': notes,
-        'report_id': Uuid.v4(),
-        'filename': _basename(file.path),
-        'content_type': _contentTypeForFile(file.path),
-        'data': base64Encode(await file.readAsBytes()),
-      },
+    // Upload directly to Supabase Storage (avoids Edge Function 2 MB body
+    // limit that caused 400 Bad Request for even moderate-sized files).
+    final reportId = Uuid.v4();
+    final ext = _fileExtension(file.path);
+    final storagePath = '$_uid/$reportId$ext';
+
+    debugPrint('[FACILITY] Uploading $storagePath ($size bytes)');
+
+    await _client.storage.from('lab-reports').upload(
+      storagePath,
+      file,
+      fileOptions: FileOptions(
+        contentType: contentType,
+        upsert: true,
+      ),
     );
+
+    final insertError = await _client.from('facility_tests').insert({
+      'id': reportId,
+      'facility_id': _uid,
+      'patient_id': resolvedPatientId,
+      'test_type': testType,
+      'file_path': storagePath,
+      'notes': notes,
+    }).then((_) => null, onError: (e) => e);
+
+    if (insertError != null) {
+      // Best-effort cleanup — don't let a stale file linger.
+      try {
+        await _client.storage.from('lab-reports').remove([storagePath]);
+      } catch (_) {}
+      throw insertError;
+    }
   }
 
   Future<void> createOffer({
@@ -84,6 +104,9 @@ class FacilityRepository {
       throw StateError('Offer description is required.');
     }
 
+    final offerId = Uuid.v4();
+    String? imagePath;
+
     if (image != null) {
       final size = await image.length();
       if (size > 10 * 1024 * 1024) {
@@ -96,25 +119,29 @@ class FacilityRepository {
         );
       }
 
-      await _supabase.invokeFunction(
-        'upload_lab_offer',
-        body: {
-          'facility_id': _uid,
-          'offer_id': Uuid.v4(),
-          'title': cleanTitle,
-          'description': cleanDescription,
-          'filename': _basename(image.path),
-          'content_type': contentType,
-          'data': base64Encode(await image.readAsBytes()),
-        },
+      final ext = _fileExtension(image.path);
+      final storagePath = '$_uid/$offerId$ext';
+
+      debugPrint('[FACILITY] Uploading offer image $storagePath');
+
+      await _client.storage.from('lab-offers').upload(
+        storagePath,
+        image,
+        fileOptions: FileOptions(
+          contentType: contentType,
+          upsert: true,
+        ),
       );
-      return;
+
+      imagePath = storagePath;
     }
 
     await _client.from('facility_offers').insert({
+      'id': offerId,
       'facility_id': _uid,
       'title': cleanTitle,
       'description': cleanDescription,
+      'image_path': imagePath,
       'is_active': true,
     });
   }
@@ -129,14 +156,17 @@ class FacilityRepository {
     return snapshot;
   }
 
-  String _basename(String path) {
-    return path.split(Platform.pathSeparator).last;
+  String _fileExtension(String path) {
+    final parts = path.toLowerCase().split('.');
+    if (parts.length < 2) return '';
+    return '.${parts.last}';
   }
 
   String _contentTypeForFile(String path) {
     final ext = path.toLowerCase();
     if (ext.endsWith('.png')) return 'image/png';
     if (ext.endsWith('.jpg') || ext.endsWith('.jpeg')) return 'image/jpeg';
+    if (ext.endsWith('.pdf')) return 'application/pdf';
     return 'application/octet-stream';
   }
 }
