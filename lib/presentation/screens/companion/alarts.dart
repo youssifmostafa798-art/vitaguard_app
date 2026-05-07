@@ -5,6 +5,7 @@ import 'package:vitaguard_app/core/alerts/widgets/alert_card.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/core/alerts/alert_center_provider.dart';
+import 'package:vitaguard_app/core/alerts/alert_model.dart';
 
 import '../../../core/utils/custem_background.dart';
 
@@ -42,32 +43,72 @@ class Alarts extends ConsumerWidget {
                         return const Center(child: CircularProgressIndicator());
                       }
 
-                      if (alerts.isEmpty) {
+                      final hasError = ref.read(alertControllerProvider).error != null;
+                      final showDemo = alerts.isEmpty && !hasError;
+
+                      if (alerts.isEmpty && !showDemo) {
                         return _EmptyAlertState(
-                          error: ref
-                              .read(alertControllerProvider)
-                              .error
-                              ?.toString(),
+                          error: ref.read(alertControllerProvider).error?.toString(),
                         );
                       }
 
-                      return ListView.separated(
-                        itemCount: alerts.length,
-                        separatorBuilder: (_, _) => SizedBox(height: 14.h),
-                        itemBuilder: (context, index) {
-                          final alert = alerts[index];
-                          return AlertCard(
-                            alert: alert,
-                            showPatientName: false,
-                            onAcknowledge: alert.isActive
-                                ? () {
-                                    ref
-                                        .read(alertControllerProvider.notifier)
-                                        .acknowledgeAlert(alert.id);
-                                  }
-                                : null,
-                          );
-                        },
+                      final displayAlerts = showDemo ? _getDemoAlerts() : alerts;
+
+                      return Column(
+                        children: [
+                          if (showDemo) ...[
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.symmetric(vertical: 8.h),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8.r),
+                                border: Border.all(
+                                  color: Colors.orange.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Sample Data (No active alerts)',
+                                  style: TextStyle(
+                                    color: Colors.orange.shade800,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 14.h),
+                          ],
+                          Expanded(
+                            child: ListView.separated(
+                              itemCount: displayAlerts.length,
+                              separatorBuilder: (_, _) => SizedBox(height: 14.h),
+                              itemBuilder: (context, index) {
+                                final alert = displayAlerts[index];
+                                return AlertCard(
+                                  alert: alert,
+                                  showPatientName: false,
+                                  onAcknowledge: alert.isActive && !showDemo
+                                      ? () {
+                                          ref
+                                              .read(alertControllerProvider.notifier)
+                                              .acknowledgeAlert(alert.id);
+                                        }
+                                      : showDemo && alert.isActive && !alert.isAcknowledged
+                                          ? () {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text('Demo alert acknowledged.'),
+                                                ),
+                                              );
+                                            }
+                                          : null,
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       );
                     },
                   ),
@@ -215,4 +256,46 @@ class _EmptyAlertState extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Demo Data ─────────────────────────────────────────────────────────────────
+
+List<AppAlert> _getDemoAlerts() {
+  return [
+    AppAlert(
+      id: 'demo-1',
+      patientId: 'p-1',
+      patientName: 'Ahmed Mahmoud',
+      alertType: 'Vitals Drop',
+      severity: AlertSeverity.critical,
+      metrics: const ['SpO2: 85%', 'HR: 110 bpm'],
+      message:
+          'Critical drop in oxygen saturation detected. Immediate attention required.',
+      source: 'hardware',
+      occurredAt: DateTime.now().subtract(const Duration(minutes: 2)),
+      lastSeenAt: DateTime.now(),
+      payload: const {},
+      recipientRole: 'companion',
+      isAcknowledged: false,
+      isResolved: false,
+    ),
+    AppAlert(
+      id: 'demo-2',
+      patientId: 'p-1',
+      patientName: 'Ahmed Mahmoud',
+      alertType: 'High Blood Pressure',
+      severity: AlertSeverity.warning,
+      metrics: const ['BP: 160/95 mmHg'],
+      message:
+          'Blood pressure is elevated above normal range. Monitor closely.',
+      source: 'hardware',
+      occurredAt: DateTime.now().subtract(const Duration(hours: 1)),
+      lastSeenAt: DateTime.now(),
+      payload: const {},
+      recipientRole: 'companion',
+      isAcknowledged: true,
+      isResolved: false,
+      acknowledgedAt: DateTime.now().subtract(const Duration(minutes: 50)),
+    ),
+  ];
 }

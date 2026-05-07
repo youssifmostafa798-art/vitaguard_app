@@ -72,6 +72,7 @@ class FacilityRepository {
     );
 
     try {
+      await _ensureFacilityExists();
       await _client.from('facility_tests').insert({
         'id': reportId,
         'facility_id': _uid,
@@ -86,6 +87,29 @@ class FacilityRepository {
         await _client.storage.from('lab-reports').remove([storagePath]);
       } catch (_) {}
       rethrow;
+    }
+  }
+
+  Future<void> _ensureFacilityExists() async {
+    final facilityCheck = await _client
+        .from('facilities')
+        .select('id')
+        .eq('id', _uid)
+        .maybeSingle();
+
+    if (facilityCheck == null) {
+      final profileData = await _client
+          .from('profiles')
+          .select('name')
+          .eq('id', _uid)
+          .maybeSingle();
+          
+      final facilityName = profileData?['name'] ?? 'Unknown Facility';
+      
+      await _client.from('facilities').insert({
+        'id': _uid,
+        'name': facilityName,
+      });
     }
   }
 
@@ -136,28 +160,7 @@ class FacilityRepository {
       imagePath = storagePath;
     }
 
-    // Ensure facility profile exists to prevent "Profile Data Inconsistency"
-    final facilityCheck = await _client
-        .from('facilities')
-        .select('id')
-        .eq('id', _uid)
-        .maybeSingle();
-
-    if (facilityCheck == null) {
-      // Recover missing facility row using profile data
-      final profileData = await _client
-          .from('profiles')
-          .select('name')
-          .eq('id', _uid)
-          .maybeSingle();
-          
-      final facilityName = profileData?['name'] ?? 'Unknown Facility';
-      
-      await _client.from('facilities').insert({
-        'id': _uid,
-        'name': facilityName,
-      });
-    }
+    await _ensureFacilityExists();
 
     await _client.from('facility_offers').insert({
       'id': offerId,
