@@ -53,8 +53,9 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
     }
 
     try {
-      final vitals =
-          await ref.read(vitalsRepositoryProvider).getLatestVitals(uid);
+      final vitals = await ref
+          .read(vitalsRepositoryProvider)
+          .getLatestVitals(uid);
       if (mounted) {
         setState(() {
           _latestVitals = vitals;
@@ -65,12 +66,12 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
       if (mounted) setState(() => _isLoadingVitals = false);
     }
 
-    _vitalsSubscription =
-        ref.read(vitalsRepositoryProvider).subscribeToVitals(uid).listen(
-      (vitals) {
-        if (mounted) setState(() => _latestVitals = vitals);
-      },
-    );
+    _vitalsSubscription = ref
+        .read(vitalsRepositoryProvider)
+        .subscribeToVitals(uid)
+        .listen((vitals) {
+          if (mounted) setState(() => _latestVitals = vitals);
+        });
   }
 
   @override
@@ -130,8 +131,7 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
   }
 
   Widget _buildAvailableDoctorsList() {
-    final patientRepo =
-        ref.read(patientControllerProvider.notifier).repository;
+    final patientRepo = ref.read(patientControllerProvider.notifier).repository;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,6 +212,7 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
+                          // detels
                           builder: (_) => const ChatListPatient(),
                         ),
                       );
