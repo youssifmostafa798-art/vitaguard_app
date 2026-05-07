@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:vitaguard_app/core/alerts/alert_model.dart';
 import 'package:vitaguard_app/core/alerts/widgets/alert_card.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
@@ -35,37 +36,91 @@ class DoctorAlertsScreen extends ConsumerWidget {
                 ),
                 SizedBox(height: 18.h),
                 Expanded(
-                  child: Builder(
-                    builder: (context) {
-                      if (alertCenter.isLoading && alerts.isEmpty) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      if (alerts.isEmpty) {
-                        return _EmptyDoctorAlerts(
-                          error: alertCenter.error?.toString(),
-                        );
-                      }
-
-                      return ListView.separated(
-                        itemCount: alerts.length,
-                        separatorBuilder: (_, _) => SizedBox(height: 14.h),
-                        itemBuilder: (context, index) {
-                          final alert = alerts[index];
-                          return AlertCard(
-                            alert: alert,
-                            showPatientName: true,
-                            onAcknowledge: alert.isActive
-                                ? () {
-                                    ref
-                                        .read(alertControllerProvider.notifier)
-                                        .acknowledgeAlert(alert.id);
-                                  }
-                                : null,
-                          );
-                        },
-                      );
-                    },
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      children: [
+                        if (alertCenter.isLoading && alerts.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 40),
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                        if (alerts.isEmpty && !alertCenter.isLoading)
+                          Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20.h),
+                            child: _EmptyDoctorAlerts(
+                              error: alertCenter.error?.toString(),
+                            ),
+                          ),
+                        if (alerts.isNotEmpty)
+                          ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: alerts.length,
+                            separatorBuilder: (_, _) => SizedBox(height: 14.h),
+                            itemBuilder: (context, index) {
+                              final alert = alerts[index];
+                              return AlertCard(
+                                alert: alert,
+                                showPatientName: true,
+                                onAcknowledge: alert.isActive
+                                    ? () {
+                                        ref
+                                            .read(alertControllerProvider.notifier)
+                                            .acknowledgeAlert(alert.id);
+                                      }
+                                    : null,
+                              );
+                            },
+                          ),
+                        SizedBox(height: 32.h),
+                        Row(
+                          children: [
+                            const Expanded(child: Divider()),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 12.w),
+                              child: Text(
+                                'Demo / Sample Data for Presentation',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const Expanded(child: Divider()),
+                          ],
+                        ),
+                        SizedBox(height: 16.h),
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _getDemoAlerts().length,
+                          separatorBuilder: (_, _) => SizedBox(height: 14.h),
+                          itemBuilder: (context, index) {
+                            final alert = _getDemoAlerts()[index];
+                            return AlertCard(
+                              alert: alert,
+                              showPatientName: true,
+                              onAcknowledge: alert.isActive && !alert.isAcknowledged
+                                  ? () {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: const Text('Demo alert acknowledged!'),
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(10.r),
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  : null,
+                            );
+                          },
+                        ),
+                        SizedBox(height: 32.h),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -214,4 +269,64 @@ class _EmptyDoctorAlerts extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Demo Data ─────────────────────────────────────────────────────────────────
+
+List<AppAlert> _getDemoAlerts() {
+  return [
+    AppAlert(
+      id: 'demo-1',
+      patientId: 'p-1',
+      patientName: 'Ahmed Mahmoud',
+      alertType: 'Vitals Drop',
+      severity: AlertSeverity.critical,
+      metrics: const ['SpO2: 85%', 'HR: 110 bpm'],
+      message:
+          'Critical drop in oxygen saturation detected. Immediate attention required.',
+      source: 'hardware',
+      occurredAt: DateTime.now().subtract(const Duration(minutes: 2)),
+      lastSeenAt: DateTime.now(),
+      payload: const {},
+      recipientRole: 'doctor',
+      isAcknowledged: false,
+      isResolved: false,
+    ),
+    AppAlert(
+      id: 'demo-2',
+      patientId: 'p-2',
+      patientName: 'Sarah Connor',
+      alertType: 'High Blood Pressure',
+      severity: AlertSeverity.warning,
+      metrics: const ['BP: 160/95 mmHg'],
+      message:
+          'Blood pressure is elevated above normal range. Monitor closely.',
+      source: 'hardware',
+      occurredAt: DateTime.now().subtract(const Duration(hours: 1)),
+      lastSeenAt: DateTime.now(),
+      payload: const {},
+      recipientRole: 'doctor',
+      isAcknowledged: true,
+      isResolved: false,
+      acknowledgedAt: DateTime.now().subtract(const Duration(minutes: 50)),
+    ),
+    AppAlert(
+      id: 'demo-3',
+      patientId: 'p-3',
+      patientName: 'Mohamed Ali',
+      alertType: 'Irregular Heartbeat',
+      severity: AlertSeverity.critical,
+      metrics: const ['Arrhythmia Detected'],
+      message:
+          'Multiple irregular heartbeat events detected in the last 30 minutes.',
+      source: 'hardware',
+      occurredAt: DateTime.now().subtract(const Duration(hours: 2)),
+      lastSeenAt: DateTime.now(),
+      payload: const {},
+      recipientRole: 'doctor',
+      isAcknowledged: false,
+      isResolved: true,
+      resolvedAt: DateTime.now().subtract(const Duration(minutes: 10)),
+    ),
+  ];
 }

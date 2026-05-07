@@ -37,14 +37,5 @@ List<CategoryModel> homeCategoriesDr(BuildContext context, String drName) {
         );
       },
     ),
-    CategoryModel(
-      icon: LucideIcons.microscope,
-      title: "Labs",
-      onTap: () {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Coming Soon")));
-      },
-    ),
   ];
 }
