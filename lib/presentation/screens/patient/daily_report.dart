@@ -3,24 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
-import 'package:vitaguard_app/core/errors/error_mapper.dart';
-import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
-import 'package:vitaguard_app/data/models/patient/patient_models.dart';
-import 'package:vitaguard_app/presentation/controllers/patient/patient_provider.dart';
-
 import 'package:vitaguard_app/presentation/screens/vitals/hardware_screen.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/data/repositories/vitals/vitals_repository.dart';
 import 'package:vitaguard_app/data/models/vitals/vitals_model.dart';
 import 'package:vitaguard_app/presentation/controllers/auth/auth_provider.dart';
-import 'package:vitaguard_app/core/alerts/alert_model.dart';
-import 'package:vitaguard_app/core/alerts/widgets/alert_card.dart';
 import '../../../core/utils/custem_text.dart';
-
 import '../../../core/utils/custem_background.dart';
-import '../../../core/utils/custem_bottom.dart';
-import '../../../core/utils/custem_field.dart';
 
 class DailyReportScreen extends ConsumerStatefulWidget {
   const DailyReportScreen({super.key});
@@ -30,11 +20,6 @@ class DailyReportScreen extends ConsumerStatefulWidget {
 }
 
 class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
-  final _heartRateCtrl = TextEditingController();
-  final _oxygenCtrl = TextEditingController();
-  final _tempCtrl = TextEditingController();
-  final _bpCtrl = TextEditingController();
-
   PatientLiveVitals? _latestVitals;
   StreamSubscription? _vitalsSubscription;
   bool _isLoadingVitals = true;
@@ -80,84 +65,8 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
         });
   }
 
-  List<AppAlert> _getDemoAlerts() {
-    return [
-      AppAlert(
-        id: 'demo-alert-1',
-        patientId: 'patient-123',
-        patientName: 'Ahmed Mahmoud',
-        alertType: 'Elevated Heart Rate',
-        message: 'Patient\'s heart rate has been > 100 bpm for 15 minutes.',
-        severity: AlertSeverity.critical,
-        occurredAt: DateTime.now().subtract(const Duration(minutes: 5)),
-        lastSeenAt: DateTime.now(),
-        source: 'Bracelet Monitor',
-        isAcknowledged: false,
-        isResolved: false,
-        metrics: const ['HR: 105 bpm'],
-        payload: const {},
-        recipientRole: 'companion',
-      ),
-      AppAlert(
-        id: 'demo-alert-2',
-        patientId: 'patient-123',
-        patientName: 'Ahmed Mahmoud',
-        alertType: 'SpO2 Warning',
-        message: 'SpO2 level dropped below 92%.',
-        severity: AlertSeverity.warning,
-        occurredAt: DateTime.now().subtract(const Duration(minutes: 45)),
-        lastSeenAt: DateTime.now(),
-        source: 'Daily Report',
-        isAcknowledged: true,
-        isResolved: false,
-        metrics: const ['SpO2: 91%'],
-        payload: const {},
-        recipientRole: 'companion',
-      ),
-    ];
-  }
-
-  void _handleSave() async {
-    final report = DailyReport(
-      heartRate: double.tryParse(_heartRateCtrl.text) ?? 0,
-      oxygenLevel: double.tryParse(_oxygenCtrl.text) ?? 0,
-      temperature: double.tryParse(_tempCtrl.text) ?? 0,
-      bloodPressure: _bpCtrl.text.trim(),
-    );
-
-    final success = await ref
-        .read(patientControllerProvider.notifier)
-        .submitDailyReport(report);
-
-    if (success) {
-      if (!mounted) return;
-      showClinicalPopup(
-        context,
-        type: ClinicalPopupType.success,
-        title: 'Report Saved',
-        message: 'Your daily report was saved successfully.',
-      );
-      Navigator.pop(context);
-    } else {
-      if (!mounted) return;
-      final mapped = ErrorMapper.mapForUser(
-        ref.read(patientControllerProvider).error ?? 'Failed to save report',
-        const ClinicalErrorContext(area: ClinicalErrorArea.reports),
-      );
-      showClinicalPopup(
-        context,
-        type: ClinicalPopupType.error,
-        title: 'Report Not Saved',
-        message: mapped.message,
-        developerDiagnostics: mapped.developerDiagnostics,
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final isLoading = ref.watch(patientControllerProvider).isLoading;
-
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: SimpleHeader(title: "Daily Report"),
@@ -194,94 +103,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                         },
                       ),
 
-                      const Gap(30),
-
-                      //Heart Rate (bpm)
-                      CustemField(
-                        title: "Heart Rate (bpm)",
-                        hint: "e.g. 75",
-                        controller: _heartRateCtrl,
-                      ),
-
-                      const Gap(20),
-
-                      //Oxygen Level (%)
-                      CustemField(
-                        title: "Oxygen Level (%)",
-                        hint: "e.g. 98",
-                        controller: _oxygenCtrl,
-                      ),
-
-                      const Gap(20),
-
-                      //Temperature (°C)
-                      CustemField(
-                        title: "Temperature (°C)",
-                        hint: "e.g. 36.5",
-                        controller: _tempCtrl,
-                      ),
-
-                      const Gap(20),
-
-                      //Blood Pressure
-                      CustemField(
-                        title: "Blood Pressure",
-                        hint: "e.g. 120/80",
-                        controller: _bpCtrl,
-                      ),
-
-                      const Gap(40),
-
-                      if (isLoading)
-                        const Center(child: CircularProgressIndicator())
-                      else
-                        Button(title: "Save Report", onTap: _handleSave),
-
-                      const Gap(40),
-
-                      CustemText(
-                        text: "Recent Alerts",
-                        size: 22,
-                        spacing: 3,
-                        color: const Color(0xff003F6B),
-                        weight: FontWeight.bold,
-                      ),
-                      const Gap(15),
-
-                      // Demo Data indication for Companion logic fallback
-                      Padding(
-                        padding: EdgeInsets.only(bottom: 16.h, left: 8.w),
-                        child: Row(
-                          children: [
-                            Icon(Icons.science_outlined, color: AppColors.primary, size: 20.sp),
-                            SizedBox(width: 8.w),
-                            Text(
-                              'Sample Data (No active alerts)',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _getDemoAlerts().length,
-                        separatorBuilder: (_, _) => SizedBox(height: 14.h),
-                        itemBuilder: (context, index) {
-                          final alert = _getDemoAlerts()[index];
-                          return AlertCard(
-                            alert: alert,
-                            showPatientName: false,
-                            onAcknowledge: null, // Read-only for Companion/Patient
-                          );
-                        },
-                      ),
-
-                      const Gap(30),
+                      Gap(30),
                     ],
                   ),
                 ),
