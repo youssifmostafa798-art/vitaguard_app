@@ -46,7 +46,6 @@ class DailyReports extends ConsumerStatefulWidget {
 class _DailyReportsState extends ConsumerState<DailyReports> {
   final TextEditingController _searchController = TextEditingController();
   DailyReportStatus? _statusFilter;
-  bool _showDemoData = false;
 
   @override
   void initState() {
@@ -272,7 +271,7 @@ class _DailyReportsState extends ConsumerState<DailyReports> {
                       ),
                       Gap(12.h),
                       if (filtered.isEmpty)
-                        _buildEmptyState(textTheme)
+                        _buildDemoSection(textTheme)
                       else
                         ListView.builder(
                           shrinkWrap: true,
@@ -299,11 +298,6 @@ class _DailyReportsState extends ConsumerState<DailyReports> {
                           },
                         ),
                       Gap(24.h),
-                      // Demo Data Section with Collapsible Header
-                      _buildDemoSectionHeader(textTheme),
-                      Gap(12.h),
-                      if (_showDemoData) _buildDemoSection(textTheme),
-                      Gap(20.h),
                     ],
                   ),
                 ),
@@ -417,57 +411,6 @@ class _DailyReportsState extends ConsumerState<DailyReports> {
     );
   }
 
-  Widget _buildDemoSectionHeader(TextTheme textTheme) {
-    return InkWell(
-      onTap: () => setState(() => _showDemoData = !_showDemoData),
-      borderRadius: BorderRadius.circular(12.r),
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 14.w),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.science_outlined, color: AppColors.primary, size: 20.r),
-            Gap(10.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Sample Data (For Demo)',
-                    style: textTheme.titleSmall?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13.sp,
-                    ),
-                  ),
-                  Gap(2.h),
-                  Text(
-                    'Mock reports to demonstrate features',
-                    style: textTheme.labelSmall?.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 11.sp,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              _showDemoData
-                  ? Icons.expand_less_rounded
-                  : Icons.expand_more_rounded,
-              color: AppColors.primary,
-              size: 22.r,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildFilterChip({
     required String label,
     required bool selected,
@@ -493,41 +436,43 @@ class _DailyReportsState extends ConsumerState<DailyReports> {
     );
   }
 
-  Widget _buildEmptyState(TextTheme textTheme) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 48.h),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(
-              Icons.search_off_rounded,
-              size: 56.r,
-              color: AppColors.textSecondary.withValues(alpha: 0.5),
-            ),
-            Gap(16.h),
-            Text(
-              'No reports match your search',
-              style: textTheme.titleMedium?.copyWith(
-                fontSize: 16.sp,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            Gap(8.h),
-            Text(
-              'Try a different name or filter',
-              style: textTheme.bodySmall?.copyWith(
-                fontSize: 14.sp,
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildEmptyState(TextTheme textTheme) {
+  //   return Padding(
+  //     padding: EdgeInsets.symmetric(vertical: 48.h),
+  //     child: Center(
+  //       child: Column(
+  //         children: [
+  //           Gap(16.h),
+
+  //           // Icon(
+  //           //   Icons.search_off_rounded,
+  //           //   size: 56.r,
+  //           //   color: AppColors.textSecondary.withValues(alpha: 0.5),
+  //           // ),
+
+  //           // Text(
+  //           //   'No reports match your search',
+  //           //   style: textTheme.titleMedium?.copyWith(
+  //           //     fontSize: 16.sp,
+  //           //     color: AppColors.textSecondary,
+  //           //     fontWeight: FontWeight.w600,
+  //           //   ),
+  //           //   textAlign: TextAlign.center,
+  //           // ),
+  //           // Gap(8.h),
+  //           // Text(
+  //           //   'Try a different name or filter',
+  //           //   style: textTheme.bodySmall?.copyWith(
+  //           //     fontSize: 14.sp,
+  //           //     color: AppColors.textSecondary,
+  //           //   ),
+  //           //   textAlign: TextAlign.center,
+  //           // ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildDemoSection(TextTheme textTheme) {
     final List<DailyReportModel> mockReports = [

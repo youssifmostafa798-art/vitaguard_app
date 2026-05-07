@@ -84,24 +84,7 @@ class DoctorAlertsScreen extends ConsumerWidget {
                               );
                             },
                           ),
-                        SizedBox(height: 32.h),
-                        Row(
-                          children: [
-                            const Expanded(child: Divider()),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 12.w),
-                              child: Text(
-                                'Demo / Sample Data for Presentation',
-                                style: TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            const Expanded(child: Divider()),
-                          ],
-                        ),
+
                         SizedBox(height: 16.h),
                         ListView.separated(
                           shrinkWrap: true,
@@ -302,7 +285,7 @@ List<AppAlert> _getDemoAlerts() {
     AppAlert(
       id: 'demo-2',
       patientId: 'p-2',
-      patientName: 'Sarah Connor',
+      patientName: 'Sarah Samy',
       alertType: 'High Blood Pressure',
       severity: AlertSeverity.warning,
       metrics: const ['BP: 160/95 mmHg'],
