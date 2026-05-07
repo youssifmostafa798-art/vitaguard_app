@@ -109,6 +109,7 @@ class PatientRepository {
       return;
     }
 
+    await ensureCurrentPatientRecord();
     await _client.from('patient_daily_reports').insert(payload);
   }
 

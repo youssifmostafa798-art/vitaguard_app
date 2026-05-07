@@ -1073,7 +1073,7 @@ Color _semanticColor(ClinicalPopupType type) {
     case ClinicalPopupType.warning:
       return const Color(0xFFF59E0B);
     case ClinicalPopupType.error:
-      return const Color(0xFFEF4444);
+      return const Color(0xFFE15A5A); // Softer, nicer red instead of harsh standard red
     case ClinicalPopupType.info:
     case ClinicalPopupType.loading:
       return const Color(0xFF4F46E5);

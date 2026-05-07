@@ -98,17 +98,10 @@ class FacilityRepository {
         .maybeSingle();
 
     if (facilityCheck == null) {
-      final profileData = await _client
-          .from('profiles')
-          .select('name')
-          .eq('id', _uid)
-          .maybeSingle();
-          
-      final facilityName = profileData?['name'] ?? 'Unknown Facility';
-      
+      // The `facilities` table does not have a `name` column. 
+      // The name is fetched via the foreign key to `profiles`.
       await _client.from('facilities').insert({
         'id': _uid,
-        'name': facilityName,
       });
     }
   }
