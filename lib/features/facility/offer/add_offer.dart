@@ -1,13 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
-import 'package:image_picker/image_picker.dart';
-
 import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/core/utils/simple_header.dart';
 import 'package:vitaguard_app/data/repositories/facility/facility_repository.dart';
-
 import '../../../core/utils/custem_background.dart';
 import '../../../core/utils/custem_bottom.dart';
 import '../../../core/utils/custem_field.dart';
@@ -36,24 +34,6 @@ class _AddOfferState extends State<AddOffer> {
     discountController.dispose();
     priceController.dispose();
     super.dispose();
-  }
-
-  bool _isPicking = false;
-
-  Future<void> _pickImage() async {
-    if (_isPicking) return;
-    try {
-      _isPicking = true;
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        setState(() {
-          _selectedImage = File(pickedFile.path);
-        });
-      }
-    } finally {
-      _isPicking = false;
-    }
   }
 
   Future<void> _saveOffer() async {
@@ -89,7 +69,12 @@ class _AddOfferState extends State<AddOffer> {
         title: 'Offer Created',
         message: 'The facility offer was created successfully.',
       );
-      Navigator.pop(context, nameController.text);
+      Navigator.pop(context, {
+        'displayName': nameController.text.trim(),
+        'displayDetails': detailsController.text.trim(),
+        'discountPercent': int.tryParse(discountController.text.trim()) ?? 0,
+        'originalPrice': int.tryParse(priceController.text.trim()) ?? 0,
+      });
     } catch (e) {
       if (!mounted) return;
       final mapped = ErrorMapper.mapForUser(
@@ -154,59 +139,8 @@ class _AddOfferState extends State<AddOffer> {
                       ),
                     ],
                   ),
-                  const Gap(20),
 
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      "Cover Image",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xff0D3B66),
-                      ),
-                    ),
-                  ),
-                  const Gap(10),
-
-                  GestureDetector(
-                    onTap: _pickImage,
-                    child: Container(
-                      height: 180,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xff0D3B66)),
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: _selectedImage != null
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(25),
-                              child: Image.file(
-                                _selectedImage!,
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          : const Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.image_outlined,
-                                    size: 50,
-                                    color: Color(0xff0D3B66),
-                                  ),
-                                  Gap(8),
-                                  Text(
-                                    "Select Offer Image",
-                                    style: TextStyle(color: Color(0xff0D3B66)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                    ),
-                  ),
-
-                  const Gap(50),
+                  Gap(50.h),
 
                   Button(
                     title: _isLoading ? "Saving..." : "Save",

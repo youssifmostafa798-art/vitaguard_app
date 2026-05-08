@@ -73,13 +73,14 @@ class _ReportsState extends State<Reports> {
       );
 
       if (!mounted) return;
-      showClinicalPopup(
-        context,
-        type: ClinicalPopupType.success,
-        title: 'Report Uploaded',
-        message: 'The medical report was uploaded successfully.',
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Report added successfully"),
+          backgroundColor: Color(0xff003F6B),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
-      Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       final mapped = ErrorMapper.mapForUser(
