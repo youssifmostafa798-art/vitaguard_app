@@ -62,6 +62,20 @@ class ChatRepository {
         .eq('id', conversationId);
   }
 
+  Future<String> ensureDirectConversationWithDoctor(String doctorId) async {
+    final response = await _supabase.rpc<dynamic>(
+      'ensure_direct_doctor_conversation',
+      params: {'doctor_id': doctorId},
+    );
+    final conversationId = response?.toString().trim() ?? '';
+
+    if (conversationId.isEmpty || conversationId == 'null') {
+      throw StateError('Unable to create or load doctor conversation.');
+    }
+
+    return conversationId;
+  }
+
   Stream<List<ChatPreview>> streamConversations() async* {
     final stream = _client
         .from('conversation_participants')

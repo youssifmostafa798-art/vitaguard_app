@@ -5,13 +5,13 @@ import 'package:gap/gap.dart';
 import 'package:vitaguard_app/presentation/screens/auth/role_screen.dart';
 import 'package:vitaguard_app/core/utils/app_colors.dart';
 import 'package:vitaguard_app/core/utils/home_header.dart';
+import 'package:vitaguard_app/presentation/screens/patient/chat_patient_detail.dart';
 import 'package:vitaguard_app/presentation/widgets/patient/category_grid_patient.dart';
 import 'package:vitaguard_app/presentation/widgets/patient/home_search.dart';
-import 'package:vitaguard_app/presentation/screens/patient/chat_list_patient.dart';
 import 'package:vitaguard_app/presentation/controllers/auth/auth_provider.dart';
-
 import '../../../core/utils/custem_background.dart';
 import '../../../core/utils/custem_text.dart';
+
 class PatientHome extends ConsumerStatefulWidget {
   final String name;
 
@@ -81,6 +81,7 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
     final doctors = [
       {
         'name': 'Dr. Ahmed Mahmoud',
+        'ID': '1234',
         'specialization': 'Cardiology - Saudi German Hospital',
         'verification_status': 'approved',
         'rating': '4.9',
@@ -88,6 +89,7 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
       },
       {
         'name': 'Dr. Sarah Samy',
+        'ID': '5678',
         'specialization': 'Pulmonology - Al Andalus Clinic',
         'verification_status': 'approved',
         'rating': '4.8',
@@ -95,6 +97,7 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
       },
       {
         'name': 'Dr. Mohamed Ali',
+        'ID': '9101',
         'specialization': 'Internal Medicine - Elite Care',
         'verification_status': 'approved',
         'rating': '4.7',
@@ -114,7 +117,7 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
         ),
         Gap(15.h),
         SizedBox(
-          height: 180.h,
+          height: 215.h,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: doctors.length,
@@ -131,7 +134,10 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const ChatListPatient(),
+                      builder: (_) => ChatPatientDetail(
+                        chatName: doc['name']!,
+                        chatId: doc['ID']!,
+                      ),
                     ),
                   );
                 },
@@ -143,8 +149,6 @@ class _PatientHomeState extends ConsumerState<PatientHome> {
     );
   }
 }
-
-// ─── Removed _LatestVitalsCard from here ─────────────────────────────────────
 
 // ─── Doctor suggestion card ───────────────────────────────────────────────────
 
@@ -172,9 +176,10 @@ class _DoctorSuggestionCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 160.w,
-        margin: EdgeInsets.only(right: 14.w),
-        padding: EdgeInsets.all(14.w),
+        height: 205.h,
+        width: 175.w,
+        margin: EdgeInsets.only(right: 15.w),
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 16.h),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18.r),
@@ -192,7 +197,7 @@ class _DoctorSuggestionCard extends StatelessWidget {
           ],
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Stack(
               alignment: Alignment.bottomRight,
@@ -221,11 +226,10 @@ class _DoctorSuggestionCard extends StatelessWidget {
                   ),
               ],
             ),
-            Gap(8.h),
             Text(
               name,
               style: TextStyle(
-                fontSize: 14.sp,
+                fontSize: 13.sp,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               ),
@@ -233,11 +237,10 @@ class _DoctorSuggestionCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            Gap(2.h),
             Text(
               specialization,
               style: TextStyle(
-                fontSize: 11.sp,
+                fontSize: 10.5.sp,
                 fontWeight: FontWeight.w500,
                 color: AppColors.textSecondary,
               ),
@@ -245,7 +248,6 @@ class _DoctorSuggestionCard extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            Gap(6.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -258,9 +260,15 @@ class _DoctorSuggestionCard extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Gap(8.w),
-                Icon(Icons.work_history_rounded, color: AppColors.textSecondary, size: 12.sp),
+                Icon(
+                  Icons.work_history_rounded,
+                  color: AppColors.textSecondary,
+                  size: 12.sp,
+                ),
                 Gap(2.w),
                 Text(
                   '$experience y',
@@ -269,10 +277,11 @@ class _DoctorSuggestionCard extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     color: AppColors.textSecondary,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
-            Gap(8.h),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
               decoration: BoxDecoration(
@@ -286,6 +295,8 @@ class _DoctorSuggestionCard extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

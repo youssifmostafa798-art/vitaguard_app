@@ -12,11 +12,19 @@ import '../../../core/utils/message_input.dart';
 class ChatPatientDetail extends StatefulWidget {
   final String chatName;
   final String chatId;
+  final String? doctorId;
+  final String? doctorSpecialization;
+  final String? doctorImageUrl;
+  final bool showDemoMessages;
 
   const ChatPatientDetail({
     super.key,
     required this.chatName,
     required this.chatId,
+    this.doctorId,
+    this.doctorSpecialization,
+    this.doctorImageUrl,
+    this.showDemoMessages = true,
   });
 
   @override
@@ -27,7 +35,7 @@ class _ChatPatientDetailState extends State<ChatPatientDetail> {
   final TextEditingController _messageController = TextEditingController();
   final ChatRepository _repository = ChatRepository();
 
-  bool _isDemoMode = true;
+  late bool _isDemoMode;
   final List<ChatMessage> _demoMessages = [
     ChatMessage(
       id: '1',
@@ -111,6 +119,7 @@ class _ChatPatientDetailState extends State<ChatPatientDetail> {
   @override
   void initState() {
     super.initState();
+    _isDemoMode = widget.showDemoMessages;
   }
 
   Future<void> _sendMessage() async {
@@ -156,6 +165,8 @@ class _ChatPatientDetailState extends State<ChatPatientDetail> {
     return Scaffold(
       appBar: ChatHeader(
         namee: widget.chatName,
+        subtitle: widget.doctorSpecialization,
+        imageUrl: widget.doctorImageUrl,
         onBackPressed: () => Navigator.pop(context),
       ),
       body: SafeArea(
@@ -188,7 +199,9 @@ class _ChatPatientDetailState extends State<ChatPatientDetail> {
                   builder: (context, snapshot) {
                     final realMessages = snapshot.data ?? [];
                     WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted && _isDemoMode != realMessages.isEmpty) {
+                      if (mounted &&
+                          widget.showDemoMessages &&
+                          _isDemoMode != realMessages.isEmpty) {
                         setState(() {
                           _isDemoMode = realMessages.isEmpty;
                         });

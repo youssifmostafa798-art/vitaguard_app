@@ -12,6 +12,8 @@ class CustemText extends StatelessWidget {
     this.color = Colors.white,
     this.height = 1,
     this.spacing = 1,
+    this.maxline,
+    this.overflow,
   });
   final String text;
   final double size;
@@ -20,10 +22,14 @@ class CustemText extends StatelessWidget {
   final double height;
   final double spacing;
   final dynamic font;
+  final int? maxline;
+  final TextOverflow? overflow;
   @override
   Widget build(BuildContext context) {
     return Text(
       text,
+      maxLines: maxline,
+      overflow: overflow,
       style: TextStyle(
         fontFamily: font,
         letterSpacing: spacing,
