@@ -574,15 +574,10 @@ class _ClinicalPopupCardState extends State<_ClinicalPopupCard>
   void initState() {
     super.initState();
     final duration = widget.entry.request.duration;
-    final reducedMotion = _reducedMotion;
     _entryController = AnimationController(
       vsync: this,
-      duration: reducedMotion
-          ? Duration.zero
-          : const Duration(milliseconds: 210),
-      reverseDuration: reducedMotion
-          ? Duration.zero
-          : ClinicalFeedbackController.exitDuration,
+      duration: const Duration(milliseconds: 210),
+      reverseDuration: ClinicalFeedbackController.exitDuration,
     );
     final curved = CurvedAnimation(
       parent: _entryController,
@@ -603,6 +598,18 @@ class _ClinicalPopupCardState extends State<_ClinicalPopupCard>
         : null;
     _entryController.forward();
     _progressController?.forward();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reducedMotion = _reducedMotion;
+    _entryController.duration = reducedMotion
+        ? Duration.zero
+        : const Duration(milliseconds: 210);
+    _entryController.reverseDuration = reducedMotion
+        ? Duration.zero
+        : ClinicalFeedbackController.exitDuration;
   }
 
   bool get _reducedMotion {
