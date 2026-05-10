@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.22.0"
 
 // -- Environment ---------------------------------------------------
 const GEMINI_API_KEY            = Deno.env.get("GEMINI_API_KEY")            ?? "";
-const GEMINI_MODEL              = Deno.env.get("GEMINI_MODEL")              || "gemma-4-27b-it";
+const GEMINI_MODEL              = Deno.env.get("GEMINI_MODEL")              || "gemma-4-26b-a4b-it";
 const SUPABASE_URL              = Deno.env.get("SUPABASE_URL")              ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 

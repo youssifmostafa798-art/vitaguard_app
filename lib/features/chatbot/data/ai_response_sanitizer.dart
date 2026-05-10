@@ -54,39 +54,16 @@ class AiResponseSanitizer {
   static String _stripLeadingEcho(String text, String prompt) {
     if (prompt.length < 4) return text;
     final escaped = RegExp.escape(prompt);
-    
-    // Completely remove leading "User:" prefixes regardless of prompt
-    final userPrefixRegExp = RegExp(
-      r'^(?:\*?\*?(?:User|Question|Prompt|Patient):\*?\*?\s*)+',
-      caseSensitive: false,
-    );
-    String result = text.replaceFirst(userPrefixRegExp, '');
-
     final patterns = <RegExp>[
-      RegExp('^["\']?$escaped["\']?\\s*[-:]+\\s*', caseSensitive: false),
-      RegExp('^$escaped\\s*', caseSensitive: false),
-      RegExp('^\\*\\*$escaped\\*\\*\\s*', caseSensitive: false),
-      RegExp('^\\*$escaped\\*\\s*', caseSensitive: false),
-      RegExp(
-        '^(?:\\*\\*User:\\*\\*|User:|You asked:|Question:)\\s*["\']?$escaped["\']?\\s*',
-        caseSensitive: false,
-      ),
+      RegExp('^$escaped\\s+', caseSensitive: false, multiLine: false),
       RegExp(
         '(?:The user (?:said|asked|wrote|typed)\\s+["\']\\s*)$escaped',
         caseSensitive: false,
       ),
     ];
-    
-    bool changed = true;
-    while (changed) {
-      changed = false;
-      for (final pattern in patterns) {
-        final next = result.trimLeft().replaceFirst(pattern, '').trimLeft();
-        if (next != result.trimLeft()) {
-          result = next;
-          changed = true;
-        }
-      }
+    String result = text.trimLeft();
+    for (final pattern in patterns) {
+      result = result.replaceFirst(pattern, '').trimLeft();
     }
     return result;
   }
