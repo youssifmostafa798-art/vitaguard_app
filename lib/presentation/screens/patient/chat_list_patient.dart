@@ -31,9 +31,9 @@ class _ChatListPatientState extends State<ChatListPatient> {
     _repository = widget.repository ?? ChatRepository();
   }
 
-  void _onBotTap() {
-    Navigator.push(
-      context,
+  void _openAiChat() {
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (_) => widget.aiChatScreen ?? const AiChatScreen(),
       ),
@@ -53,60 +53,7 @@ class _ChatListPatientState extends State<ChatListPatient> {
                 final realChats = snapshot.data ?? [];
                 final chats = realChats.isNotEmpty
                     ? realChats
-                    : [
-                      ChatPreview(
-                        id: '1',
-                        name: 'Dr Eslam Ahmed',
-                        avatarInitials: 'EA',
-                        lastMessage:
-                            "Hussain, you're supposed to take your medication in the morning",
-                        time: '28min',
-                        sender: MessageSender.doctor,
-                        status: MessageStatus.active,
-                        unreadCount: 1,
-                      ),
-                      ChatPreview(
-                        id: '2',
-                        name: 'Dr Mohanad Ahmed',
-                        avatarInitials: 'MA',
-                        lastMessage:
-                            "Hussain, you're supposed to take your medication in the morning",
-                        time: '25min',
-                        sender: MessageSender.doctor,
-                        status: MessageStatus.active,
-                        unreadCount: 0,
-                      ),
-                      ChatPreview(
-                        id: '3',
-                        name: 'Dr Mohamed Ahmed',
-                        avatarInitials: 'MA',
-                        lastMessage:
-                            "Hussain, you're supposed to take your medication in the morning",
-                        time: '12min',
-                        sender: MessageSender.doctor,
-                        status: MessageStatus.active,
-                        unreadCount: 1,
-                      ),
-                      ChatPreview(
-                        id: '4',
-                        name: 'Medical Laboratory',
-                        avatarInitials: 'ML',
-                        lastMessage: "Your test results are ready now, sir",
-                        time: '23min',
-                        sender: MessageSender.facility,
-                        status: MessageStatus.active,
-                      ),
-                      ChatPreview(
-                        id: '5',
-                        name: 'Dr Mohamed Ali',
-                        avatarInitials: 'MA',
-                        lastMessage:
-                            "Hussain, you're supposed to take your medication in the morning",
-                        time: '25min',
-                        sender: MessageSender.doctor,
-                        status: MessageStatus.active,
-                      ),
-                    ];
+                    : _fallbackPatientChats;
 
                 return AppBackground(
                   child: LayoutBuilder(
@@ -191,27 +138,94 @@ class _ChatListPatientState extends State<ChatListPatient> {
             Positioned(
               right: 20.w,
               bottom: 20.h,
-              child: Material(
-                color: const Color(0xFF0F1828),
-                borderRadius: BorderRadius.circular(16.r),
-                child: InkWell(
-                  onTap: _onBotTap,
-                  borderRadius: BorderRadius.circular(16.r),
-                  child: SizedBox(
-                    width: 56.r,
-                    height: 56.r,
-                    child: Icon(
-                      LucideIcons.bot,
-                      color: const Color(0xFF4D7CFE),
-                      size: 30.r,
-                    ),
-                  ),
-                ),
-              ),
+              child: _buildAiChatButton(),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildAiChatButton() {
+    return Semantics(
+      button: true,
+      label: 'Open VitaGuard AI chat',
+      child: Material(
+        color: const Color(0xFF0F1828),
+        borderRadius: BorderRadius.circular(16.r),
+        elevation: 6,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: _openAiChat,
+          borderRadius: BorderRadius.circular(16.r),
+          child: SizedBox(
+            width: 56.r,
+            height: 56.r,
+            child: Icon(
+              LucideIcons.bot,
+              color: const Color(0xFF4D7CFE),
+              size: 30.r,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<ChatPreview> get _fallbackPatientChats {
+    return [
+      ChatPreview(
+        id: '1',
+        name: 'Dr Eslam Ahmed',
+        avatarInitials: 'EA',
+        lastMessage:
+            "Hussain, you're supposed to take your medication in the morning",
+        time: '28min',
+        sender: MessageSender.doctor,
+        status: MessageStatus.active,
+        unreadCount: 1,
+      ),
+      ChatPreview(
+        id: '2',
+        name: 'Dr Mohanad Ahmed',
+        avatarInitials: 'MA',
+        lastMessage:
+            "Hussain, you're supposed to take your medication in the morning",
+        time: '25min',
+        sender: MessageSender.doctor,
+        status: MessageStatus.active,
+        unreadCount: 0,
+      ),
+      ChatPreview(
+        id: '3',
+        name: 'Dr Mohamed Ahmed',
+        avatarInitials: 'MA',
+        lastMessage:
+            "Hussain, you're supposed to take your medication in the morning",
+        time: '12min',
+        sender: MessageSender.doctor,
+        status: MessageStatus.active,
+        unreadCount: 1,
+      ),
+      ChatPreview(
+        id: '4',
+        name: 'Medical Laboratory',
+        avatarInitials: 'ML',
+        lastMessage: "Your test results are ready now, sir",
+        time: '23min',
+        sender: MessageSender.facility,
+        status: MessageStatus.active,
+      ),
+      ChatPreview(
+        id: '5',
+        name: 'Dr Mohamed Ali',
+        avatarInitials: 'MA',
+        lastMessage:
+            "Hussain, you're supposed to take your medication in the morning",
+        time: '25min',
+        sender: MessageSender.doctor,
+        status: MessageStatus.active,
+      ),
+    ];
   }
 }
