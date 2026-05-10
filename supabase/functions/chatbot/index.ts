@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.22.0"
 
 // -- Environment ---------------------------------------------------
 const GEMINI_API_KEY            = Deno.env.get("GEMINI_API_KEY")            ?? "";
-const GEMINI_MODEL              = Deno.env.get("GEMINI_MODEL")              || "gemma-4-27b-it";
+const GEMINI_MODEL              = Deno.env.get("GEMINI_MODEL")              || "gemma-4-26b-a4b-it";
 const SUPABASE_URL              = Deno.env.get("SUPABASE_URL")              ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
@@ -92,6 +92,8 @@ const BLOCKED_LINE_PATTERNS: RegExp[] = [
   /^\s*Keep responses focused/i,
   /^\s*As an AI(,| language model)/i,
   /^\s*I am an AI/i,
+  /^\s*\*?\*?(User|Question|Prompt|Patient)\s*:?\*?\*?\s*/i,
+  /^\s*The user (said|asked|wrote|typed)\s*:/i,
 ];
 
 function isBlockedLine(line: string): boolean {
@@ -126,6 +128,10 @@ function sanitize(
   const prompt = userPrompt.trim();
   if (prompt.length >= 4) {
     const escaped = prompt.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    
+    // Completely remove leading "User:" prefixes regardless of prompt
+    text = text.replace(/^(?:\*?\*?(?:User|Question|Prompt|Patient):\*?\*?\s*)+/i, "");
+
     text = text.replace(
       new RegExp(
         `(?:The user (?:said|asked|wrote|typed)\\s+["']${escaped}["']|user\\s*:?\\s*${escaped})`,
@@ -135,7 +141,10 @@ function sanitize(
     );
     const leadingEchos = [
       new RegExp(`^["']?${escaped}["']?\\s*[-:]+\\s*`, "i"),
-      new RegExp(`^${escaped}\\s+`, "i"),
+      new RegExp(`^${escaped}\\s*`, "i"),
+      new RegExp(`^\\*\\*${escaped}\\*\\*\\s*`, "i"),
+      new RegExp(`^\\*${escaped}\\*\\s*`, "i"),
+      new RegExp(`^(?:\\*\\*User:\\*\\*|User:|You asked:|Question:)\\s*["']?${escaped}["']?\\s*`, "i")
     ];
     let changed = true;
     while (changed) {
@@ -233,6 +242,8 @@ async function processRequest(
     const result = await chat.sendMessageStream(userMsg.content);
     let accumulated = "";
 
+    console.log(`[Chatbot] Starting generation for userMessageId: ${userMessageId}`);
+
     for await (const chunk of result.stream) {
       const piece = chunk.text?.() ?? "";
       if (!piece) continue;
@@ -247,9 +258,13 @@ async function processRequest(
         .eq("id", assistantMessageId);
     }
 
+    console.log(`[Chatbot] Raw accumulated response:`, accumulated);
+
     const finalText = sanitize(accumulated, userMsg.content, {
       fallbackWhenEmpty: true,
     });
+
+    console.log(`[Chatbot] Sanitized final response:`, finalText);
 
     await supabase
       .from("ai_messages")
