@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
+import 'dart:developer';
+
 import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/data/models/chatbot/ai_chat_models.dart';
@@ -43,15 +45,31 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   }
 
   Future<void> _sendMessage() async {
-    final text = _messageController.text.trim();
-    if (text.isEmpty) return;
+    final rawText = _messageController.text;
+    final text = rawText.trim();
+    debugPrint(
+      '[AI_CHAT_SCREEN] _sendMessage called. Raw: "$rawText" | Trimmed: "$text" | isEmpty: ${text.isEmpty}',
+    );
+    if (text.isEmpty) {
+      debugPrint(
+        '[AI_CHAT_SCREEN] _sendMessage rejected: text is empty after trim',
+      );
+      return;
+    }
 
     _messageController.clear();
+    debugPrint(
+      '[AI_CHAT_SCREEN] Sending to provider: "$text" (length: ${text.length})',
+    );
     final ok = await ref
         .read(aiChatControllerProvider.notifier)
         .sendMessage(text);
+    debugPrint('[AI_CHAT_SCREEN] sendMessage result: $ok');
     if (!ok && mounted) {
       _messageController.text = text;
+      debugPrint(
+        '[AI_CHAT_SCREEN] sendMessage failed, restoring text to controller',
+      );
       // Error is shown through the persistent clinical feedback panel.
       // Error is already shown in the persistent bubble above the message list.
     }

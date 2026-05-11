@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/data/models/chatbot/ai_chat_models.dart';
@@ -223,13 +224,26 @@ class SupabaseAiChatRepository implements AiChatRepository {
       // If refresh fails, invoke will naturally fail with 401 anyway
     }
 
+    final requestBody = {
+      'conversationId': conversationId,
+      'userMessageId': userMessageId,
+    };
+    debugPrint('[AI_CHAT] Request body: $requestBody');
+
     final response = await _supabase.invokeFunction(
       'chatbot',
-      body: {'conversationId': conversationId, 'userMessageId': userMessageId},
+      body: requestBody,
+    );
+
+    debugPrint(
+      '[AI_CHAT] Response status: ${response.status}, data: ${response.data}',
     );
 
     if (response.status != 202) {
       final message = _extractErrorMessage(response);
+      debugPrint(
+        '[AI_CHAT] Error from function: status=${response.status}, message=$message',
+      );
       throw StateError(
         message ?? 'The AI assistant could not start a reply right now.',
       );

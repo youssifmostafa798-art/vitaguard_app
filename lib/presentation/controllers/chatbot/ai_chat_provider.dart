@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:vitaguard_app/data/models/chatbot/ai_chat_models.dart';
 import 'package:vitaguard_app/data/repositories/chatbot/ai_chat_repository.dart';
@@ -56,7 +58,10 @@ class AiChatController extends _$AiChatController {
     return await _repository.fetchConversationHistory();
   }
 
-  Future<void> ensureConversation({bool forceRefresh = false, String? conversationId}) async {
+  Future<void> ensureConversation({
+    bool forceRefresh = false,
+    String? conversationId,
+  }) async {
     final currentUserId = _repository.currentUserIdOrNull;
     if (currentUserId == null) {
       state = state.copyWith(
@@ -68,7 +73,8 @@ class AiChatController extends _$AiChatController {
       return;
     }
 
-    final isTargetingDifferentConversation = conversationId != null && state.conversation?.id != conversationId;
+    final isTargetingDifferentConversation =
+        conversationId != null && state.conversation?.id != conversationId;
 
     if (!forceRefresh &&
         !isTargetingDifferentConversation &&
@@ -109,32 +115,58 @@ class AiChatController extends _$AiChatController {
 
   Future<bool> sendMessage(String content) async {
     final text = content.trim();
-    if (text.isEmpty || state.isSending) return false;
+    if (text.isEmpty) {
+      debugPrint(
+        '[AI_CHAT] sendMessage rejected: empty or whitespace-only text',
+      );
+      return false;
+    }
+    if (state.isSending) {
+      debugPrint('[AI_CHAT] sendMessage rejected: already sending');
+      return false;
+    }
 
     final now = DateTime.now();
     if (now.difference(_lastMessageSentAt).inMilliseconds < 1000) {
-       return false;
+      debugPrint('[AI_CHAT] sendMessage rejected: rate limited');
+      return false;
     }
     _lastMessageSentAt = now;
 
+    // Capture text in local variable BEFORE clearing state / awaiting
+    // so the UI edit changes can't interfere with the content
+    final messageText = text;
+    debugPrint(
+      '[AI_CHAT] Sending message: "$messageText" (length: ${messageText.length})',
+    );
+
+    // Ensure we have a valid conversation, then re-read state to avoid stale closure
     await ensureConversation();
-    if (state.conversation == null) return false;
+    final conversation = state.conversation;
+    if (conversation == null) {
+      debugPrint(
+        '[AI_CHAT] sendMessage failed: no conversation after ensureConversation',
+      );
+      return false;
+    }
 
     state = state.copyWith(isSending: true, error: null);
 
     try {
       final userMessageId = await _repository.insertUserMessage(
-        state.conversation!.id,
-        text,
+        conversation.id,
+        messageText,
       );
       await _repository.requestAssistantReply(
-        conversationId: state.conversation!.id,
+        conversationId: conversation.id,
         userMessageId: userMessageId,
       );
       state = state.copyWith(isSending: false);
+      debugPrint('[AI_CHAT] Message sent successfully');
       return true;
-    } catch (e) {
+    } catch (e, stack) {
       state = state.copyWith(isSending: false, error: ErrorMapper.map(e));
+      debugPrint('[AI_CHAT] sendMessage error: $e\n$stack');
       return false;
     }
   }

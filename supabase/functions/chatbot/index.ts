@@ -199,10 +199,40 @@ async function processRequest(
       .eq("conversation_id", conversationId)
       .single();
 
-    if (umErr || !userMsg) throw new Error("User message not found.");
-    if (userMsg.role !== "user") throw new Error("Message must be a user prompt.");
+    if (umErr || !userMsg) {
+      console.error("[CHATBOT] User message not found. conversationId:", conversationId, "userMessageId:", userMessageId, "error:", umErr);
+      throw new Error("User message not found.");
+    }
+    if (userMsg.role !== "user") {
+      console.error("[CHATBOT] Message role is not 'user'. role:", userMsg.role);
+      throw new Error("Message must be a user prompt.");
+    }
 
-    const { data: rawHistory } = await supabase
+    // Guard against empty/whitespace-only prompts — these cause Gemini 500 errors
+    const trimmedContent = (userMsg.content ?? "").trim();
+    if (!trimmedContent) {
+      console.error("[CHATBOT] Empty/whitespace-only prompt detected. Raw content:", JSON.stringify(userMsg.content), "conversationId:", conversationId);
+      await supabase
+        .from("ai_messages")
+        .update({
+          content: "It seems like your message was empty. Could you try rephrasing or sending your question again?",
+          status: "complete",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", assistantMessageId);
+      return;
+    }
+
+    // Log the full request body for debugging
+    console.log("[CHATBOT] === REQUEST START ===");
+    console.log("[CHATBOT] conversationId:", conversationId);
+    console.log("[CHATBOT] userMessageId:", userMessageId);
+    console.log("[CHATBOT] model:", GEMINI_MODEL);
+    console.log("[CHATBOT] contentLength:", trimmedContent.length);
+    console.log("[CHATBOT] contentPreview:", trimmedContent.substring(0, 200));
+    console.log("[CHATBOT] === REQUEST END ===");
+
+    const { data: rawHistory, error: historyErr } = await supabase
       .from("ai_messages")
       .select("role, content")
       .eq("conversation_id", conversationId)
@@ -213,7 +243,13 @@ async function processRequest(
       .order("created_at", { ascending: false })
       .limit(10);
 
+    if (historyErr) {
+      console.error("[CHATBOT] Failed to fetch conversation history:", historyErr);
+    }
+
     const history = buildHistory(((rawHistory ?? []) as RawMessage[]).reverse());
+
+    console.log("[CHATBOT] historyTurns:", history.length);
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
@@ -230,14 +266,14 @@ async function processRequest(
       },
     });
 
-    const result = await chat.sendMessageStream(userMsg.content);
+    const result = await chat.sendMessageStream(trimmedContent);
     let accumulated = "";
 
     for await (const chunk of result.stream) {
       const piece = chunk.text?.() ?? "";
       if (!piece) continue;
       accumulated += piece;
-      const partial = sanitize(accumulated, userMsg.content, {
+      const partial = sanitize(accumulated, trimmedContent, {
         fallbackWhenEmpty: false,
       });
       if (!partial) continue;
@@ -247,20 +283,21 @@ async function processRequest(
         .eq("id", assistantMessageId);
     }
 
-    const finalText = sanitize(accumulated, userMsg.content, {
+    const finalText = sanitize(accumulated, trimmedContent, {
       fallbackWhenEmpty: true,
     });
 
     await supabase
       .from("ai_messages")
       .update({
-        content: isUnsafe(finalText, userMsg.content) ? SAFE_FALLBACK : finalText,
+        content: isUnsafe(finalText, trimmedContent) ? SAFE_FALLBACK : finalText,
         status: "complete",
         updated_at: new Date().toISOString(),
       })
       .eq("id", assistantMessageId);
 
   } catch (err) {
+    console.error("[CHATBOT] processRequest error:", err instanceof Error ? err.message : String(err), "stack:", err instanceof Error ? err.stack : "N/A");
     await supabase
       .from("ai_messages")
       .update({
@@ -285,7 +322,17 @@ Deno.serve(async (req: Request) => {
     const conversationId = requireUuid(body?.conversationId, "conversationId");
     const userMessageId  = requireUuid(body?.userMessageId,  "userMessageId");
 
+    console.log("[CHATBOT] === INVOKE START ===");
+    console.log("[CHATBOT] userId:", userId);
+    console.log("[CHATBOT] conversationId:", conversationId);
+    console.log("[CHATBOT] userMessageId:", userMessageId);
+    console.log("[CHATBOT] model:", GEMINI_MODEL);
+    console.log("[CHATBOT] GEMINI_API_KEY set:", GEMINI_API_KEY.length > 0);
+    console.log("[CHATBOT] SUPABASE_URL set:", SUPABASE_URL.length > 0);
+    console.log("[CHATBOT] === INVOKE END ===");
+
     if (!GEMINI_API_KEY) {
+      console.error("[CHATBOT] GEMINI_API_KEY is not set!");
       throw new HttpError(
         500,
         "AI assistant is not configured.",
@@ -316,6 +363,7 @@ Deno.serve(async (req: Request) => {
 
   } catch (err) {
     const status = err instanceof HttpError ? err.status : 500;
+    console.error("[CHATBOT] Top-level error:", err instanceof Error ? err.message : String(err));
     return jsonResponse(
       {
         error:   err instanceof Error     ? err.message  : "Internal Error",
