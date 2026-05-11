@@ -116,19 +116,17 @@ class AiChatController extends _$AiChatController {
   Future<bool> sendMessage(String content) async {
     final text = content.trim();
     if (text.isEmpty) {
-      debugPrint(
-        '[AI_CHAT] sendMessage rejected: empty or whitespace-only text',
-      );
+      log('[AI_CHAT] sendMessage rejected: empty or whitespace-only text');
       return false;
     }
     if (state.isSending) {
-      debugPrint('[AI_CHAT] sendMessage rejected: already sending');
+      log('[AI_CHAT] sendMessage rejected: already sending');
       return false;
     }
 
     final now = DateTime.now();
     if (now.difference(_lastMessageSentAt).inMilliseconds < 1000) {
-      debugPrint('[AI_CHAT] sendMessage rejected: rate limited');
+      log('[AI_CHAT] sendMessage rejected: rate limited');
       return false;
     }
     _lastMessageSentAt = now;
@@ -136,7 +134,7 @@ class AiChatController extends _$AiChatController {
     // Capture text in local variable BEFORE clearing state / awaiting
     // so the UI edit changes can't interfere with the content
     final messageText = text;
-    debugPrint(
+    log(
       '[AI_CHAT] Sending message: "$messageText" (length: ${messageText.length})',
     );
 
@@ -144,7 +142,7 @@ class AiChatController extends _$AiChatController {
     await ensureConversation();
     final conversation = state.conversation;
     if (conversation == null) {
-      debugPrint(
+      log(
         '[AI_CHAT] sendMessage failed: no conversation after ensureConversation',
       );
       return false;
@@ -162,11 +160,11 @@ class AiChatController extends _$AiChatController {
         userMessageId: userMessageId,
       );
       state = state.copyWith(isSending: false);
-      debugPrint('[AI_CHAT] Message sent successfully');
+      log('[AI_CHAT] Message sent successfully');
       return true;
     } catch (e, stack) {
       state = state.copyWith(isSending: false, error: ErrorMapper.map(e));
-      debugPrint('[AI_CHAT] sendMessage error: $e\n$stack');
+      log('[AI_CHAT] sendMessage error: $e\n$stack');
       return false;
     }
   }

@@ -2,18 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
-import 'dart:developer';
-
 import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/core/feedback/clinical_feedback.dart';
 import 'package:vitaguard_app/data/models/chatbot/ai_chat_models.dart';
 import 'package:vitaguard_app/presentation/widgets/chatbot/ai_message_bubble.dart';
-
 import 'package:intl/intl.dart';
 import 'package:vitaguard_app/core/supabase/supabase_service.dart';
 import 'package:vitaguard_app/presentation/screens/auth/sign_in_screen.dart';
 import 'package:vitaguard_app/presentation/controllers/chatbot/ai_chat_provider.dart';
-
 import '../../../core/utils/custem_background.dart';
 import '../../../core/utils/message_input.dart';
 
