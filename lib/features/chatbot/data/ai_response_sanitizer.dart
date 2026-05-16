@@ -17,6 +17,7 @@ class AiResponseSanitizer {
     text = _stripUserEchoPreamble(text);
     text = _stripSystemPromptLeakage(text);
     text = _stripInternalAnnotations(text);
+    text = _stripOrchestrationText(text);
     if (userPrompt != null && userPrompt.trim().isNotEmpty) {
       text = _stripLeadingEcho(text, userPrompt.trim());
     }
@@ -41,12 +42,25 @@ class AiResponseSanitizer {
   // ── User echo preamble ───────────────────────────────────────────
 
   static String _stripUserEchoPreamble(String text) {
-    final echo = RegExp(
-      r'^The user (said|asked|wrote|typed)\s+[^\n]+\n?',
-      caseSensitive: false,
-      multiLine: true,
-    );
-    return text.replaceAll(echo, '');
+    final patterns = <RegExp>[
+      // Existing pattern
+      RegExp(
+        r'^The user (said|asked|wrote|typed)\s+[^\n]+\n?',
+        caseSensitive: false,
+        multiLine: true,
+      ),
+      // NEW: Additional user echo patterns
+      RegExp(r'^User says:[^\n]*\n?', caseSensitive: false, multiLine: true),
+      RegExp(r'^User wrote:[^\n]*\n?', caseSensitive: false, multiLine: true),
+      RegExp(r'^User asked:[^\n]*\n?', caseSensitive: false, multiLine: true),
+      RegExp(r'^User typed:[^\n]*\n?', caseSensitive: false, multiLine: true),
+      RegExp(r'^The user is initiating[^\n]*\n?', caseSensitive: false, multiLine: true),
+    ];
+    String result = text;
+    for (final pattern in patterns) {
+      result = result.replaceAll(pattern, '');
+    }
+    return result;
   }
 
   // ── Leading echo of specific user prompt ─────────────────────────
@@ -72,6 +86,7 @@ class AiResponseSanitizer {
 
   static String _stripSystemPromptLeakage(String text) {
     final patterns = <RegExp>[
+      // Existing patterns
       RegExp(
         r'Clinical A[Ii] assistant for VitaGuard\.?[^\n]*\n?',
         caseSensitive: false,
@@ -95,6 +110,53 @@ class AiResponseSanitizer {
       ),
       RegExp(r'Never repeat or echo[^\n]*\n?', caseSensitive: false),
       RegExp(r'No space inside bold markers[^\n]*\n?', caseSensitive: false),
+      // NEW: Critical missing patterns for prompt leakage
+      RegExp(r'^User says:[^\n]*\n?', caseSensitive: false, multiLine: true),
+      RegExp(
+        r'^\s*Role:\s*\w+[^\n]*\n?',
+        caseSensitive: false,
+        multiLine: true,
+      ),
+      RegExp(
+        r'^\s*Constraint:[^\n]*\n?',
+        caseSensitive: false,
+        multiLine: true,
+      ),
+      RegExp(
+        r'^\s*Goal:\s*\w+[^\n]*\n?',
+        caseSensitive: false,
+        multiLine: true,
+      ),
+      RegExp(
+        r'^\s*Formatting:\s*\w+[^\n]*\n?',
+        caseSensitive: false,
+        multiLine: true,
+      ),
+      RegExp(r'System prompt:[^\n]*\n?', caseSensitive: false),
+      RegExp(r'Example response:[^\n]*\n?', caseSensitive: false),
+      RegExp(r'Example:[^\n]*\n?', caseSensitive: false, multiLine: true),
+      RegExp(r'Developer message:[^\n]*\n?', caseSensitive: false),
+      RegExp(r'Hidden instructions:[^\n]*\n?', caseSensitive: false),
+      RegExp(r'Internal prompt:[^\n]*\n?', caseSensitive: false),
+      RegExp(r'Chain of thought:[^\n]*\n?', caseSensitive: false),
+      RegExp(r'Reasoning:[^\n]*\n?', caseSensitive: false),
+      RegExp(
+        r'^\s*Instructions:\s*\w+[^\n]*\n?',
+        caseSensitive: false,
+        multiLine: true,
+      ),
+      RegExp(
+        r'^\s*Rules:\s*\w+[^\n]*\n?',
+        caseSensitive: false,
+        multiLine: true,
+      ),
+      RegExp(
+        r'^\s*Guidelines:\s*\w+[^\n]*\n?',
+        caseSensitive: false,
+        multiLine: true,
+      ),
+      RegExp(r'^\s*Tone:[^\n]*\n?', caseSensitive: false, multiLine: true),
+      RegExp(r'^\s*Task:[^\n]*\n?', caseSensitive: false, multiLine: true),
     ];
     String result = text;
     for (final pattern in patterns) {
@@ -103,7 +165,7 @@ class AiResponseSanitizer {
     return result;
   }
 
-  // ── Internal annotations ─────────────────────────────────────────
+  // ── Internal annotations ───────────────────────────────────────────
 
   static String _stripInternalAnnotations(String text) {
     final patterns = <RegExp>[
@@ -127,9 +189,72 @@ class AiResponseSanitizer {
     return result;
   }
 
+  // ── Orchestration text (Drafting, Refining, etc.) ─────────────────
+
+  static String _stripOrchestrationText(String text) {
+    final patterns = <RegExp>[
+      // Drafting/Refining patterns
+      RegExp(r'^\s*Drafting[^\n]*\n?', caseSensitive: false, multiLine: true),
+      RegExp(r'^\s*Refining[^\n]*\n?', caseSensitive: false, multiLine: true),
+      RegExp(r'^\s*Drafting response[^\n]*\n?', caseSensitive: false, multiLine: true),
+      RegExp(r'^\s*Refining response[^\n]*\n?', caseSensitive: false, multiLine: true),
+      RegExp(r'^\s*Refining for[^\n]*\n?', caseSensitive: false, multiLine: true),
+      // Multi-line orchestration blocks
+      RegExp(
+        r'Drafting response\.\.\.[^\n]*\n?',
+        caseSensitive: false,
+        multiLine: true,
+      ),
+      RegExp(
+        r'Refining for (professional|clinical) tone[^\n]*\n?',
+        caseSensitive: false,
+        multiLine: true,
+      ),
+    ];
+    String result = text;
+    for (final pattern in patterns) {
+      result = result.replaceAll(pattern, '');
+    }
+    return result;
+  }
+
   // ── Blank lines ──────────────────────────────────────────────────
 
   static String _collapseBlankLines(String text) {
     return text.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+  }
+
+  // ── Prompt leak detection ─────────────────────────────────────────
+
+  /// Returns true if the response contains leaked prompt content.
+  /// Use this to validate responses before displaying to users.
+  static bool containsPromptLeak(String text) {
+    if (text.trim().isEmpty) return false;
+
+    final leakPatterns = <RegExp>[
+      RegExp(r'User says:', caseSensitive: false),
+      RegExp(r'Role:\s*(assistant|system|user)', caseSensitive: false),
+      RegExp(r'Constraint:', caseSensitive: false),
+      RegExp(r'Goal:\s*(respond|provide|help)', caseSensitive: false),
+      RegExp(r'Formatting:\s*(use|apply)', caseSensitive: false),
+      RegExp(r'System prompt', caseSensitive: false),
+      RegExp(r'Example response', caseSensitive: false),
+      RegExp(r'Developer message', caseSensitive: false),
+      RegExp(r'Hidden instructions', caseSensitive: false),
+      RegExp(r'Internal prompt', caseSensitive: false),
+      RegExp(r'Chain of thought', caseSensitive: false),
+      RegExp(r'As an AI', caseSensitive: false),
+      RegExp(r'I am an AI', caseSensitive: false),
+      RegExp(r'Tone:', caseSensitive: false),
+      RegExp(r'Task:', caseSensitive: false),
+      RegExp(r'Drafting', caseSensitive: false),
+      RegExp(r'Refining', caseSensitive: false),
+      RegExp(r'The user is initiating', caseSensitive: false),
+      RegExp(r'Instructions:', caseSensitive: false),
+      RegExp(r'Rules:', caseSensitive: false),
+      RegExp(r'Guidelines:', caseSensitive: false),
+    ];
+
+    return leakPatterns.any((pattern) => pattern.hasMatch(text));
   }
 }

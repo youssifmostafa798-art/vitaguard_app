@@ -80,6 +80,7 @@ function requireUuid(value: unknown, field: string): string {
 // -- Sanitizer -----------------------------------------------------
 
 const BLOCKED_LINE_PATTERNS: RegExp[] = [
+  // Existing patterns
   /^\s*\d+\.\s+(Use|Never|Respond|Be|Format|Hide|Provide|Keep|For)\b/i,
   /^\s*(Plan|Goal|Tone|Step \d+|Formatting rules?)\s*:/i,
   /^\s*STRICT\s+(FORMATTING\s+)?RULES/i,
@@ -92,6 +93,27 @@ const BLOCKED_LINE_PATTERNS: RegExp[] = [
   /^\s*Keep responses focused/i,
   /^\s*As an AI(,| language model)/i,
   /^\s*I am an AI/i,
+  // NEW: Critical missing patterns for prompt leakage
+  /^\s*User says:/i,
+  /^\s*Role:\s*\w+/i,
+  /^\s*Constraint:/i,
+  /^\s*Goal:\s*\w+/i,
+  /^\s*Formatting:\s*\w+/i,
+  /^\s*System prompt:/i,
+  /^\s*Example:/i,
+  /^\s*Example response:/i,
+  /^\s*Developer message:/i,
+  /^\s*Hidden instructions:/i,
+  /^\s*Internal prompt:/i,
+  /^\s*Chain of thought:/i,
+  /^\s*Reasoning:/i,
+  /^\s*Instructions:/i,
+  /^\s*Rules:/i,
+  /^\s*Guidelines:/i,
+  /^\s*Task:/i,
+  /^\s*Drafting/i,
+  /^\s*Refining/i,
+  /^\s*The user is initiating/i,
 ];
 
 function isBlockedLine(line: string): boolean {
@@ -103,6 +125,7 @@ function sanitize(
   userPrompt: string,
   opts: { fallbackWhenEmpty: boolean } = { fallbackWhenEmpty: true },
 ): string {
+  const original = raw;
   let text = raw;
 
   // Strip <thought> blocks
@@ -151,12 +174,45 @@ function sanitize(
   }
 
   text = text.replace(/\n{3,}/g, "\n\n").trim();
+  
+  // Log if sanitization changed the content
+  if (original !== text) {
+    console.log("[CHATBOT] Sanitized response. Original length:", original.length, "Cleaned length:", text.length);
+  }
+  
   if (!text) return opts.fallbackWhenEmpty ? SAFE_FALLBACK : "";
   return text;
 }
 
 function isUnsafe(response: string, userPrompt: string): boolean {
   if (response.split("\n").some(isBlockedLine)) return true;
+  
+  // Additional comprehensive leak pattern checks
+  const leakPatterns = [
+    /User says:/i,
+    /Role:\s*(assistant|system|user)/i,
+    /Constraint:/i,
+    /Goal:\s*(respond|provide|help)/i,
+    /Formatting:\s*(use|apply)/i,
+    /System prompt/i,
+    /Example response/i,
+    /Tone:/i,
+    /Task:/i,
+    /Drafting/i,
+    /Refining/i,
+    /The user is initiating/i,
+    /Internal prompt:/i,
+    /Developer message:/i,
+    /Hidden instructions:/i,
+    /Chain of thought:/i,
+    /Reasoning:/i,
+    /Instructions:/i,
+    /Rules:/i,
+    /Guidelines:/i,
+  ];
+  
+  if (leakPatterns.some(re => re.test(response))) return true;
+
   const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
   const p = norm(userPrompt);
   if (p.length >= 12 && norm(response).includes(p)) return true;

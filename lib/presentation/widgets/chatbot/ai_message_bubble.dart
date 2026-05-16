@@ -39,7 +39,13 @@ class AiMessageBubble extends StatelessWidget {
       return '_Thinking…_';
     }
     if (!message.isUser) {
-      return AiResponseSanitizer.sanitize(message.content);
+      final sanitized = AiResponseSanitizer.sanitize(message.content);
+      // Defensive guard: if sanitized content still contains prompt leakage,
+      // show a fallback message instead of potentially unsafe content
+      if (AiResponseSanitizer.containsPromptLeak(sanitized)) {
+        return "I'm sorry, I couldn't process that response correctly. Please try again.";
+      }
+      return sanitized;
     }
     return message.content;
   }

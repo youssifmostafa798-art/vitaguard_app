@@ -1,3 +1,5 @@
+import 'dart:developer' as dev;
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/core/errors/error_mapper.dart';
@@ -228,20 +230,20 @@ class SupabaseAiChatRepository implements AiChatRepository {
       'conversationId': conversationId,
       'userMessageId': userMessageId,
     };
-    debugPrint('[AI_CHAT] Request body: $requestBody');
+    dev.log('[AI_CHAT] Request body: $requestBody');
 
     final response = await _supabase.invokeFunction(
       'chatbot',
       body: requestBody,
     );
 
-    debugPrint(
+    dev.log(
       '[AI_CHAT] Response status: ${response.status}, data: ${response.data}',
     );
 
     if (response.status != 202) {
       final message = _extractErrorMessage(response);
-      debugPrint(
+      dev.log(
         '[AI_CHAT] Error from function: status=${response.status}, message=$message',
       );
       throw StateError(
