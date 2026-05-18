@@ -86,7 +86,7 @@ class AiResponseSanitizer {
 
   static String _stripSystemPromptLeakage(String text) {
     final patterns = <RegExp>[
-      // Existing patterns
+      // Existing patterns — these exactly mirror system prompt phrasing
       RegExp(
         r'Clinical A[Ii] assistant for VitaGuard\.?[^\n]*\n?',
         caseSensitive: false,
@@ -110,10 +110,10 @@ class AiResponseSanitizer {
       ),
       RegExp(r'Never repeat or echo[^\n]*\n?', caseSensitive: false),
       RegExp(r'No space inside bold markers[^\n]*\n?', caseSensitive: false),
-      // NEW: Critical missing patterns for prompt leakage
+      // Structural prompt markers (rare in natural medical text)
       RegExp(r'^User says:[^\n]*\n?', caseSensitive: false, multiLine: true),
       RegExp(
-        r'^\s*Role:\s*\w+[^\n]*\n?',
+        r'^\s*Role:\s*(assistant|system|user)\b[^\n]*\n?',
         caseSensitive: false,
         multiLine: true,
       ),
@@ -122,41 +122,12 @@ class AiResponseSanitizer {
         caseSensitive: false,
         multiLine: true,
       ),
-      RegExp(
-        r'^\s*Goal:\s*\w+[^\n]*\n?',
-        caseSensitive: false,
-        multiLine: true,
-      ),
-      RegExp(
-        r'^\s*Formatting:\s*\w+[^\n]*\n?',
-        caseSensitive: false,
-        multiLine: true,
-      ),
       RegExp(r'System prompt:[^\n]*\n?', caseSensitive: false),
       RegExp(r'Example response:[^\n]*\n?', caseSensitive: false),
-      RegExp(r'Example:[^\n]*\n?', caseSensitive: false, multiLine: true),
       RegExp(r'Developer message:[^\n]*\n?', caseSensitive: false),
       RegExp(r'Hidden instructions:[^\n]*\n?', caseSensitive: false),
       RegExp(r'Internal prompt:[^\n]*\n?', caseSensitive: false),
       RegExp(r'Chain of thought:[^\n]*\n?', caseSensitive: false),
-      RegExp(r'Reasoning:[^\n]*\n?', caseSensitive: false),
-      RegExp(
-        r'^\s*Instructions:\s*\w+[^\n]*\n?',
-        caseSensitive: false,
-        multiLine: true,
-      ),
-      RegExp(
-        r'^\s*Rules:\s*\w+[^\n]*\n?',
-        caseSensitive: false,
-        multiLine: true,
-      ),
-      RegExp(
-        r'^\s*Guidelines:\s*\w+[^\n]*\n?',
-        caseSensitive: false,
-        multiLine: true,
-      ),
-      RegExp(r'^\s*Tone:[^\n]*\n?', caseSensitive: false, multiLine: true),
-      RegExp(r'^\s*Task:[^\n]*\n?', caseSensitive: false, multiLine: true),
     ];
     String result = text;
     for (final pattern in patterns) {
@@ -228,6 +199,11 @@ class AiResponseSanitizer {
 
   /// Returns true if the response contains leaked prompt content.
   /// Use this to validate responses before displaying to users.
+  ///
+  /// IMPORTANT: Only include patterns that are unambiguously structural
+  /// prompt leakage. Do NOT include common medical terms like
+  /// 'Instructions:', 'Guidelines:', 'Rules:', 'Reasoning:' — these appear
+  /// constantly in legitimate clinical responses and cause false positives.
   static bool containsPromptLeak(String text) {
     if (text.trim().isEmpty) return false;
 
@@ -245,14 +221,7 @@ class AiResponseSanitizer {
       RegExp(r'Chain of thought', caseSensitive: false),
       RegExp(r'As an AI', caseSensitive: false),
       RegExp(r'I am an AI', caseSensitive: false),
-      RegExp(r'Tone:', caseSensitive: false),
-      RegExp(r'Task:', caseSensitive: false),
-      RegExp(r'Drafting', caseSensitive: false),
-      RegExp(r'Refining', caseSensitive: false),
       RegExp(r'The user is initiating', caseSensitive: false),
-      RegExp(r'Instructions:', caseSensitive: false),
-      RegExp(r'Rules:', caseSensitive: false),
-      RegExp(r'Guidelines:', caseSensitive: false),
     ];
 
     return leakPatterns.any((pattern) => pattern.hasMatch(text));

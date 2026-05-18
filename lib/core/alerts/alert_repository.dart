@@ -65,11 +65,16 @@ class AlertRepository {
       return const [];
     }
 
+    // Unresolved alerts: cap at 48 hours so stale test/demo data never
+    // triggers the siren indefinitely after hardware is disconnected.
+    final unresolvedSince =
+        since ?? DateTime.now().subtract(const Duration(hours: 48));
+
     final unresolvedRows = await _queryAlerts(
       patientIds: patientIds,
       audience: audience,
       unresolvedOnly: true,
-      since: since,
+      since: unresolvedSince,
     );
 
     final recentRows = await _queryAlerts(
