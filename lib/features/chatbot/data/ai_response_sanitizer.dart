@@ -16,7 +16,11 @@ class AiResponseSanitizer {
 
   static final List<RegExp> _blockedLinePatterns = [
     RegExp(
-      r'^\s*(?:[*-]\s*)?(?:User Input|User input|User says|Context|Role|Goal|Task|Plan|Guidelines?|Instructions?|Safety|Constraint|System prompt|Internal prompt|Chain of thought)\s*:',
+      r'^\s*(?:[*-]\s*)?(?:User Input|User input|User says|User asks|Context|Role|Goal|Task|Plan|Problem|Reasoning|Thoughts|Guidelines?|Instructions?|Safety|Constraint|System prompt|Internal prompt|Chain of thought)\s*:',
+      caseSensitive: false,
+    ),
+    RegExp(
+      r'^\s*(?:[*-]\s*)?Acknowledge(?:\s+the\s+request)?\.?\s*$',
       caseSensitive: false,
     ),
     RegExp(
@@ -27,6 +31,33 @@ class AiResponseSanitizer {
 
   static bool _isBlockedLine(String line) {
     return _blockedLinePatterns.any((pattern) => pattern.hasMatch(line));
+  }
+
+  static String _removeBlockedLines(String input) {
+    return input.split('\n').where((line) => !_isBlockedLine(line)).join('\n');
+  }
+
+  static bool _isWordCharacter(String char) {
+    return RegExp(r'[A-Za-z0-9_]').hasMatch(char);
+  }
+
+  static String _fixBoldMarkerSpacing(String input) {
+    final source = input.replaceAllMapped(
+      RegExp(r'\*\*\s+([^*\n]+?)\s+\*\*'),
+      (match) => '**${match.group(1)?.trim() ?? ''}**',
+    );
+
+    return source.replaceAllMapped(RegExp(r'\*\*([^*\n]+?)\*\*'), (match) {
+      final inner = match.group(1)?.trim() ?? '';
+      if (inner.isEmpty) return match.group(0) ?? '';
+
+      final previous = match.start > 0 ? source[match.start - 1] : '';
+      final next = match.end < source.length ? source[match.end] : '';
+      final leadingSpace = previous.isNotEmpty && _isWordCharacter(previous);
+      final trailingSpace = next.isNotEmpty && _isWordCharacter(next);
+
+      return '${leadingSpace ? ' ' : ''}**$inner**${trailingSpace ? ' ' : ''}';
+    });
   }
 
   /// Sanitize [raw] AI response text.
@@ -45,11 +76,8 @@ class AiResponseSanitizer {
     ).firstMatch(text);
     if (responseTagMatch != null) {
       String extracted = (responseTagMatch.group(1) ?? '').trim();
-      // Clean up spacing around bold
-      extracted = extracted.replaceAllMapped(
-        RegExp(r'\*\*\s+(.*?)\s+\*\*'),
-        (match) => '**${match.group(1)}**',
-      );
+      extracted = _fixBoldMarkerSpacing(extracted);
+      extracted = _removeBlockedLines(extracted).trim();
       if (extracted.isNotEmpty) {
         return SanitizedResult(text: extracted, isValid: true);
       }
@@ -128,13 +156,9 @@ class AiResponseSanitizer {
       }
     }
 
-    // Fix bold spacing artefact
-    text = text.replaceAllMapped(
-      RegExp(r'\*\*\s+(.*?)\s+\*\*'),
-      (match) => '**${match.group(1)}**',
-    );
+    text = _fixBoldMarkerSpacing(text);
 
-    text = text.split('\n').where((line) => !_isBlockedLine(line)).join('\n');
+    text = _removeBlockedLines(text);
 
     final prompt = userPrompt?.trim();
     if (prompt != null && prompt.length >= 4) {

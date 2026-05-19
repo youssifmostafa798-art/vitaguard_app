@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
@@ -23,6 +24,7 @@ class AiChatScreen extends ConsumerStatefulWidget {
 class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  bool _isSendingQuickReply = false;
 
   @override
   void initState() {
@@ -42,12 +44,25 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   Future<void> _sendQuickReply(String suggestion) async {
     final text = suggestion.trim();
     if (text.isEmpty) return;
+    if (_isSendingQuickReply || ref.read(aiChatControllerProvider).isSending) {
+      debugPrint('[AI_CHAT_SCREEN] _sendQuickReply ignored: send in progress');
+      return;
+    }
+
+    HapticFeedback.lightImpact();
+    setState(() => _isSendingQuickReply = true);
     debugPrint('[AI_CHAT_SCREEN] _sendQuickReply: "$text"');
-    final ok = await ref
-        .read(aiChatControllerProvider.notifier)
-        .sendMessage(text);
-    if (!ok && mounted) {
-      debugPrint('[AI_CHAT_SCREEN] _sendQuickReply failed: "$text"');
+    try {
+      final ok = await ref
+          .read(aiChatControllerProvider.notifier)
+          .sendMessage(text);
+      if (!ok && mounted) {
+        debugPrint('[AI_CHAT_SCREEN] _sendQuickReply failed: "$text"');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSendingQuickReply = false);
+      }
     }
   }
 
@@ -631,6 +646,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             children: suggestions.asMap().entries.map((entry) {
               final isLast = entry.key == suggestions.length - 1;
               final suggestion = entry.value;
+              final quickRepliesDisabled =
+                  _isSendingQuickReply || provider.isSending;
 
               return Padding(
                 padding: EdgeInsets.only(right: isLast ? 0 : 8.w),
@@ -649,7 +666,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20.r),
                   ),
-                  onPressed: provider.isSending
+                  onPressed: quickRepliesDisabled
                       ? null
                       : () => _sendQuickReply(suggestion),
                 ),
