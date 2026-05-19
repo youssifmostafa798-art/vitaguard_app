@@ -196,6 +196,54 @@ function isUnsafe(response: string, userPrompt: string): boolean {
   return false;
 }
 
+async function updateAssistantMessage(
+  supabase: ReturnType<typeof createClient>,
+  assistantMessageId: string,
+  values: Record<string, unknown>,
+  context: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("ai_messages")
+    .update({
+      ...values,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", assistantMessageId)
+    .select("id")
+    .single();
+
+  if (error) {
+    console.error("[CHATBOT] Failed to update assistant message:", context, error);
+    throw new Error(`Failed to update assistant message during ${context}.`);
+  }
+}
+
+async function markAssistantMessageError(
+  supabase: ReturnType<typeof createClient>,
+  assistantMessageId: string,
+  err: unknown,
+): Promise<void> {
+  const message = err instanceof Error ? err.message : "Generation failed.";
+  try {
+    await updateAssistantMessage(
+      supabase,
+      assistantMessageId,
+      {
+        content:
+          "I'm sorry, I'm having trouble right now. Please try again in a moment.",
+        status: "error",
+        error_message: message,
+      },
+      "error fallback",
+    );
+  } catch (updateErr) {
+    console.error(
+      "[CHATBOT] Failed to mark assistant message as error:",
+      updateErr instanceof Error ? updateErr.message : String(updateErr),
+    );
+  }
+}
+
 // -- History builder -----------------------------------------------
 
 interface RawMessage { role: string; content: string; }
@@ -245,14 +293,15 @@ async function processRequest(
     const trimmedContent = (userMsg.content ?? "").trim();
     if (!trimmedContent) {
       console.error("[CHATBOT] Empty/whitespace-only prompt detected. Raw content:", JSON.stringify(userMsg.content), "conversationId:", conversationId);
-      await supabase
-        .from("ai_messages")
-        .update({
+      await updateAssistantMessage(
+        supabase,
+        assistantMessageId,
+        {
           content: "It seems like your message was empty. Could you try rephrasing or sending your question again?",
           status: "complete",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", assistantMessageId);
+        },
+        "empty prompt completion",
+      );
       return;
     }
 
@@ -310,24 +359,31 @@ async function processRequest(
         fallbackWhenEmpty: false,
       });
       if (!partial) continue;
-      await supabase
-        .from("ai_messages")
-        .update({ content: partial, updated_at: new Date().toISOString() })
-        .eq("id", assistantMessageId);
+      await updateAssistantMessage(
+        supabase,
+        assistantMessageId,
+        { content: partial },
+        "streaming content",
+      );
+    }
+
+    if (!accumulated.trim()) {
+      throw new Error("Gemini returned an empty response.");
     }
 
     const finalText = sanitize(accumulated, trimmedContent, {
       fallbackWhenEmpty: true,
     });
 
-    await supabase
-      .from("ai_messages")
-      .update({
+    await updateAssistantMessage(
+      supabase,
+      assistantMessageId,
+      {
         content: isUnsafe(finalText, trimmedContent) ? SAFE_FALLBACK : finalText,
         status: "complete",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", assistantMessageId);
+      },
+      "final completion",
+    );
 
     // Call 2: Generate Quick Replies synchronously
     try {
@@ -365,13 +421,14 @@ async function processRequest(
       }
 
       if (quickReplies && quickReplies.length > 0) {
-        await supabase
-          .from("ai_messages")
-          .update({
+        await updateAssistantMessage(
+          supabase,
+          assistantMessageId,
+          {
             quick_replies: quickReplies,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", assistantMessageId);
+          },
+          "quick replies",
+        );
       }
     } catch (qrErr) {
       console.error("[CHATBOT] Quick Reply generation failed:", qrErr instanceof Error ? qrErr.message : String(qrErr));
@@ -379,16 +436,7 @@ async function processRequest(
 
   } catch (err) {
     console.error("[CHATBOT] processRequest error:", err instanceof Error ? err.message : String(err), "stack:", err instanceof Error ? err.stack : "N/A");
-    await supabase
-      .from("ai_messages")
-      .update({
-        content:
-          "I'm sorry, I'm having trouble right now. Please try again in a moment.",
-        status: "error",
-        error_message: err instanceof Error ? err.message : "Generation failed.",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", assistantMessageId);
+    await markAssistantMessageError(supabase, assistantMessageId, err);
   }
 }
 
@@ -425,7 +473,7 @@ Deno.serve(async (req: Request) => {
     const assistantMessageId = crypto.randomUUID();
     const now                = new Date().toISOString();
 
-    await supabase.from("ai_messages").insert({
+    const { error: insertErr } = await supabase.from("ai_messages").insert({
       id:              assistantMessageId,
       conversation_id: conversationId,
       owner_user_id:   userId,
@@ -435,6 +483,10 @@ Deno.serve(async (req: Request) => {
       created_at:      now,
       updated_at:      now,
     });
+    if (insertErr) {
+      console.error("[CHATBOT] Failed to insert assistant placeholder:", insertErr);
+      throw new HttpError(500, "Unable to start AI reply.", insertErr.message);
+    }
 
     (EdgeRuntime as any).waitUntil(
       processRequest(supabase, conversationId, assistantMessageId, userMessageId),

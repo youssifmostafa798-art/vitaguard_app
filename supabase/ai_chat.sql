@@ -21,9 +21,13 @@ create table if not exists ai_messages (
   provider text,
   model text,
   error_message text,
+  quick_replies jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table ai_messages
+  add column if not exists quick_replies jsonb;
 
 create index if not exists idx_ai_messages_conversation_created_at
   on ai_messages (conversation_id, created_at);
