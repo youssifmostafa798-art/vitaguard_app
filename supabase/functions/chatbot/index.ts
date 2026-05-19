@@ -95,6 +95,7 @@ const BLOCKED_LINE_PATTERNS: RegExp[] = [
   /^\s*As an AI(,| language model)/i,
   /^\s*I am an AI/i,
   // Structural prompt-leakage markers (rare in natural medical text)
+  /^\s*(?:[*-]\s*)?(?:User Input|User input|User says|Context|Role|Goal|Task|Plan|Guidelines?|Instructions?|Safety)\s*:/i,
   /^\s*User says:/i,
   /^\s*Role:\s*(assistant|system|user)\b/i,
   /^\s*Constraint:/i,
@@ -105,6 +106,9 @@ const BLOCKED_LINE_PATTERNS: RegExp[] = [
   /^\s*Internal prompt:/i,
   /^\s*Chain of thought:/i,
   /^\s*The user is initiating/i,
+  /^\s*(?:[*-]\s*)?The user is asking\b/i,
+  /^\s*(?:[*-]\s*)?As a clinical AI assistant\b/i,
+  /^\s*(?:[*-]\s*)?(?:I need to|I should|I must)\b/i,
 ];
 
 function isBlockedLine(line: string): boolean {
@@ -189,6 +193,9 @@ function isUnsafe(response: string, userPrompt: string): boolean {
     /Hidden instructions:/i,
     /Chain of thought:/i,
     /The user is initiating/i,
+    /User Input\s*:/i,
+    /The user is asking\b/i,
+    /As a clinical AI assistant\b/i,
   ];
 
   if (leakPatterns.some(re => re.test(response))) return true;

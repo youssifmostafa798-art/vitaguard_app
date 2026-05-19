@@ -16,13 +16,11 @@ class AiMessageBubble extends ConsumerWidget {
     required this.message,
     required this.isPreviousSameSender,
     required this.isLastMessage,
-    this.allowQuickReplies = true,
   });
 
   final AiMessage message;
   final bool isPreviousSameSender;
   final bool isLastMessage;
-  final bool allowQuickReplies;
 
   // ── Time formatting ────────────────────────────────────────────
 
@@ -77,7 +75,6 @@ class AiMessageBubble extends ConsumerWidget {
               children: [
                 _buildBubbleContent(timeText, parsedMessage, isUser),
                 if (!isUser &&
-                    allowQuickReplies &&
                     message.status == AiMessageStatus.complete &&
                     message.quickReplies != null &&
                     message.quickReplies!.isNotEmpty &&

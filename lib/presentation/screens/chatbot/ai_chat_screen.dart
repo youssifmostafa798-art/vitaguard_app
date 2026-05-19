@@ -284,12 +284,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ),
           ),
 
-        Expanded(
-          child: _buildMessages(
-            provider,
-            allowQuickReplies: !isHistorical,
-          ),
-        ),
+        Expanded(child: _buildMessages(provider)),
         if (ref.read(aiChatControllerProvider).isSending)
           Padding(
             padding: EdgeInsets.symmetric(vertical: 6.h, horizontal: 16.w),
@@ -448,10 +443,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     );
   }
 
-  Widget _buildMessages(
-    AiChatState provider, {
-    required bool allowQuickReplies,
-  }) {
+  Widget _buildMessages(AiChatState provider) {
     if (ref.read(aiChatControllerProvider).isLoading &&
         ref.read(aiChatControllerProvider).conversation == null) {
       return const Center(child: CircularProgressIndicator());
@@ -552,7 +544,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               message: message,
               isPreviousSameSender: nextIsSame,
               isLastMessage: index == 0,
-              allowQuickReplies: allowQuickReplies,
             );
           },
         );
