@@ -39,6 +39,18 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     super.dispose();
   }
 
+  Future<void> _sendQuickReply(String suggestion) async {
+    final text = suggestion.trim();
+    if (text.isEmpty) return;
+    debugPrint('[AI_CHAT_SCREEN] _sendQuickReply: "$text"');
+    final ok = await ref
+        .read(aiChatControllerProvider.notifier)
+        .sendMessage(text);
+    if (!ok && mounted) {
+      debugPrint('[AI_CHAT_SCREEN] _sendQuickReply failed: "$text"');
+    }
+  }
+
   Future<void> _sendMessage() async {
     final rawText = _messageController.text;
     final text = rawText.trim();
@@ -65,8 +77,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       debugPrint(
         '[AI_CHAT_SCREEN] sendMessage failed, restoring text to controller',
       );
-      // Error is shown through the persistent clinical feedback panel.
-      // Error is already shown in the persistent bubble above the message list.
     }
   }
 
@@ -82,7 +92,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               'VitaGuard AI';
           final hasUser = SupabaseService.instance.currentSession?.user != null;
 
-          // Full-screen lock ONLY if we have no local user session.
           final isLocked = !hasUser;
 
           return Scaffold(
@@ -174,7 +183,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 await Navigator.of(
                   context,
                 ).push(MaterialPageRoute(builder: (_) => const SignInScreen()));
-                // When returning from login, check if we have a session and refresh
                 if (mounted &&
                     SupabaseService.instance.currentSession != null) {
                   ref
@@ -208,12 +216,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     bool isHistorical = false;
     String displayDate = '';
 
-    if (ref.read(aiChatControllerProvider).conversation != null) {
-      final localTime = ref
-          .read(aiChatControllerProvider)
-          .conversation!
-          .createdAt
-          .toLocal();
+    if (provider.conversation != null) {
+      final localTime = provider.conversation!.createdAt.toLocal();
       final now = DateTime.now();
       isHistorical =
           localTime.year != now.year ||
@@ -226,14 +230,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
     return Column(
       children: [
-        if (ref.read(aiChatControllerProvider).error != null)
+        if (provider.error != null)
           Padding(
             padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 0),
             child: ClinicalFeedbackPanel(
               type: ClinicalPopupType.warning,
               title: 'VitaGuard AI Connection',
               message: ErrorMapper.mapForUser(
-                ref.read(aiChatControllerProvider).error!,
+                provider.error!,
                 const ClinicalErrorContext(area: ClinicalErrorArea.chatbot),
               ).message,
             ),
@@ -285,7 +289,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           ),
 
         Expanded(child: _buildMessages(provider)),
-        if (ref.read(aiChatControllerProvider).isSending)
+        _buildQuickRepliesSection(provider, isHistorical),
+        if (provider.isSending)
           Padding(
             padding: EdgeInsets.symmetric(vertical: 6.h, horizontal: 16.w),
             child: Row(
@@ -304,23 +309,21 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         MessageInput(
           controller: _messageController,
           onSend: _sendMessage,
-          enabled:
-              !ref.read(aiChatControllerProvider).isLoading &&
-              !ref.read(aiChatControllerProvider).isSending,
+          enabled: !provider.isLoading && !provider.isSending,
         ),
       ],
     );
   }
 
   Widget _buildHistoryTab(AiChatState provider) {
-    final errorStr = ref.read(aiChatControllerProvider).error == null
+    final errorStr = provider.error == null
         ? ''
         : ErrorMapper.mapForUser(
-            ref.read(aiChatControllerProvider).error!,
+            provider.error!,
             const ClinicalErrorContext(area: ClinicalErrorArea.chatbot),
           ).message;
     if (errorStr.isNotEmpty && errorStr.toLowerCase().contains('logged in')) {
-      return const SizedBox.shrink(); // Prevent fetching if fully unauthorized
+      return const SizedBox.shrink();
     }
 
     return FutureBuilder<List<AiConversation>>(
@@ -356,9 +359,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             final dateStr = DateFormat('MMMM d, yyyy').format(localTime);
             final timeStr = DateFormat('h:mm a').format(localTime);
 
-            final isCurrent =
-                ref.read(aiChatControllerProvider).conversation?.id ==
-                conversation.id;
+            final isCurrent = provider.conversation?.id == conversation.id;
 
             return InkWell(
               onTap: () {
@@ -444,13 +445,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   }
 
   Widget _buildMessages(AiChatState provider) {
-    if (ref.read(aiChatControllerProvider).isLoading &&
-        ref.read(aiChatControllerProvider).conversation == null) {
+    if (provider.isLoading && provider.conversation == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (ref.read(aiChatControllerProvider).conversation == null ||
-        ref.read(aiChatControllerProvider).messageStream == null) {
+    if (provider.conversation == null || provider.messageStream == null) {
       return Center(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -464,16 +463,28 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     }
 
     return StreamBuilder<List<AiMessage>>(
-      stream: ref.read(aiChatControllerProvider).messageStream,
+      stream: provider.messageStream,
       builder: (context, snapshot) {
         final messages = snapshot.data ?? const <AiMessage>[];
 
+        // Merge pending assistant message if no real assistant message exists yet
+        final pending = provider.pendingAssistantMessage;
+        var displayMessages = messages;
+        if (pending != null) {
+          final hasRealAssistant = displayMessages.any(
+            (m) => m.role == AiMessageRole.assistant && !m.isPending,
+          );
+          if (!hasRealAssistant) {
+            displayMessages = [...displayMessages, pending];
+          }
+        }
+
         if (snapshot.connectionState == ConnectionState.waiting &&
-            messages.isEmpty) {
+            displayMessages.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (messages.isEmpty) {
+        if (displayMessages.isEmpty) {
           return Center(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -489,15 +500,24 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           );
         }
 
+        // Clear pending when real assistant message arrives
+        if (pending != null &&
+            displayMessages.any(
+              (m) => m.role == AiMessageRole.assistant && !m.isPending,
+            )) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ref.read(aiChatControllerProvider.notifier).clearPendingMessage();
+          });
+        }
+
         return ListView.builder(
           key: const PageStorageKey('chat_list'),
           controller: _scrollController,
           padding: EdgeInsets.fromLTRB(8.w, 12.h, 8.w, 16.h),
-          reverse: true, // Industry standard: newest at bottom
-          itemCount: messages.length + 1,
+          reverse: true,
+          itemCount: displayMessages.length + 1,
           itemBuilder: (context, index) {
-            // Header at the very top (index == length in a reversed list)
-            if (index == messages.length) {
+            if (index == displayMessages.length) {
               return Padding(
                 padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
                 child: Column(
@@ -532,12 +552,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               );
             }
 
-            // Message logic
-            final message = messages[index];
-            // In a reversed list, the one "above" it has a HIGHER index (older)
+            final message = displayMessages[index];
             final nextIsSame =
-                index + 1 < messages.length &&
-                messages[index + 1].role == message.role;
+                index + 1 < displayMessages.length &&
+                displayMessages[index + 1].role == message.role;
 
             return AiMessageBubble(
               key: ValueKey(message.id),
@@ -546,6 +564,98 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               isLastMessage: index == 0,
             );
           },
+        );
+      },
+    );
+  }
+
+  Widget _buildQuickRepliesSection(AiChatState provider, bool isHistorical) {
+    if (isHistorical) return const SizedBox.shrink();
+    if (provider.conversation == null || provider.messageStream == null) {
+      return const SizedBox.shrink();
+    }
+
+    return StreamBuilder<List<AiMessage>>(
+      stream: provider.messageStream,
+      builder: (context, snapshot) {
+        final messages = snapshot.data ?? [];
+        List<String> suggestions = [];
+
+        if (messages.isEmpty) {
+          // If the conversation is brand new and has no messages, show default quick replies based on role
+          switch (provider.conversation!.role) {
+            case AiConversationRole.patient:
+              suggestions = [
+                'Check my latest vitals',
+                'Report a new symptom',
+                'Explain my health trends',
+                'General health question',
+              ];
+              break;
+            case AiConversationRole.companion:
+              suggestions = [
+                'How is the patient doing?',
+                'Track patient vitals',
+                'Log medication compliance',
+                'Ask caregiving advice',
+              ];
+              break;
+            case AiConversationRole.doctor:
+              suggestions = [
+                'Analyze patient vitals',
+                'Draft clinical summary',
+                'Review patient trends',
+                'Clinical guidelines reference',
+              ];
+              break;
+          }
+        } else {
+          final latestMessage = messages.first;
+
+          if (latestMessage.role == AiMessageRole.assistant &&
+              latestMessage.status == AiMessageStatus.complete &&
+              latestMessage.quickReplies != null &&
+              latestMessage.quickReplies!.isNotEmpty) {
+            suggestions = latestMessage.quickReplies!;
+          }
+        }
+
+        if (suggestions.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+          child: Row(
+            children: suggestions.asMap().entries.map((entry) {
+              final isLast = entry.key == suggestions.length - 1;
+              final suggestion = entry.value;
+
+              return Padding(
+                padding: EdgeInsets.only(right: isLast ? 0 : 8.w),
+                child: ActionChip(
+                  label: Text(
+                    suggestion,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF003F6B),
+                    ),
+                  ),
+                  backgroundColor: const Color(0xFFF0F7FF),
+                  padding: EdgeInsets.symmetric(horizontal: 4.w),
+                  side: const BorderSide(color: Color(0xFFB3E0FF)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  onPressed: provider.isSending
+                      ? null
+                      : () => _sendQuickReply(suggestion),
+                ),
+              );
+            }).toList(),
+          ),
         );
       },
     );

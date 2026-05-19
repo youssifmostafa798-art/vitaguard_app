@@ -6,19 +6,13 @@ class SanitizedResult {
   final String text;
   final bool isValid;
 
-  const SanitizedResult({
-    required this.text,
-    required this.isValid,
-  });
+  const SanitizedResult({required this.text, required this.isValid});
 }
 
 /// Cleans raw Gemma/Gemini output before displaying to the user.
 /// Structured to be loss-aware and fail-safe.
 class AiResponseSanitizer {
   AiResponseSanitizer._();
-
-  static const _fallback =
-      "I'm sorry, I could not generate a response. Please try rephrasing your question.";
 
   static final List<RegExp> _blockedLinePatterns = [
     RegExp(
@@ -27,14 +21,6 @@ class AiResponseSanitizer {
     ),
     RegExp(
       r'^\s*(?:[*-]\s*)?The user is (?:asking|initiating)\b',
-      caseSensitive: false,
-    ),
-    RegExp(
-      r'^\s*(?:[*-]\s*)?As a clinical AI assistant\b',
-      caseSensitive: false,
-    ),
-    RegExp(
-      r'^\s*(?:[*-]\s*)?(?:I need to|I should|I must)\b',
       caseSensitive: false,
     ),
   ];
@@ -46,24 +32,109 @@ class AiResponseSanitizer {
   /// Sanitize [raw] AI response text.
   /// Limited to ONLY structural recovery, no semantic removal.
   static SanitizedResult sanitize(String raw, {String? userPrompt}) {
-    if (raw.trim().isEmpty) return const SanitizedResult(text: '', isValid: true);
+    if (raw.trim().isEmpty) {
+      return const SanitizedResult(text: '', isValid: true);
+    }
 
     String text = raw;
 
-    // Structural cleanup: fix bold spacing artefact
+    // Try to extract content inside <response>...</response> tags first
+    final responseTagMatch = RegExp(
+      r'<response>([\s\S]*?)(?:</response>|$)',
+      caseSensitive: false,
+    ).firstMatch(text);
+    if (responseTagMatch != null) {
+      String extracted = (responseTagMatch.group(1) ?? '').trim();
+      // Clean up spacing around bold
+      extracted = extracted.replaceAllMapped(
+        RegExp(r'\*\*\s+(.*?)\s+\*\*'),
+        (match) => '**${match.group(1)}**',
+      );
+      if (extracted.isNotEmpty) {
+        return SanitizedResult(text: extracted, isValid: true);
+      }
+    }
+
+    // 1. Structural cleanup: strip any stray <thought> blocks
+    text = text.replaceAll(
+      RegExp(r'<thought>[\s\S]*?</thought>', caseSensitive: false),
+      '',
+    );
+    text = text.replaceAll(
+      RegExp(r'<thought>[\s\S]*$', caseSensitive: false),
+      '',
+    );
+
+    // 2. Identify if there's a "Final Polish/Response/Answer" block and extract it
+    final finalBlockMatch = RegExp(
+      r'(?:Final\s+Polish|Final\s+Response|Final\s+Answer|^Response\s*:)\s*\*?\*?:?\s*([\s\S]*)',
+      caseSensitive: false,
+      multiLine: true,
+    ).firstMatch(text);
+
+    if (finalBlockMatch != null) {
+      text = finalBlockMatch.group(1) ?? '';
+    } else {
+      // If no explicit final block, but we have preamble sections, let's strip lines belonging to those sections
+      final preamblePatterns = [
+        RegExp(r'^\s*[-*•]?\s*Constraint\s+Checklist', caseSensitive: false),
+        RegExp(r'^\s*[-*•]?\s*Confidence\s+Score', caseSensitive: false),
+        RegExp(r'^\s*[-*•]?\s*Mental\s+Sandbox', caseSensitive: false),
+        RegExp(r'^\s*[-*•]?\s*Decision\s*:', caseSensitive: false),
+        RegExp(r'^\s*[-*•]?\s*Inline\s+backticks', caseSensitive: false),
+        RegExp(r'^\s*[-*•]?\s*No\s+internal\s+thoughts', caseSensitive: false),
+        RegExp(r'^\s*[-*•]?\s*N/A\b', caseSensitive: false),
+      ];
+      final lines = text.split('\n');
+      final cleanedLines = <String>[];
+      bool insidePreamble = false;
+      for (final line in lines) {
+        final isPreambleLine = preamblePatterns.any(
+          (pattern) => pattern.hasMatch(line),
+        );
+        if (isPreambleLine) {
+          insidePreamble = true;
+          continue;
+        }
+        if (insidePreamble &&
+            (RegExp(
+                  r'^\s*(?:Option\s+\d+|Decision)\b',
+                  caseSensitive: false,
+                ).hasMatch(line) ||
+                (RegExp(
+                      r'^\s*["\x27`]?Hello',
+                      caseSensitive: false,
+                    ).hasMatch(line) &&
+                    line.contains("clinical assistant")))) {
+          continue;
+        }
+        cleanedLines.add(line);
+      }
+      text = cleanedLines.join('\n');
+    }
+
+    // 3. Clean up the extracted text (double quote duplicates, quotes, etc.)
+    text = text.trim();
+    final quoteMatch = RegExp(
+      r'^["\x27]([\s\S]*?)["\x27]\s*([\s\S]*)$',
+    ).firstMatch(text);
+    if (quoteMatch != null) {
+      final quoted = quoteMatch.group(1) ?? '';
+      final remainder = quoteMatch.group(2) ?? '';
+      if (remainder.trim().isNotEmpty) {
+        text = remainder.trim();
+      } else {
+        text = quoted.trim();
+      }
+    }
+
+    // Fix bold spacing artefact
     text = text.replaceAllMapped(
       RegExp(r'\*\*\s+(.*?)\s+\*\*'),
-      (match) => '**${match.group(1)}**'
+      (match) => '**${match.group(1)}**',
     );
-    
-    // Structural cleanup: strip any stray <thought> blocks just in case the model
-    // hallucinates them based on prior training/prompts.
-    text = text.replaceAll(RegExp(r'<thought>[\s\S]*?</thought>', caseSensitive: false), '');
 
-    text = text
-        .split('\n')
-        .where((line) => !_isBlockedLine(line))
-        .join('\n');
+    text = text.split('\n').where((line) => !_isBlockedLine(line)).join('\n');
 
     final prompt = userPrompt?.trim();
     if (prompt != null && prompt.length >= 4) {
@@ -76,17 +147,20 @@ class AiResponseSanitizer {
         '',
       );
       text = text.trimLeft().replaceFirst(
-            RegExp('^["\\\']?$escaped["\\\']?\\s*[-:]+\\s*',
-                caseSensitive: false),
-            '',
-          );
+        RegExp('^["\\\']?$escaped["\\\']?\\s*[-:]+\\s*', caseSensitive: false),
+        '',
+      );
     }
 
     text = text.replaceAll(RegExp(r'\n{3,}'), '\n\n').trim();
     if (text.isEmpty && raw.trim().isNotEmpty) {
-      return const SanitizedResult(text: _fallback, isValid: true);
+      // Preserve raw text instead of substituting a generic fallback
+      return SanitizedResult(text: raw.trim(), isValid: true);
     }
 
-    return SanitizedResult(text: text.trim(), isValid: true);
+    return SanitizedResult(
+      text: text.trim().isNotEmpty ? text.trim() : raw.trim(),
+      isValid: true,
+    );
   }
 }

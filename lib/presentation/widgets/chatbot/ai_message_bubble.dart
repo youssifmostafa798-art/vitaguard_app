@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_md/flutter_md.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
@@ -52,8 +53,10 @@ class AiMessageBubble extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isUser = message.isUser;
     final timeText = _formatTime(message.createdAt);
-    
-    final parsedMessage = ref.read(aiChatControllerProvider.notifier).getParsedMessage(message);
+
+    final parsedMessage = ref
+        .read(aiChatControllerProvider.notifier)
+        .getParsedMessage(message);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -69,53 +72,8 @@ class AiMessageBubble extends ConsumerWidget {
         children: [
           if (!isUser) _buildAvatar(),
           if (!isUser) Gap(8.w),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildBubbleContent(timeText, parsedMessage, isUser),
-                if (!isUser &&
-                    message.status == AiMessageStatus.complete &&
-                    message.quickReplies != null &&
-                    message.quickReplies!.isNotEmpty &&
-                    isLastMessage)
-                  _buildQuickReplies(context, ref),
-              ],
-            ),
-          ),
+          Flexible(child: _buildBubbleContent(timeText, parsedMessage, isUser)),
         ],
-      ),
-    );
-  }
-
-  Widget _buildQuickReplies(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: EdgeInsets.only(top: 8.h),
-      child: Wrap(
-        spacing: 8.w,
-        runSpacing: 8.h,
-        children: message.quickReplies!.map((reply) {
-          return ActionChip(
-            label: Text(
-              reply,
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: const Color(0xFF003F6B),
-              ),
-            ),
-            backgroundColor: Colors.white,
-            side: const BorderSide(color: Color(0xFF00A3FF)),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20.r),
-            ),
-            onPressed: () {
-              // Send the quick reply message
-              if (!ref.read(aiChatControllerProvider).isSending) {
-                ref.read(aiChatControllerProvider.notifier).sendMessage(reply);
-              }
-            },
-          );
-        }).toList(),
       ),
     );
   }
@@ -140,7 +98,11 @@ class AiMessageBubble extends ConsumerWidget {
     );
   }
 
-  Widget _buildBubbleContent(String timeText, ChatMessageModel parsedMessage, bool isUser) {
+  Widget _buildBubbleContent(
+    String timeText,
+    ChatMessageModel parsedMessage,
+    bool isUser,
+  ) {
     if (isUser) {
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
@@ -165,14 +127,14 @@ class AiMessageBubble extends ConsumerWidget {
           children: [
             Text(
               parsedMessage.text,
-              style: TextStyle(color: Colors.white, fontSize: 15.sp, height: 1.4),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 15.sp,
+                height: 1.4,
+              ),
             ),
             Gap(4.h),
-            CustemText(
-              text: timeText,
-              size: 10,
-              color: Colors.white70,
-            ),
+            CustemText(text: timeText, size: 10, color: Colors.white70),
           ],
         ),
       );
@@ -235,7 +197,9 @@ class AiMessageBubble extends ConsumerWidget {
 
     return _buildAiWrapper(
       timeText: timeText,
-      customWrapper: parsedMessage.intent == MessageIntent.normal || parsedMessage.intent == MessageIntent.question,
+      customWrapper:
+          parsedMessage.intent == MessageIntent.normal ||
+          parsedMessage.intent == MessageIntent.question,
       child: wrappedContent,
     );
   }
@@ -250,7 +214,9 @@ class AiMessageBubble extends ConsumerWidget {
         bottomRight: Radius.circular(20.r),
       ),
       border: Border.all(
-        color: message.isError ? const Color(0xFFFFC2C2) : const Color(0xFFE3EEF7),
+        color: message.isError
+            ? const Color(0xFFFFC2C2)
+            : const Color(0xFFE3EEF7),
       ),
       boxShadow: [
         BoxShadow(
@@ -271,7 +237,10 @@ class AiMessageBubble extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.only(bottom: 4.h, left: customWrapper ? 16.w : 4.w),
+          padding: EdgeInsets.only(
+            bottom: 4.h,
+            left: customWrapper ? 16.w : 4.w,
+          ),
           child: CustemText(
             text: 'VitaGuard AI',
             size: 12,
@@ -282,7 +251,10 @@ class AiMessageBubble extends ConsumerWidget {
         child,
         if (message.isStreaming && message.content.isNotEmpty)
           Padding(
-            padding: EdgeInsets.only(top: 8.h, left: customWrapper ? 16.w : 4.w),
+            padding: EdgeInsets.only(
+              top: 8.h,
+              left: customWrapper ? 16.w : 4.w,
+            ),
             child: SizedBox(
               width: 12.w,
               height: 12.w,
@@ -294,7 +266,10 @@ class AiMessageBubble extends ConsumerWidget {
           ),
         if (message.isError && message.errorMessage != null)
           Padding(
-            padding: EdgeInsets.only(top: 4.h, left: customWrapper ? 16.w : 4.w),
+            padding: EdgeInsets.only(
+              top: 4.h,
+              left: customWrapper ? 16.w : 4.w,
+            ),
             child: CustemText(
               text: message.errorMessage!,
               size: 11,
@@ -319,20 +294,25 @@ class AiMessageBubble extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
+    // During streaming, use plain text to avoid flickering markdown re-renders
+    final isStreaming = message.isStreaming;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: blocks.map((block) {
         if (block is ParagraphBlock) {
           return Padding(
             padding: EdgeInsets.only(bottom: 8.h),
-            child: Text(
-              _cleanFormatting(block.text),
-              style: TextStyle(
-                color: _textColor(),
-                fontSize: 15.sp,
-                height: 1.4,
-              ),
-            ),
+            child: isStreaming
+                ? Text(
+                    _stripMarkdown(block.text),
+                    style: TextStyle(
+                      color: _textColor(),
+                      fontSize: 15.sp,
+                      height: 1.4,
+                    ),
+                  )
+                : _renderMd(block.text),
           );
         } else if (block is BulletBlock) {
           return Padding(
@@ -345,17 +325,22 @@ class AiMessageBubble extends ConsumerWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('•', style: TextStyle(color: _textColor(), fontSize: 15.sp)),
+                      Text(
+                        '•',
+                        style: TextStyle(color: _textColor(), fontSize: 15.sp),
+                      ),
                       Gap(8.w),
                       Expanded(
-                        child: Text(
-                          _cleanFormatting(item),
-                          style: TextStyle(
-                            color: _textColor(),
-                            fontSize: 15.sp,
-                            height: 1.4,
-                          ),
-                        ),
+                        child: isStreaming
+                            ? Text(
+                                _stripMarkdown(item),
+                                style: TextStyle(
+                                  color: _textColor(),
+                                  fontSize: 15.sp,
+                                  height: 1.4,
+                                ),
+                              )
+                            : _renderMd(item),
                       ),
                     ],
                   ),
@@ -371,7 +356,25 @@ class AiMessageBubble extends ConsumerWidget {
     );
   }
 
-  String _cleanFormatting(String text) {
-    return text.replaceAll(RegExp(r'\*\*'), '').replaceAll(RegExp(r'\*'), '');
+  /// Strip markdown markers for streaming (plain text) display only.
+  /// For completed messages, flutter_md renders markdown natively.
+  String _stripMarkdown(String text) {
+    return text
+        .replaceAll(RegExp(r'\*\*'), '')
+        .replaceAll(RegExp(r'\*'), '')
+        .replaceAll(RegExp(r'`'), '');
+  }
+
+  /// Render text with flutter_md markdown support.
+  Widget _renderMd(String text) {
+    try {
+      final md = Markdown.fromString(text);
+      return MarkdownWidget(markdown: md);
+    } catch (_) {
+      return Text(
+        text,
+        style: TextStyle(color: _textColor(), fontSize: 15.sp, height: 1.4),
+      );
+    }
   }
 }

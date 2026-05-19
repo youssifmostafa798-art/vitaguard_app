@@ -52,6 +52,7 @@ class AiMessage {
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<String>? quickReplies;
+  final bool isPending;
 
   const AiMessage({
     required this.id,
@@ -66,6 +67,7 @@ class AiMessage {
     required this.createdAt,
     required this.updatedAt,
     this.quickReplies,
+    this.isPending = false,
   });
 
   bool get isUser => role == AiMessageRole.user;
@@ -104,6 +106,7 @@ class AiMessage {
     DateTime? createdAt,
     DateTime? updatedAt,
     List<String>? quickReplies,
+    bool? isPending,
   }) {
     return AiMessage(
       id: id ?? this.id,
@@ -118,6 +121,7 @@ class AiMessage {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       quickReplies: quickReplies ?? this.quickReplies,
+      isPending: isPending ?? this.isPending,
     );
   }
 }

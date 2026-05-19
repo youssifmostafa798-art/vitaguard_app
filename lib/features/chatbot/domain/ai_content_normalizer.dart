@@ -32,7 +32,7 @@ class AiContentNormalizer {
       }
     }
 
-    final bulletRegex = RegExp(r'^(\*|-|\d+\.)\s+(.*)');
+    final bulletRegex = RegExp(r'^(\*|-|\d+\.|\.)\s+(.*)');
 
     for (final line in lines) {
       final trimmed = line.trim();

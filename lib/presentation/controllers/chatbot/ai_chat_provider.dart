@@ -17,6 +17,7 @@ class AiChatState {
   final String? error;
   final AiConversation? conversation;
   final Stream<List<AiMessage>>? messageStream;
+  final AiMessage? pendingAssistantMessage;
 
   AiChatState({
     this.isLoading = false,
@@ -24,6 +25,7 @@ class AiChatState {
     this.error,
     this.conversation,
     this.messageStream,
+    this.pendingAssistantMessage,
   });
 
   AiChatState copyWith({
@@ -32,6 +34,8 @@ class AiChatState {
     String? error,
     AiConversation? conversation,
     Stream<List<AiMessage>>? messageStream,
+    bool clearPending = false,
+    AiMessage? pendingAssistantMessage,
   }) {
     return AiChatState(
       isLoading: isLoading ?? this.isLoading,
@@ -39,6 +43,9 @@ class AiChatState {
       error: error ?? this.error,
       conversation: conversation ?? this.conversation,
       messageStream: messageStream ?? this.messageStream,
+      pendingAssistantMessage: clearPending
+          ? null
+          : (pendingAssistantMessage ?? this.pendingAssistantMessage),
     );
   }
 }
@@ -79,7 +86,8 @@ class AiChatController extends _$AiChatController {
     if (_parsedCache.containsKey(message.id)) {
       final cached = _parsedCache[message.id]!;
       // Simple invalidation check if content differs somehow
-      if (cached.text == message.content || cached.text == AiResponseSanitizer.sanitize(message.content).text) {
+      if (cached.text == message.content ||
+          cached.text == AiResponseSanitizer.sanitize(message.content).text) {
         return cached;
       }
     }
@@ -143,12 +151,21 @@ class AiChatController extends _$AiChatController {
       return;
     }
 
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(
+      isLoading: true,
+      error: null,
+      conversation: isTargetingDifferentConversation
+          ? null
+          : state.conversation,
+      messageStream: isTargetingDifferentConversation
+          ? null
+          : state.messageStream,
+    );
 
     try {
       final conversation = await _repository.ensureConversation(conversationId);
       if (isTargetingDifferentConversation) _parsedCache.clear();
-      
+
       state = state.copyWith(
         isLoading: false,
         conversation: conversation,
@@ -161,11 +178,16 @@ class AiChatController extends _$AiChatController {
   }
 
   Future<void> startNewChat() async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(
+      isLoading: true,
+      error: null,
+      conversation: null,
+      messageStream: null,
+    );
     try {
       final conversation = await _repository.ensureConversation(null, true);
       _parsedCache.clear();
-      
+
       state = state.copyWith(
         isLoading: false,
         conversation: conversation,
@@ -203,17 +225,37 @@ class AiChatController extends _$AiChatController {
 
     // Ensure we have a valid conversation, then re-read state to avoid stale closure
     await ensureConversation();
-    final conversation = state.conversation;
-    if (conversation == null) {
+    if (state.conversation == null) {
       dev.log(
         '[AI_CHAT] sendMessage failed: no conversation after ensureConversation',
       );
       return false;
     }
+    final conversation = state.conversation!;
 
     state = state.copyWith(isSending: true, error: null);
 
     try {
+      // Set optimistic pending placeholder before any DB/async ops
+      final now = DateTime.now().toUtc();
+      state = state.copyWith(
+        isSending: true,
+        pendingAssistantMessage: AiMessage(
+          id: 'pending-${now.millisecondsSinceEpoch}',
+          conversationId: conversation.id,
+          ownerUserId: _repository.currentUserIdOrNull ?? '',
+          role: AiMessageRole.assistant,
+          content: '',
+          status: AiMessageStatus.streaming,
+          provider: null,
+          model: null,
+          errorMessage: null,
+          createdAt: now,
+          updatedAt: now,
+          isPending: true,
+        ),
+      );
+
       final userMessageId = await _repository.insertUserMessage(
         conversation.id,
         messageText,
@@ -229,6 +271,12 @@ class AiChatController extends _$AiChatController {
       state = state.copyWith(isSending: false, error: ErrorMapper.map(e));
       dev.log('[AI_CHAT] sendMessage error: $e\n$stack');
       return false;
+    }
+  }
+
+  void clearPendingMessage() {
+    if (state.pendingAssistantMessage != null) {
+      state = state.copyWith(clearPending: true);
     }
   }
 
