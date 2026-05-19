@@ -4,6 +4,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:vitaguard_app/data/models/chatbot/ai_chat_models.dart';
 import 'package:vitaguard_app/data/repositories/chatbot/ai_chat_repository.dart';
 import 'package:vitaguard_app/core/errors/error_mapper.dart';
+import 'package:vitaguard_app/features/chatbot/data/ai_response_sanitizer.dart';
+import 'package:vitaguard_app/features/chatbot/domain/ai_content_normalizer.dart';
+import 'package:vitaguard_app/features/chatbot/domain/ai_intent_classifier.dart';
+import 'package:vitaguard_app/features/chatbot/domain/models/chat_message_model.dart';
 
 part 'ai_chat_provider.g.dart';
 
@@ -45,12 +49,66 @@ class AiChatController extends _$AiChatController {
   DateTime _lastMessageSentAt = DateTime.fromMillisecondsSinceEpoch(0);
   String? _loadedUserId;
 
+  // Cache for parsed messages to support memoized UI rendering
+  final Map<String, ChatMessageModel> _parsedCache = {};
+
   @override
   AiChatState build() {
     // Keep alive for session: multi-step async ops set state between awaits.
     // Chat state must also survive screen navigation without losing conversation.
     ref.keepAlive();
     return AiChatState();
+  }
+
+  /// Returns a cached [ChatMessageModel] to prevent UI stuttering.
+  /// If the message is currently streaming, parses directly without caching.
+  ChatMessageModel getParsedMessage(AiMessage message) {
+    if (message.isUser) {
+      return ChatMessageModel(
+        text: message.content,
+        intent: MessageIntent.normal,
+        blocks: [],
+        isValid: true,
+      );
+    }
+
+    if (message.isStreaming) {
+      return _parseAiMessage(message);
+    }
+
+    if (_parsedCache.containsKey(message.id)) {
+      final cached = _parsedCache[message.id]!;
+      // Simple invalidation check if content differs somehow
+      if (cached.text == message.content || cached.text == AiResponseSanitizer.sanitize(message.content).text) {
+        return cached;
+      }
+    }
+
+    final parsed = _parseAiMessage(message);
+    _parsedCache[message.id] = parsed;
+    return parsed;
+  }
+
+  ChatMessageModel _parseAiMessage(AiMessage message) {
+    final sanitized = AiResponseSanitizer.sanitize(message.content);
+    if (!sanitized.isValid) {
+      return const ChatMessageModel(
+        text: '',
+        intent: MessageIntent.normal,
+        blocks: [],
+        isValid: false,
+      );
+    }
+
+    final intent = AiIntentClassifier.classify(sanitized.text);
+    final blocks = AiContentNormalizer.normalize(sanitized.text);
+
+    return ChatMessageModel(
+      text: sanitized.text,
+      intent: intent,
+      blocks: blocks,
+      isValid: true,
+    );
   }
 
   Future<List<AiConversation>> fetchUserHistory() async {
@@ -70,6 +128,7 @@ class AiChatController extends _$AiChatController {
         error: 'You must be logged in to chat with VitaGuard AI.',
       );
       _loadedUserId = null;
+      _parsedCache.clear();
       return;
     }
 
@@ -88,6 +147,8 @@ class AiChatController extends _$AiChatController {
 
     try {
       final conversation = await _repository.ensureConversation(conversationId);
+      if (isTargetingDifferentConversation) _parsedCache.clear();
+      
       state = state.copyWith(
         isLoading: false,
         conversation: conversation,
@@ -103,6 +164,8 @@ class AiChatController extends _$AiChatController {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final conversation = await _repository.ensureConversation(null, true);
+      _parsedCache.clear();
+      
       state = state.copyWith(
         isLoading: false,
         conversation: conversation,
@@ -177,5 +240,6 @@ class AiChatController extends _$AiChatController {
   void reset() {
     state = AiChatState();
     _loadedUserId = null;
+    _parsedCache.clear();
   }
 }

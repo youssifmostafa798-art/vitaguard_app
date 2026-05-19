@@ -1,6 +1,5 @@
 import 'dart:developer' as dev;
 
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vitaguard_app/core/errors/error_mapper.dart';
 import 'package:vitaguard_app/data/models/chatbot/ai_chat_models.dart';
@@ -161,25 +160,26 @@ class SupabaseAiChatRepository implements AiChatRepository {
     if (message.role != AiMessageRole.assistant) return message;
 
     final prompt = _nearestOlderUserPrompt(messages, index);
-    final cleanContent = AiResponseSanitizer.sanitize(
+    final sanitized = AiResponseSanitizer.sanitize(
       message.content,
       userPrompt: prompt,
     );
 
-    if (cleanContent == message.content) return message;
+    if (sanitized.text == message.content) return message;
 
     return AiMessage(
       id: message.id,
       conversationId: message.conversationId,
       ownerUserId: message.ownerUserId,
       role: message.role,
-      content: cleanContent,
+      content: sanitized.text,
       status: message.status,
       provider: message.provider,
       model: message.model,
       errorMessage: message.errorMessage,
       createdAt: message.createdAt,
       updatedAt: message.updatedAt,
+      quickReplies: message.quickReplies,
     );
   }
 

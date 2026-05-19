@@ -51,6 +51,7 @@ class AiMessage {
   final String? errorMessage;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final List<String>? quickReplies;
 
   const AiMessage({
     required this.id,
@@ -64,6 +65,7 @@ class AiMessage {
     required this.errorMessage,
     required this.createdAt,
     required this.updatedAt,
+    this.quickReplies,
   });
 
   bool get isUser => role == AiMessageRole.user;
@@ -83,6 +85,39 @@ class AiMessage {
       errorMessage: map['error_message']?.toString(),
       createdAt: _parseDate(map['created_at']),
       updatedAt: _parseDate(map['updated_at']),
+      quickReplies: (map['quick_replies'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList(),
+    );
+  }
+
+  AiMessage copyWith({
+    String? id,
+    String? conversationId,
+    String? ownerUserId,
+    AiMessageRole? role,
+    String? content,
+    AiMessageStatus? status,
+    String? provider,
+    String? model,
+    String? errorMessage,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    List<String>? quickReplies,
+  }) {
+    return AiMessage(
+      id: id ?? this.id,
+      conversationId: conversationId ?? this.conversationId,
+      ownerUserId: ownerUserId ?? this.ownerUserId,
+      role: role ?? this.role,
+      content: content ?? this.content,
+      status: status ?? this.status,
+      provider: provider ?? this.provider,
+      model: model ?? this.model,
+      errorMessage: errorMessage ?? this.errorMessage,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      quickReplies: quickReplies ?? this.quickReplies,
     );
   }
 }

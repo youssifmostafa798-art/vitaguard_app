@@ -23,7 +23,6 @@ class AiChatScreen extends ConsumerStatefulWidget {
 class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  bool _isHandlingQuickReply = false;
 
   @override
   void initState() {
@@ -286,7 +285,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           ),
 
         Expanded(child: _buildMessages(provider)),
-        _buildQuickReplies(provider),
         if (ref.read(aiChatControllerProvider).isSending)
           Padding(
             padding: EdgeInsets.symmetric(vertical: 6.h, horizontal: 16.w),
@@ -545,71 +543,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               key: ValueKey(message.id),
               message: message,
               isPreviousSameSender: nextIsSame,
+              isLastMessage: index == 0,
             );
           },
         );
       },
-    );
-  }
-
-  Widget _buildQuickReplies(AiChatState provider) {
-    if (ref.read(aiChatControllerProvider).conversation == null ||
-        ref.read(aiChatControllerProvider).isLoading ||
-        ref.read(aiChatControllerProvider).isSending) {
-      return const SizedBox.shrink();
-    }
-
-    final suggestions = [
-      'Check my symptoms',
-      'Daily wellness tip',
-      'Track my mood',
-      'Set a health goal',
-    ];
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      child: Row(
-        children: suggestions.asMap().entries.map((entry) {
-          final isLast = entry.key == suggestions.length - 1;
-          final suggestion = entry.value;
-
-          return Padding(
-            padding: EdgeInsets.only(right: isLast ? 0 : 8.w),
-            child: ActionChip(
-              label: Text(
-                suggestion,
-                overflow: TextOverflow.visible,
-                softWrap: false,
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  color: const Color(0xFF003F6B),
-                ),
-              ),
-              backgroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(
-                horizontal: 4.w,
-              ), // Reduce internal padding if needed
-              side: const BorderSide(color: Color(0xFF00A3FF)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20.r),
-              ),
-              onPressed:
-                  _isHandlingQuickReply ||
-                      ref.read(aiChatControllerProvider).isSending
-                  ? null
-                  : () async {
-                      setState(() => _isHandlingQuickReply = true);
-                      _messageController.text = suggestion;
-                      await _sendMessage();
-                      if (mounted) {
-                        setState(() => _isHandlingQuickReply = false);
-                      }
-                    },
-            ),
-          );
-        }).toList(),
-      ),
     );
   }
 }
