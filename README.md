@@ -557,10 +557,10 @@ The ESP32 sends JSON payloads via HTTP POST to the `hardware_telemetry` Edge Fun
    Open `lib/main.dart` and update the Supabase URL and anon key:
 
    ```dart
-   await Supabase.initialize(
-     url: 'https://your-project.supabase.co',
-     anonKey: 'your-anon-key',
-   );
+    await Supabase.initialize(
+    url: 'https://sumgvbdgucrjyiztmzyn.supabase.co',
+    anonKey: 'sb_publishable_mn_LuYvFSEJBx4Kqt07Xpg_6mHktGkV',
+  );
    ```
 
 5. **Deploy Edge Functions** (requires Supabase CLI)
